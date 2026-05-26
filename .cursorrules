@@ -1,0 +1,229 @@
+# UMBRAL — Reglas Globales del Proyecto para Cursor AI
+
+## 1. Identidad del proyecto
+
+Eres un asistente experto integrado en el proyecto **UMBRAL**, una plataforma web
+para la operación en tiempo real de experiencias de investigación inmersiva.
+Tu rol es ayudar a construir código que sea correcto, limpio, testeable y alineado
+estrictamente con la arquitectura y el dominio definidos.
+
+Antes de escribir cualquier línea de código, consulta los archivos en:
+- `.cursor/specs/`   → qué debe hacer el sistema y cómo está estructurado
+- `.cursor/skills/`  → cómo implementar cada tecnología del stack
+- `.cursor/rules/`   → estándares de código y restricciones del proyecto
+- `.cursor/agents/`  → qué agente especializado aplica a la tarea actual
+
+---
+
+## 2. Stack tecnológico — NO negociable
+
+| Capa                  | Tecnología obligatoria                              |
+|-----------------------|-----------------------------------------------------|
+| Frontend Web          | React + Vite + TypeScript (Admin + Operador)        |
+| Frontend Mobile       | React Native + Expo + TypeScript (Equipo Participante) |
+| Backend               | .NET 8 (C#) — Arquitectura Hexagonal               |
+| Casos de uso          | MediatR + CQRS (Commands separados de Queries)      |
+| ORM / Persistencia    | Entity Framework Core 8 + PostgreSQL                |
+| Tiempo real           | SignalR (WebSockets) — cliente web Y mobile         |
+| Mensajería async      | RabbitMQ + MassTransit                              |
+| Validaciones          | FluentValidation                                    |
+| Contenedores          | Docker + Docker Compose (backend + BD + broker)     |
+| Pruebas backend       | xUnit + Moq + FluentAssertions                      |
+| Pruebas web           | Vitest + React Testing Library + Playwright (E2E)   |
+| Pruebas mobile        | Jest + React Native Testing Library                 |
+
+---
+
+## 3. Patrón arquitectónico — MONOLITO HEXAGONAL
+
+**CRÍTICO: Este proyecto es un MONOLITO. Nunca sugieras microservicios.**
+
+La solución .NET tiene exactamente CUATRO proyectos:
+Umbral.Domain          → Núcleo de negocio puro. Sin dependencias externas.
+Umbral.Application     → Casos de uso, Commands, Queries, handlers MediatR.
+Umbral.Infrastructure  → EF Core, repositorios, RabbitMQ, SignalR, servicios externos.
+Umbral.API             → Controllers, middlewares, configuración, punto de entrada.
+
+Regla de dependencias (siempre hacia adentro):
+API → Application → Domain
+Infrastructure → Application → Domain
+
+**Infraestructura NUNCA es referenciada por Dominio ni Aplicación directamente.**
+
+---
+
+## 4. Bounded Contexts del dominio
+
+El dominio está organizado en tres Bounded Contexts dentro del monolito.
+Son conceptualmente independientes; NO los mezcles:
+
+- **BC Catálogo de Misiones** → Mision, Etapa, Pista
+  Exclusivo de sesiones tipo BusquedaTesoro.
+
+- **BC Catálogo de Trivia** → Pregunta, Categoria, OpcionRespuesta
+  Exclusivo de sesiones tipo Trivia.
+
+- **BC Ejecución de Sesión** → Sesion, ContextoBusquedaTesoro, ContextoTrivia,
+  EquipoSesion, Evidencia, RespuestaTrivia, Penalizacion, EventoSesion.
+  Compartido por ambos modos. El campo `TipoSesion` en `Sesion` determina
+  qué contexto aplica. Nunca existirán ambos contextos en la misma sesión.
+
+Regla crítica: Una sesión es BusquedaTesoro O Trivia. Jamás una mezcla.
+
+---
+
+## 5. Reglas absolutas de dominio
+
+- Las entidades del dominio **NO** tienen referencias a DbContext, HttpContext
+  ni ninguna clase de infraestructura.
+- Los agregados exponen comportamiento mediante métodos, **no setters públicos**.
+- Los Value Objects son **inmutables** y se validan en el constructor.
+- Los Domain Events se emiten dentro de los métodos del agregado.
+- Los repositorios son **interfaces** definidas en Domain o Application.
+  Las implementaciones concretas van en Infrastructure.
+- Los Domain Services operan sobre agregados y no dependen de frameworks.
+
+---
+
+## 6. Reglas de Application Layer
+
+- Cada caso de uso es un **Command** o una **Query** manejado por MediatR.
+- Commands → modifican estado → devuelven `Result<T>` o `Unit`.
+- Queries → solo leen → devuelven DTOs, nunca entidades del dominio.
+- Los handlers **no** contienen lógica de negocio; delegan al dominio.
+- Toda entrada es validada con **FluentValidation** antes de llegar al handler.
+- Los handlers publican eventos de dominio a través de `IEventPublisher`.
+
+---
+
+## 7. Reglas de Infrastructure Layer
+
+- Los repositorios implementan las interfaces definidas en capas interiores.
+- EF Core mappings van en clases `IEntityTypeConfiguration<T>` separadas.
+- Los consumers de RabbitMQ se registran con MassTransit.
+- Los hubs de SignalR se definen aquí y se referencian desde API.
+- **No hay lógica de negocio** en ninguna clase de infraestructura.
+
+---
+
+## 8. Reglas de API Layer
+
+- Controllers son **delgados**: reciben request → envían a MediatR → devuelven respuesta.
+- El manejo global de excepciones va en un middleware centralizado.
+- La autenticación es JWT. La autorización usa políticas por rol:
+  `Administrador`, `Operador`, `EquipoParticipante`.
+- Logging con Serilog en cada request significativo.
+
+---
+
+## 9. Reglas de Frontend
+
+### Web (React) — Admin y Operador únicamente
+Estructura obligatoria:
+src/
+├── components/   → reutilizables sin lógica de negocio
+├── pages/        → vistas por ruta (admin/, operator/)
+├── hooks/        → lógica con estado
+├── services/     → llamadas HTTP y conexión WebSocket
+├── store/        → estado global (Zustand)
+└── types/        → tipos TypeScript compartidos
+
+- Ningún componente llama directamente a `fetch` o `axios`. Va en `services/`.
+- Los hooks consumen services; los componentes consumen hooks.
+- SignalR se conecta en custom hooks reutilizables.
+- Rutas protegidas por rol: solo `Administrador` y `Operador` acceden a esta app.
+
+### Mobile (React Native + Expo) — Equipo Participante únicamente
+Estructura obligatoria:
+
+src/
+├── components/   → componentes nativos reutilizables
+├── screens/      → pantallas por flujo (busqueda/, trivia/, shared/)
+├── hooks/        → misma convención que web
+├── services/     → misma convención que web (axios + signalr)
+├── store/        → Zustand (misma convención)
+└── types/        → tipos compartidos (pueden ser los mismos del backend)
+
+- El cliente SignalR es `@microsoft/signalr` — funciona igual en React Native.
+- Navegación con React Navigation (Stack + Tab navigator).
+- Estilos con StyleSheet o NativeWind.
+- Sin `localStorage`: usar `AsyncStorage` para persistir el token.
+- El equipo se autentica con su `CodigoAcceso` y accede solo a su sesión activa.
+
+### Regla global aplicable a ambos
+- Ningún componente/screen llama servicios directamente.
+- Ningún hook contiene JSX.
+- Prohibido usar `any` en TypeScript.
+
+---
+
+## 10. Patrones de diseño requeridos
+
+Estos patrones **deben** evidenciarse en clases reales del proyecto:
+
+| Patrón             | Dónde aplicarlo en UMBRAL                                  |
+|--------------------|------------------------------------------------------------|
+| Strategy           | Cálculo de puntaje según tipo de etapa (Trivia vs QR)      |
+| Composite          | Jerarquía Mision → Etapa → Pista                           |
+| Facade             | SessionOperationFacade para coordinar operaciones de sesión|
+| Proxy              | Control de acceso a pistas y paneles por rol               |
+| Template Method    | Flujo base de procesamiento de evidencias                  |
+| State              | Ciclo de vida de Sesion (Programada→Activa→Finalizada)     |
+| Chain of Responsibility | Validación en cadena de evidencias y cambios de estado|
+
+---
+
+## 11. Calidad y pruebas
+
+- Cobertura mínima de pruebas en backend: **90%**
+- Toda lógica de negocio en Domain y Application tiene prueba unitaria.
+- Los handlers se prueban con repositorios **falsos** (fakes/mocks), nunca con BD real.
+- Las pruebas de integración usan una BD PostgreSQL en contenedor (Testcontainers).
+- Las pruebas E2E cubren el flujo principal: crear sesión → registrar equipo →
+  liberar pista → enviar evidencia → ver ranking actualizado.
+- Nomenclatura de pruebas: `MetodoOComportamiento_Escenario_ResultadoEsperado`.
+
+---
+
+## 12. Convenciones de nomenclatura
+
+| Elemento              | Convención                          | Ejemplo                        |
+|-----------------------|-------------------------------------|--------------------------------|
+| Clases C#             | PascalCase                          | `SesionRepository`             |
+| Interfaces C#         | I + PascalCase                      | `ISesionRepository`            |
+| Métodos C#            | PascalCase                          | `AvanzarEtapa()`               |
+| Variables / params    | camelCase                           | `sesionId`                     |
+| Commands              | Verbo + Sustantivo + Command        | `CrearSesionCommand`           |
+| Queries               | Get/List + Sustantivo + Query       | `GetRankingSesionQuery`        |
+| Handlers              | [Command/Query] + Handler           | `CrearSesionCommandHandler`    |
+| Componentes React     | PascalCase                          | `RankingBoard`                 |
+| Hooks React           | use + PascalCase                    | `useSessionSocket`             |
+| Servicios React       | camelCase + Service                 | `sesionService`                |
+| Archivos de prueba    | [Clase].Tests.cs / [hook].test.tsx  | `SesionTests.cs`               |
+
+---
+
+## 13. Lo que NUNCA debes hacer
+
+- ❌ Agregar referencias de Infrastructure a Domain o Application.
+- ❌ Inyectar DbContext directamente en un handler o servicio de dominio.
+- ❌ Poner lógica de negocio en un Controller o en un Hub de SignalR.
+- ❌ Usar propiedades públicas con setter en entidades del dominio.
+- ❌ Retornar entidades del dominio desde Queries (usar DTOs).
+- ❌ Sugerir microservicios, múltiples soluciones o separación de deployables.
+- ❌ Omitir validaciones FluentValidation en Commands.
+- ❌ Escribir pruebas que dependan de orden de ejecución o de estado global.
+- ❌ Mezclar lógica de SignalR o RabbitMQ dentro de los handlers de MediatR.
+
+---
+
+## 14. Comportamiento esperado del asistente
+
+Cuando te pidan generar código:
+1. Identifica en qué capa pertenece el código solicitado.
+2. Verifica que no violes ninguna regla de dependencias.
+3. Aplica el patrón de diseño correspondiente si aplica.
+4. Genera la prueba unitaria junto con la implementación, siempre.
+5. Usa el lenguaje ubicuo del Bounded Context correspondiente.
+6. Si algo es ambiguo, consulta `.cursor/specs/umbral-backend-spec.md` o
+   `.cursor/specs/umbral-product-spec.md` antes de inventar.
