@@ -2,7 +2,7 @@
 
 **Alcance:** `Umbral.Infrastructure` (persistencia, adaptadores de salida, DI y pruebas de infraestructura)  
 **Rama:** `feature/fase3-infrastructure`  
-**Última actualización:** 2026-05-27 (iter-03-01)
+**Última actualización:** 2026-05-27 (iter-03-04)
 
 ---
 
@@ -23,7 +23,7 @@
 | 03-01 | Bootstrap Infrastructure + Persistence base | ✅ | [iter-03-01](iter-03-01-bootstrap-infrastructure.md) |
 | 03-02 | Configuraciones EF Core (mapeo canónico) | ✅ | [iter-03-02](iter-03-02-configuraciones-efcore.md) |
 | 03-03 | Repositorios Infrastructure (ports driven) | ✅ | [iter-03-03](iter-03-03-repositorios-infrastructure.md) |
-| 03-04 | Migración inicial + wiring DI | ⬜ | — |
+| 03-04 | Migración inicial + wiring DI | ✅ | [iter-03-04](iter-03-04-di-y-migracion-inicial.md) |
 | 03-05 | Tests de infraestructura (Testcontainers) | ⬜ | — |
 
 ---
@@ -41,5 +41,5 @@
 ## Progreso Fase 3
 
 ```
-Iter 03-03 ███░░  3/5 iteraciones (60%)
+Iter 03-04 ████░  4/5 iteraciones (80%)
 ```
