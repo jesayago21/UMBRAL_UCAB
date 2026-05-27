@@ -34,4 +34,20 @@ internal static class SesionTestBuilder
         sesion.ClearDomainEvents();
         return sesion;
     }
+
+    public static SesionAR Activa(string nombreEquipo = "EquipoDefault")
+    {
+        var sesion = ConEquipo(nombreEquipo);
+        sesion.Iniciar();
+        sesion.ClearDomainEvents();
+        return sesion;
+    }
+
+    public static SesionAR Pausada(string nombreEquipo = "EquipoDefault")
+    {
+        var sesion = Activa(nombreEquipo);
+        sesion.Pausar();
+        sesion.ClearDomainEvents();
+        return sesion;
+    }
 }
