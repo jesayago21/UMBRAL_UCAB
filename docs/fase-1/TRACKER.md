@@ -24,7 +24,7 @@
 | Iter | Caso de uso (dominio) | HU ERS principal | HU soporte | Estado | Doc |
 |------|-----------------------|------------------|------------|--------|-----|
 | 01 | CrearSesionBusquedaTesoro | **HU-12** | HU-01, HU-05, HU-06 | ✅ | [iter-01](iter-01-crear-sesion-bt.md) |
-| 02 | RegistrarEquipo | **HU-13** | — | ⬜ | — |
+| 02 | RegistrarEquipo | **HU-13** | — | ✅ | [iter-02](iter-02-registrar-equipo.md) |
 | 03 | IniciarSesion + Pausar/Reanudar | **HU-14**, **HU-15** | — | ⬜ | — |
 | 04 | AplicarPenalizacion | **HU-16** | — | ⬜ | — |
 | 05 | RegistrarEvidencia (base) | **HU-18** | HU-19 (parcial) | ⬜ | — |
@@ -51,7 +51,7 @@
 ### Sesión Operador
 
 - [x] **HU-12** Operador crea sesión BT — ✅ iter-01
-- [ ] **HU-13** Operador registra equipos — 🔶 código (`RegistrarEquipo`); **tests iter-02**
+- [x] **HU-13** Operador registra equipos — ✅ iter-02 (`SesionRegistrarEquipoTests`, 15 tests)
 - [ ] **HU-14** Operador inicia sesión — 🔶 código (`Iniciar`); **tests iter-03**
 - [ ] **HU-15** Pausar / reanudar sesión — 🔶 código (`Pausar`/`Reanudar`); **tests iter-03**
 - [ ] **HU-16** Aplicar penalización — 🔶 código (`AplicarPenalizacion`); **tests iter-04**
@@ -65,7 +65,7 @@
 
 ### Dominio compartido / transversal
 
-- [ ] Equipo se une con código de acceso — 🔶 `CodigoAcceso` VO presente; flujo unirse ⬜
+- [x] Equipo se une con código de acceso — 🔶 `CodigoAcceso` por equipo en `RegistrarEquipo`; flujo mobile ⬜
 - [ ] Liberación manual de pistas (RF-15) — ⬜
 
 ### Fuera de Fase 1
@@ -75,7 +75,7 @@
 | HU-11 Equipo ve pistas | 7 (Mobile) |
 | HU-17 Tablero tiempo real | 4 + 7 |
 | HU-21 Ranking tiempo real | 4 + 6 + 7 |
-| HU-22 Historial auditoría | 4 + 6 |
+| HU-22 Historial auditoría | 4 + 6 (consulta); dominio `EventoSesion` ✅ iter-02 |
 | HU-24…40 Trivia completo | 9 + 10 (Entrega 2) |
 | Auth JWT | 8 |
 | CI + cobertura ≥90% | 8 |
@@ -86,8 +86,9 @@
 ## Progreso Fase 1
 
 ```
-Iter 01 ██░░░░░░░░░░░░  1/7 iteraciones (14%)
+Iter 02 ████░░░░░░░░░░  2/7 iteraciones (29%)
 ```
 
-HUs con dominio+tests cerrados: **1/10** (HU-12)  
-HUs con código adelantado sin tests: **HU-01, 05, 06, 13, 14, 15, 16, 23**
+**Tests dominio:** 45/45  
+**HUs BT cerradas (dominio + tests):** HU-12, HU-13  
+**HUs con código adelantado sin tests:** HU-14, HU-15, HU-16, HU-23

@@ -27,7 +27,10 @@ public sealed class Sesion : AggregateRoot
     public ContextoBusquedaTesoro? ContextoBT { get; private set; }
 
     private readonly List<EquipoSesion> _equipos = [];
+    private readonly List<EventoSesion> _historialEventos = [];
+
     public IReadOnlyList<EquipoSesion> Equipos => _equipos.AsReadOnly();
+    public IReadOnlyList<EventoSesion> HistorialEventos => _historialEventos.AsReadOnly();
 
     private Sesion() { }
 
@@ -69,8 +72,10 @@ public sealed class Sesion : AggregateRoot
     }
 
     /// <summary>
-    /// Registra un equipo: EnPreparacion o Programada permitidos.
-    /// Iter 2 agrega: nombre único + rechazo en estado terminal.
+    /// Registra un equipo en la sesión (HU-13).
+    /// RB-13-01: nombre único por sesión (insensible a mayúsculas).
+    /// RB-13-02: no permitido en estados terminales (Finalizada, Cancelada).
+    /// RB-13-03: genera <see cref="CodigoAcceso"/> único por equipo.
     /// </summary>
     public EquipoSesion RegistrarEquipo(string nombre)
     {
@@ -78,12 +83,16 @@ public sealed class Sesion : AggregateRoot
             throw new DomainException(
                 "No se pueden registrar equipos en una sesión cerrada.");
 
-        if (_equipos.Any(e => e.Nombre.Valor == nombre))
-            throw new DomainException(
-                $"Ya existe un equipo con el nombre '{nombre}' en esta sesión.");
+        var nombreEquipo = NombreEquipo.Crear(nombre);
 
-        var equipo = EquipoSesion.Crear(SesionId, nombre);
+        if (_equipos.Any(e =>
+                string.Equals(e.Nombre.Valor, nombreEquipo.Valor, StringComparison.OrdinalIgnoreCase)))
+            throw new DomainException(
+                $"Ya existe un equipo con el nombre '{nombreEquipo.Valor}' en esta sesión.");
+
+        var equipo = EquipoSesion.Crear(SesionId, nombreEquipo.Valor);
         _equipos.Add(equipo);
+        RegistrarEvento("EquipoRegistrado", nombreEquipo.Valor);
         return equipo;
     }
 
@@ -165,6 +174,9 @@ public sealed class Sesion : AggregateRoot
         _equipos.FirstOrDefault(e => e.EquipoId == equipoId)
         ?? throw new DomainException(
             $"El equipo '{equipoId.Valor}' no pertenece a esta sesión.");
+
+    private void RegistrarEvento(string tipo, string payload) =>
+        _historialEventos.Add(EventoSesion.Crear(SesionId, tipo, payload));
 
     protected override bool IdEquals(Entity other) =>
         other is Sesion s && s.SesionId == SesionId;

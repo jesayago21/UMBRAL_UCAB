@@ -47,6 +47,11 @@ public sealed class SesionBuilder
     }
 
     /// <summary>
+    /// Explícito: no pre-registrar equipos al construir (p. ej. Iniciar sin equipos).
+    /// </summary>
+    public SesionBuilder SinEquipos() => this;
+
+    /// <summary>
     /// Atajo: construye una sesion con estado Activa y al menos un equipo.
     /// </summary>
     public SesionBuilder Activa()
