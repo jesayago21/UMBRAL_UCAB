@@ -50,4 +50,7 @@ internal static class SesionTestBuilder
         sesion.ClearDomainEvents();
         return sesion;
     }
+
+    public static string CodigoQrEtapaActual(SesionAR sesion)
+        => sesion.ContextoBT!.ObtenerEtapaActual().CodigoQRSolucion;
 }
