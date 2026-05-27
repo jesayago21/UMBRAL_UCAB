@@ -1,0 +1,14 @@
+**/.git
+**/.vs
+**/.idea
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/node_modules
+**/dist
+**/.env
+**/*.md
+**/tests
+**/coverage-report
+**/TestResults

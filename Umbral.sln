@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3531549F-E0FA-489E-A3E7-C89713EE0B63}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{8F5929D1-85A8-4BF9-B3A4-0EFC2260987C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbral.Domain", "src\backend\Umbral.Domain\Umbral.Domain.csproj", "{30EF5A3D-A626-41DC-9F81-EB8EA0D0DD7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbral.Application", "src\backend\Umbral.Application\Umbral.Application.csproj", "{DDCD76E0-5423-4774-8AE4-0FFE442EDD80}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbral.Infrastructure", "src\backend\Umbral.Infrastructure\Umbral.Infrastructure.csproj", "{F3BD533F-6AD1-4F12-A00E-67DACAE865AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbral.API", "src\backend\Umbral.API\Umbral.API.csproj", "{264128C7-AAC7-4E7D-B3C3-3B0DAF3040D6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{30EF5A3D-A626-41DC-9F81-EB8EA0D0DD7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30EF5A3D-A626-41DC-9F81-EB8EA0D0DD7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30EF5A3D-A626-41DC-9F81-EB8EA0D0DD7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30EF5A3D-A626-41DC-9F81-EB8EA0D0DD7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DDCD76E0-5423-4774-8AE4-0FFE442EDD80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDCD76E0-5423-4774-8AE4-0FFE442EDD80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDCD76E0-5423-4774-8AE4-0FFE442EDD80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDCD76E0-5423-4774-8AE4-0FFE442EDD80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3BD533F-6AD1-4F12-A00E-67DACAE865AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3BD533F-6AD1-4F12-A00E-67DACAE865AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3BD533F-6AD1-4F12-A00E-67DACAE865AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3BD533F-6AD1-4F12-A00E-67DACAE865AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{264128C7-AAC7-4E7D-B3C3-3B0DAF3040D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{264128C7-AAC7-4E7D-B3C3-3B0DAF3040D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{264128C7-AAC7-4E7D-B3C3-3B0DAF3040D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{264128C7-AAC7-4E7D-B3C3-3B0DAF3040D6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8F5929D1-85A8-4BF9-B3A4-0EFC2260987C} = {3531549F-E0FA-489E-A3E7-C89713EE0B63}
+		{30EF5A3D-A626-41DC-9F81-EB8EA0D0DD7A} = {8F5929D1-85A8-4BF9-B3A4-0EFC2260987C}
+		{DDCD76E0-5423-4774-8AE4-0FFE442EDD80} = {8F5929D1-85A8-4BF9-B3A4-0EFC2260987C}
+		{F3BD533F-6AD1-4F12-A00E-67DACAE865AE} = {8F5929D1-85A8-4BF9-B3A4-0EFC2260987C}
+		{264128C7-AAC7-4E7D-B3C3-3B0DAF3040D6} = {8F5929D1-85A8-4BF9-B3A4-0EFC2260987C}
+	EndGlobalSection
+EndGlobal
