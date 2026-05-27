@@ -1,0 +1,46 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: umbral_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-umbral_db}
+      POSTGRES_USER: ${POSTGRES_USER:-umbral_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-umbral_pass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umbral_user -d umbral_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - umbral_net
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: umbral_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-umbral_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-umbral_pass}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - umbral_net
+
+volumes:
+  postgres_data: {}
+  rabbitmq_data: {}
+
+networks:
+  umbral_net: {}

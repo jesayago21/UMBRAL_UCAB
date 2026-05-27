@@ -1,0 +1,54 @@
+# Secretos y configuración local
+.env
+.env.local
+appsettings.Local.json
+appsettings.*.Local.json
+.vscode/
+
+# Build artifacts .NET
+**/bin/
+**/obj/
+**/dist/
+**/coverage-report/
+**/TestResults/
+
+# Docker overrides locales (no commitear)
+docker-compose.override.yml
+
+# Node
+**/node_modules/
+**/.expo/
+**/.next/
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.DS_Store
+
+# Rider / Resharper
+_ReSharper*/
+*.resharper
+
+# Rider
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+packages/
+
+# Publish output
+publish/
