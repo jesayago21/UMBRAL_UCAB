@@ -2,7 +2,7 @@
 
 **Alcance:** solo dominio + `Umbral.Domain.Tests`  
 **Entrega:** 1 (criterio quality-spec)  
-**Última actualización:** 2026-05-26
+**Última actualización:** 2026-05-27
 
 ---
 
@@ -25,7 +25,7 @@
 |------|-----------------------|------------------|------------|--------|-----|
 | 01 | CrearSesionBusquedaTesoro | **HU-12** | HU-01, HU-05, HU-06 | ✅ | [iter-01](iter-01-crear-sesion-bt.md) |
 | 02 | RegistrarEquipo | **HU-13** | — | ✅ | [iter-02](iter-02-registrar-equipo.md) |
-| 03 | IniciarSesion + Pausar/Reanudar | **HU-14**, **HU-15** | — | ⬜ | — |
+| 03 | IniciarSesion + Pausar/Reanudar | **HU-14**, **HU-15** | — | ✅ | [iter-03](iter-03-iniciar-pausar-reanudar.md) |
 | 04 | AplicarPenalizacion | **HU-16** | — | ⬜ | — |
 | 05 | RegistrarEvidencia (base) | **HU-18** | HU-19 (parcial) | ⬜ | — |
 | 06 | Ganador único + transición etapa | **HU-19**, **HU-20** | HU-10 | ⬜ | — |
@@ -52,8 +52,8 @@
 
 - [x] **HU-12** Operador crea sesión BT — ✅ iter-01
 - [x] **HU-13** Operador registra equipos — ✅ iter-02 (`SesionRegistrarEquipoTests`, 15 tests)
-- [ ] **HU-14** Operador inicia sesión — 🔶 código (`Iniciar`); **tests iter-03**
-- [ ] **HU-15** Pausar / reanudar sesión — 🔶 código (`Pausar`/`Reanudar`); **tests iter-03**
+- [x] **HU-14** Operador inicia sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
+- [x] **HU-15** Pausar / reanudar sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
 - [ ] **HU-16** Aplicar penalización — 🔶 código (`AplicarPenalizacion`); **tests iter-04**
 - [ ] **HU-23** Reporte final / cerrar sesión — 🔶 código (`Finalizar`/`Cancelar`); **tests iter-07**
 
@@ -86,9 +86,9 @@
 ## Progreso Fase 1
 
 ```
-Iter 02 ████░░░░░░░░░░  2/7 iteraciones (29%)
+Iter 03 ██████░░░░░░░░  3/7 iteraciones (43%)
 ```
 
-**Tests dominio:** 45/45  
-**HUs BT cerradas (dominio + tests):** HU-12, HU-13  
-**HUs con código adelantado sin tests:** HU-14, HU-15, HU-16, HU-23
+**Tests dominio:** 77/77  
+**HUs BT cerradas (dominio + tests):** HU-12, HU-13, HU-14, HU-15  
+**HUs con código adelantado sin tests:** HU-16, HU-23

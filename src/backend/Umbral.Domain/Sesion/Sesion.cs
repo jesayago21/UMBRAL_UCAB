@@ -69,6 +69,7 @@ public sealed class Sesion : AggregateRoot
                 "Solo es posible desde 'Programada'.");
 
         Estado = EstadoSesion.EnPreparacion;
+        RegistrarEvento("SesionAbiertaParaRegistro", string.Empty);
     }
 
     /// <summary>
@@ -115,8 +116,10 @@ public sealed class Sesion : AggregateRoot
         Estado     = EstadoSesion.Activa;
         IniciadaEn = DateTime.UtcNow;
         RaiseDomainEvent(new SesionIniciada(SesionId, TipoSesion));
+        RegistrarEvento("SesionIniciada", $"operador={OperadorId.Valor}");
     }
 
+    /// <summary>Activa → Pausada (HU-15).</summary>
     public void Pausar()
     {
         if (Estado != EstadoSesion.Activa)
@@ -124,8 +127,11 @@ public sealed class Sesion : AggregateRoot
                 $"No se puede pausar una sesión en estado '{Estado}'.");
 
         Estado = EstadoSesion.Pausada;
+        RaiseDomainEvent(new Events.SesionPausada(SesionId));
+        RegistrarEvento("SesionPausada", string.Empty);
     }
 
+    /// <summary>Pausada → Activa (HU-15).</summary>
     public void Reanudar()
     {
         if (Estado != EstadoSesion.Pausada)
@@ -133,8 +139,11 @@ public sealed class Sesion : AggregateRoot
                 $"No se puede reanudar una sesión en estado '{Estado}'.");
 
         Estado = EstadoSesion.Activa;
+        RaiseDomainEvent(new Events.SesionReanudada(SesionId));
+        RegistrarEvento("SesionReanudada", string.Empty);
     }
 
+    /// <summary>Activa|Pausada → Finalizada.</summary>
     public void Finalizar()
     {
         if (Estado is not (EstadoSesion.Activa or EstadoSesion.Pausada))
@@ -143,6 +152,8 @@ public sealed class Sesion : AggregateRoot
 
         Estado       = EstadoSesion.Finalizada;
         FinalizadaEn = DateTime.UtcNow;
+        RaiseDomainEvent(new Events.SesionFinalizada(SesionId));
+        RegistrarEvento("SesionFinalizada", string.Empty);
     }
 
     public void Cancelar(string motivo)
