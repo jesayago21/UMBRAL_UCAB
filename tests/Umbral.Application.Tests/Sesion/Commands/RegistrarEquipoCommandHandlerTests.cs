@@ -3,6 +3,7 @@ using NSubstitute;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Sesion.Commands.RegistrarEquipo;
 using Umbral.Application.Tests.Builders;
+using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Shared;
@@ -57,6 +58,36 @@ public sealed class RegistrarEquipoCommandHandlerTests
 
         await _sesionRepo.Received(1).SaveAsync(sesion, Arg.Any<CancellationToken>());
         sesion.DomainEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_CuandoSesionProgramada_AbreRegistroYRegistraEquipo()
+    {
+        var sesion = SesionAR.CrearBusquedaTesoro(
+            MisionSnapshot.Desde(MisionTestBuilder.Activa()),
+            UsuarioId.Nuevo());
+        sesion.ClearDomainEvents();
+        sesion.Estado.Should().Be(EstadoSesion.Programada);
+
+        _sesionRepo
+            .FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>())
+            .Returns(sesion);
+
+        _sesionRepo
+            .SaveAsync(Arg.Any<SesionAR>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        _publisher
+            .PublishBatchAsync(Arg.Any<IReadOnlyList<IDomainEvent>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var result = await _sut.Handle(
+            new RegistrarEquipoCommand(sesion.SesionId.Valor, "Exploradores"),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        sesion.Estado.Should().Be(EstadoSesion.EnPreparacion);
+        sesion.Equipos.Should().ContainSingle(e => e.Nombre.Valor == "Exploradores");
     }
 
     [Fact]

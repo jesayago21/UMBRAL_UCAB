@@ -30,6 +30,9 @@ internal sealed class RegistrarEquipoCommandHandler
                          cancellationToken)
                      ?? throw new NotFoundException(nameof(SesionAR), command.SesionId);
 
+        if (sesion.Estado == EstadoSesion.Programada)
+            sesion.AbrirParaRegistro();
+
         var equipo = sesion.RegistrarEquipo(command.NombreEquipo);
 
         await _sesionRepository.SaveAsync(sesion, cancellationToken);

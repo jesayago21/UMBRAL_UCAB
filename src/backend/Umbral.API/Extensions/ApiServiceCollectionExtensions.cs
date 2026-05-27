@@ -14,7 +14,11 @@ public static class ApiServiceCollectionExtensions
         if (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
         {
             services
-                .AddAuthentication(TestAuthHandler.SchemeName)
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                    options.DefaultChallengeScheme    = TestAuthHandler.SchemeName;
+                })
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                     TestAuthHandler.SchemeName,
                     _ => { });
