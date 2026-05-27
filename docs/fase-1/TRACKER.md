@@ -2,7 +2,7 @@
 
 **Alcance:** solo dominio + `Umbral.Domain.Tests`  
 **Entrega:** 1 (criterio quality-spec)  
-**Última actualización:** 2026-05-27
+**Última actualización:** 2026-05-27 (iter-04)
 
 ---
 
@@ -26,7 +26,7 @@
 | 01 | CrearSesionBusquedaTesoro | **HU-12** | HU-01, HU-05, HU-06 | ✅ | [iter-01](iter-01-crear-sesion-bt.md) |
 | 02 | RegistrarEquipo | **HU-13** | — | ✅ | [iter-02](iter-02-registrar-equipo.md) |
 | 03 | IniciarSesion + Pausar/Reanudar | **HU-14**, **HU-15** | — | ✅ | [iter-03](iter-03-iniciar-pausar-reanudar.md) |
-| 04 | AplicarPenalizacion | **HU-16** | — | ⬜ | — |
+| 04 | AplicarPenalizacion | **HU-16** | — | ✅ | [iter-04](iter-04-aplicar-penalizacion.md) |
 | 05 | RegistrarEvidencia (base) | **HU-18** | HU-19 (parcial) | ⬜ | — |
 | 06 | Ganador único + transición etapa | **HU-19**, **HU-20** | HU-10 | ⬜ | — |
 | 07 | Cerrar/cancelar sesión | **HU-23** | — | ⬜ | — |
@@ -54,7 +54,7 @@
 - [x] **HU-13** Operador registra equipos — ✅ iter-02 (`SesionRegistrarEquipoTests`, 15 tests)
 - [x] **HU-14** Operador inicia sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
 - [x] **HU-15** Pausar / reanudar sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
-- [ ] **HU-16** Aplicar penalización — 🔶 código (`AplicarPenalizacion`); **tests iter-04**
+- [x] **HU-16** Aplicar penalización — ✅ iter-04 (`PuntajeTests` + `SesionAplicarPenalizacionTests`, 30 tests)
 - [ ] **HU-23** Reporte final / cerrar sesión — 🔶 código (`Finalizar`/`Cancelar`); **tests iter-07**
 
 ### Juego / Evidencia / Etapas
@@ -86,9 +86,9 @@
 ## Progreso Fase 1
 
 ```
-Iter 03 ██████░░░░░░░░  3/7 iteraciones (43%)
+Iter 04 ████████░░░░░░  4/7 iteraciones (57%)
 ```
 
-**Tests dominio:** 77/77  
-**HUs BT cerradas (dominio + tests):** HU-12, HU-13, HU-14, HU-15  
-**HUs con código adelantado sin tests:** HU-16, HU-23
+**Tests dominio:** 107/107  
+**HUs BT cerradas (dominio + tests):** HU-12, HU-13, HU-14, HU-15, HU-16  
+**HUs con código adelantado sin tests:** HU-23

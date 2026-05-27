@@ -52,13 +52,12 @@ public sealed class SesionBuilder
     public SesionBuilder SinEquipos() => this;
 
     /// <summary>
-    /// Atajo: construye una sesion con estado Activa y al menos un equipo.
+    /// Atajo: construye una sesion con estado Activa.
+    /// Si no se llama a ConEquipo(), Build() agrega un equipo por defecto.
     /// </summary>
     public SesionBuilder Activa()
     {
         _estado = EstadoSesion.Activa;
-        if (_equipos.Count == 0)
-            _equipos.Add("EquipoDefault");
         return this;
     }
 

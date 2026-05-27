@@ -169,6 +169,12 @@ public sealed class Sesion : AggregateRoot
         FinalizadaEn = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Aplica una penalización a un equipo (HU-16).
+    /// RB-16-01: solo en estado Activa.
+    /// RB-16-02: el equipo debe pertenecer a la sesión.
+    /// RB-16-03: emite PenalizacionAplicada; el puntaje no baja de cero.
+    /// </summary>
     public void AplicarPenalizacion(EquipoId equipoId, Penalizacion penalizacion)
     {
         if (Estado != EstadoSesion.Activa)
@@ -177,6 +183,14 @@ public sealed class Sesion : AggregateRoot
 
         var equipo = ObtenerEquipo(equipoId);
         equipo.AplicarPenalizacion(penalizacion);
+
+        RaiseDomainEvent(new Events.PenalizacionAplicada(
+            SesionId, equipoId,
+            penalizacion.Puntos, penalizacion.Motivo,
+            penalizacion.OperadorId));
+
+        RegistrarEvento("PenalizacionAplicada",
+            $"equipo={equipoId.Valor};puntos={penalizacion.Puntos};motivo={penalizacion.Motivo}");
     }
 
     public bool EstaActiva() => Estado == EstadoSesion.Activa;
