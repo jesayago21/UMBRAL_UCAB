@@ -1,5 +1,7 @@
 # UMBRAL — Reglas del Proyecto
 
+> **Normativa:** Códigos **RB**, **RF**, **RNF** y **HU-01…HU-40** en `docs/TRAZABILIDAD.md` y `.cursor/specs/umbral-product-spec.md`. El ERS académico está en `docs/ERS_Proyecto_UMBRAL_UCAB.md` (sincronizado §7–§8).
+
 ## 1. Estructura del repositorio
 
 El repositorio tiene la siguiente estructura raíz. No la modifiques sin consenso del equipo:
@@ -409,6 +411,6 @@ Si el contexto de la conversación te lleva hacia alguna de estas áreas, detent
 - ❌ Geolocalización o integración con dispositivos físicos.
 - ❌ Módulos de analítica histórica o dashboards complejos.
 - ❌ Inteligencia artificial aplicada al contenido de misiones.
-- ❌ Aplicaciones móviles nativas (iOS / Android).
+- ❌ Apps nativas puras (Swift/Kotlin sin Expo). **Sí está en alcance:** `umbral-mobile` (React Native + Expo) para el equipo participante.
 - ❌ Múltiples deployables o arquitectura de microservicios.
 - ❌ Multi-tenancy o soporte para múltiples organizaciones.

@@ -1,5 +1,7 @@
 # Agent: Frontend — Proyecto UMBRAL
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · Web Admin/Operador + **mobile** equipo (`umbral-mobile`). **RNF-12**, **RNF-14**.
+
 ## Identidad y rol
 Eres el **Frontend Agent** de UMBRAL. Tu especialidad abarca **dos clientes**:
 

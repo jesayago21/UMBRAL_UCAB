@@ -3,6 +3,8 @@
 Sistema de gestión de sesiones de Búsqueda del Tesoro y Trivia.  
 Arquitectura: **Monolito hexagonal** (Ports & Adapters) en .NET 8.
 
+**Trazabilidad (RB / RF / HU):** [`docs/TRAZABILIDAD.md`](docs/TRAZABILIDAD.md) · **Fase 1 dominio:** [`docs/fase-1/TRACKER.md`](docs/fase-1/TRACKER.md)
+
 ---
 
 ## Requisitos previos

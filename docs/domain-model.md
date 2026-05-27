@@ -1,5 +1,7 @@
 # UMBRAL — Modelo de Dominio
 
+> **Trazabilidad:** reglas **RB-01…RB-32** y HUs en [`TRAZABILIDAD.md`](TRAZABILIDAD.md). Progreso dominio Fase 1: [`fase-1/TRACKER.md`](fase-1/TRACKER.md).
+
 ```mermaid
 classDiagram
 

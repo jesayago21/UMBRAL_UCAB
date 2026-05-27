@@ -1,5 +1,7 @@
 # UMBRAL — Especificación Técnica Backend
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · dominio implementado según HU ERS en `docs/fase-1/TRACKER.md`.
+
 ## 1. Stack y versiones
 
 | Tecnología              | Versión   | Uso                                      |

@@ -1,5 +1,7 @@
 # Skill: EF Core + PostgreSQL — Proyecto UMBRAL
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **RNF-02**, **RNF-13**.
+
 ## Propósito
 Guía canónica para configurar Entity Framework Core con PostgreSQL en el
 monolito hexagonal de UMBRAL. Cubre: DbContext, configuraciones Fluent API,

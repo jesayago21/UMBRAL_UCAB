@@ -1,5 +1,7 @@
 # UMBRAL — Estándares de Código
 
+> **Trazabilidad:** reglas de negocio **RB-01…RB-32** en `docs/TRAZABILIDAD.md`. Comentarios `RB-xx-yy` en dominio = criterios de iteración Fase 1.
+
 ## 1. C# / .NET 8
 
 ### 1.1 Estructura de archivos

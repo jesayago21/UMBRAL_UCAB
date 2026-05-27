@@ -1,5 +1,7 @@
 # Skill: RabbitMQ + MassTransit — Proyecto UMBRAL
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **RNF-05**, RF-19, RF-29.
+
 ## Propósito
 Guía canónica para implementar mensajería asíncrona con RabbitMQ y MassTransit
 en UMBRAL. Cubre: Integration Events, Consumers, Sagas (si aplica), configuración

@@ -335,51 +335,18 @@ La interfaz debe ser clara, utilizable y coherente con los flujos principales de
 
 10. Reglas de negocio
 
-Código
+Tabla canónica completa (**RB-01 … RB-32**): [`TRAZABILIDAD.md`](TRAZABILIDAD.md) y `.cursor/specs/umbral-product-spec.md` §7.
 
-Regla de negocio
-
-RB-01
-
-Una misión solo puede utilizarse para crear sesiones si se encuentra activa.
-
-RB-02
-
-Una sesión no puede iniciar si no posee al menos un equipo registrado.
-
-RB-03
-
-No se deben aceptar evidencias si la sesión está pausada, finalizada o cancelada.
-
-RB-04
-
-Una pista no puede liberarse dos veces al mismo equipo para la misma etapa.
-
-RB-05
-
-Cada evidencia debe asociarse exactamente a un equipo, una sesión y una etapa.
-
-RB-06
-
-Toda penalización debe registrar motivo y momento de aplicación.
-
-RB-07
-
-El puntaje acumulado de un equipo no puede quedar sin trazabilidad de origen.
-
-RB-08
-
-El ranking debe ordenarse de mayor a menor puntaje y usar tiempo de resolución
-como criterio de desempate cuando aplique.
-
-RB-09
-
-Los cambios de estado de la sesión deben respetar transiciones válidas.
-
-RB-10
-
-El operador solo podrá administrar sesiones que tenga asignadas o visibles según la
-política definida por el equipo.
+| Código | Resumen |
+|--------|---------|
+| RB-01 | Sesión BT solo desde misión activa |
+| RB-02 | Nombre de equipo único por sesión |
+| RB-04–07 | Evidencias, etapas, pistas por tiempo |
+| RB-08 | Ranking y desempate |
+| RB-18 | Inicio de sesión requiere ≥1 equipo |
+| RB-19–24 | Evidencias en pausa, penalizaciones, QR, piso de puntaje |
+| RB-25–27 | Trazabilidad, solo lectura, operador por sesión |
+| RB-12–17, 28–32 | Trivia |
 
 11. Arquitectura y lineamientos técnicos obligatorios
 La  solución  deberá  construirse  siguiendo  una  arquitectura  que  evidencie  separación  clara  de
