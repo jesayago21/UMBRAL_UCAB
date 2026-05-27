@@ -15,6 +15,7 @@ public sealed class ContextoBusquedaTesoro : Entity
 
     public MisionSnapshot MisionSnapshot { get; private set; } = default!;
     public int EtapaActualIndex { get; private set; }
+    public EquipoId? GanadorEtapaActualId { get; private set; }
 
     private ContextoBusquedaTesoro() { }
 
@@ -44,6 +45,32 @@ public sealed class ContextoBusquedaTesoro : Entity
 
     public bool EsUltimaEtapa() =>
         EtapaActualIndex >= MisionSnapshot.Etapas.Count - 1;
+
+    public bool YaHayGanadorEnEtapaActual() => GanadorEtapaActualId is not null;
+
+    internal void RegistrarGanadorEtapa(EquipoId ganadorId)
+    {
+        ArgumentNullException.ThrowIfNull(ganadorId);
+
+        if (GanadorEtapaActualId is not null)
+            throw new DomainException("Ya existe un ganador en la etapa actual.");
+
+        GanadorEtapaActualId = ganadorId;
+    }
+
+    /// <summary>Avanza al siguiente nodo tras completar la etapa actual (HU-20, RB-05).</summary>
+    internal void AvanzarEtapa()
+    {
+        if (GanadorEtapaActualId is null)
+            throw new DomainException(
+                "No se puede avanzar de etapa sin un ganador registrado.");
+
+        if (EsUltimaEtapa())
+            throw new DomainException("No hay más etapas en la misión.");
+
+        EtapaActualIndex++;
+        GanadorEtapaActualId = null;
+    }
 
     protected override bool IdEquals(Entity other) =>
         other is ContextoBusquedaTesoro c && c._id == _id;

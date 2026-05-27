@@ -2,7 +2,7 @@
 
 **Alcance:** solo dominio + `Umbral.Domain.Tests`  
 **Entrega:** 1 (criterio quality-spec)  
-**Última actualización:** 2026-05-27 (iter-05)
+**Última actualización:** 2026-05-27 (iter-06)
 
 **Trazabilidad:** HU **HU-01…HU-40** según ERS y `docs/TRAZABILIDAD.md`. Reglas globales **RB-01…RB-32** (no confundir con `RB-16-01` etc. de criterios locales en `iter-*.md`).
 
@@ -30,7 +30,7 @@
 | 03 | IniciarSesion + Pausar/Reanudar | **HU-14**, **HU-15** | — | ✅ | [iter-03](iter-03-iniciar-pausar-reanudar.md) |
 | 04 | AplicarPenalizacion | **HU-16** | — | ✅ | [iter-04](iter-04-aplicar-penalizacion.md) |
 | 05 | RegistrarEvidencia (base) | **HU-18** | HU-19 (parcial) | ✅ | [iter-05](iter-05-registrar-evidencia.md) |
-| 06 | Ganador único + transición etapa | **HU-19**, **HU-20** | HU-10 | ⬜ | — |
+| 06 | Ganador único + transición etapa | **HU-19**, **HU-20** | HU-10 | ✅ | [iter-06](iter-06-ganador-transicion-etapa.md) |
 | 07 | Cerrar/cancelar sesión | **HU-23** | — | ⬜ | — |
 
 ---
@@ -62,8 +62,8 @@
 ### Juego / Evidencia / Etapas
 
 - [x] **HU-18** Equipo envía evidencia QR — ✅ iter-05 (`SesionRegistrarEvidenciaTests` + `ValidacionEvidenciaServiceTests`, 30 tests)
-- [ ] **HU-19** Validar ganador único de etapa — 🔶 parcial iter-05 (duplicado mismo equipo); **completo iter-06**
-- [ ] **HU-20** Transición automática de etapa — ⬜ iter-06
+- [x] **HU-19** Validar ganador único de etapa — ✅ iter-06 (`SesionGanadorTransicionTests`, 10 tests)
+- [x] **HU-20** Transición automática de etapa — ✅ iter-06 (`ContextoBT.AvanzarEtapa`, auto-finalizar)
 
 ### Dominio compartido / transversal
 
@@ -88,9 +88,9 @@
 ## Progreso Fase 1
 
 ```
-Iter 05 ██████████░░░░  5/7 iteraciones (71%)
+Iter 06 ████████████░░  6/7 iteraciones (86%)
 ```
 
-**Tests dominio:** 137/137  
-**HUs BT cerradas (dominio + tests):** HU-12, HU-13, HU-14, HU-15, HU-16, HU-18  
-**HUs con código adelantado sin tests:** HU-19 (parcial), HU-23
+**Tests dominio:** 149/149  
+**HUs BT cerradas (dominio + tests):** HU-12, HU-13, HU-14, HU-15, HU-16, HU-18, HU-19, HU-20  
+**HUs con código adelantado sin tests:** HU-23

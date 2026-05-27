@@ -218,7 +218,7 @@ public sealed class SesionRegistrarEvidenciaTests
     }
 
     [Fact]
-    public void RegistrarEvidencia_DosEquiposDistintos_PuedenEnviarQrValido()
+    public void RegistrarEvidencia_DosEquiposDistintos_SoloPrimeroEnEtapaGanaPuntaje()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
@@ -230,9 +230,10 @@ public sealed class SesionRegistrarEvidenciaTests
         var evAlpha = sesion.RegistrarEvidencia(alpha.EquipoId, QrEtapa1);
         var evBeta  = sesion.RegistrarEvidencia(beta.EquipoId, QrEtapa1);
 
-        // Assert — ganador único (RB-04) se implementa en iter-06
+        // Assert — Alpha gana etapa 1; Beta envía QR de etapa ya superada (RB-04/RB-05)
         evAlpha.Resultado.Should().Be(ResultadoValidacion.Valida);
-        evBeta.Resultado.Should().Be(ResultadoValidacion.Valida);
-        sesion.Evidencias.Should().HaveCount(2);
+        evBeta.Resultado.Should().Be(ResultadoValidacion.Invalida);
+        alpha.PuntajeTotal.Valor.Should().Be(100);
+        beta.PuntajeTotal.Valor.Should().Be(0);
     }
 }

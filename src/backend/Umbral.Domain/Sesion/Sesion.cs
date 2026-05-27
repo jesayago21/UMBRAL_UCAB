@@ -195,8 +195,7 @@ public sealed class Sesion : AggregateRoot
 
     /// <summary>
     /// Registra evidencia QR enviada por un equipo (HU-18).
-    /// RB-06: solo etapa activa. RB-19: rechaza si sesión no activa. RB-22: valida QR.
-    /// HU-19 parcial: mismo equipo no puede registrar dos evidencias válidas en la misma etapa.
+    /// RB-06, RB-19, RB-22. HU-19/RB-04: ganador único. HU-20/RB-05: transición de etapa.
     /// </summary>
     public Evidencia RegistrarEvidencia(EquipoId equipoId, string codigoQR)
     {
@@ -219,6 +218,12 @@ public sealed class Sesion : AggregateRoot
             resultado = ResultadoValidacion.Invalida;
         }
 
+        if (resultado == ResultadoValidacion.Valida &&
+            ContextoBT.YaHayGanadorEnEtapaActual())
+        {
+            resultado = ResultadoValidacion.Invalida;
+        }
+
         var evidencia = Evidencia.Registrar(
             SesionId, equipo.EquipoId, etapa.EtapaId, qr, resultado);
         _evidencias.Add(evidencia);
@@ -229,7 +234,35 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("EvidenciaRegistrada",
             $"equipo={equipo.EquipoId.Valor};etapa={etapa.EtapaId.Valor};resultado={resultado};qr={qr.Valor}");
 
+        if (resultado == ResultadoValidacion.Valida)
+            ProcesarEvidenciaGanadora(equipo, etapa);
+
         return evidencia;
+    }
+
+    private void ProcesarEvidenciaGanadora(EquipoSesion equipo, EtapaSnapshot etapa)
+    {
+        var puntos = CalculoPuntajeBusquedaService.Calcular(esGanador: true);
+        equipo.SumarPuntaje(puntos.Valor);
+
+        ContextoBT!.RegistrarGanadorEtapa(equipo.EquipoId);
+
+        RaiseDomainEvent(new EvidenciaValidada(
+            SesionId, equipo.EquipoId, etapa.EtapaId, puntos));
+
+        var indexCompletada = ContextoBT.EtapaActualIndex;
+        var esUltima        = ContextoBT.EsUltimaEtapa();
+
+        RaiseDomainEvent(new EtapaCompletada(
+            SesionId, indexCompletada, equipo.EquipoId));
+
+        RegistrarEvento("EtapaCompletada",
+            $"etapaIndex={indexCompletada};ganador={equipo.EquipoId.Valor}");
+
+        if (esUltima)
+            Finalizar();
+        else
+            ContextoBT.AvanzarEtapa();
     }
 
     public bool EstaActiva() => Estado == EstadoSesion.Activa;
