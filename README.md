@@ -47,13 +47,14 @@ docker compose logs -f rabbitmq
 
 | Servicio       | Puerto local | URL                              |
 |----------------|-------------|----------------------------------|
-| PostgreSQL     | 5432        | `localhost:5432`                 |
+| PostgreSQL     | 5433        | `localhost:5433`                 |
 | RabbitMQ AMQP  | 5672        | `amqp://localhost:5672`          |
 | RabbitMQ UI    | 15672       | http://localhost:15672           |
 | API Backend    | 5000        | http://localhost:5000            |
 
 **Credenciales de desarrollo** (PostgreSQL y RabbitMQ): `umbral_user` / `umbral_pass`  
 **Base de datos**: `umbral_db`
+**Nota**: se usa `5433` para evitar conflicto con instalaciones locales de PostgreSQL en `5432`.
 
 ---
 
