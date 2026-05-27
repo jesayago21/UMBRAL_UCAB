@@ -1,0 +1,196 @@
+using FluentAssertions;
+using NSubstitute;
+using Umbral.Application.Common.Exceptions;
+using Umbral.Application.Sesion.Commands.SubmitEvidencia;
+using Umbral.Application.Tests.Builders;
+using Umbral.Domain.Ports;
+using Umbral.Domain.Sesion;
+using Umbral.Domain.Sesion.Events;
+using Umbral.Domain.Shared;
+using Xunit;
+using SesionAR = Umbral.Domain.Sesion.Sesion;
+
+namespace Umbral.Application.Tests.Sesion.Commands;
+
+/// <summary>HU-18 — SubmitEvidencia (Application).</summary>
+public sealed class SubmitEvidenciaCommandHandlerTests
+{
+    private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
+    private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
+    private readonly SubmitEvidenciaCommandHandler _sut;
+
+    public SubmitEvidenciaCommandHandlerTests()
+    {
+        _sut = new SubmitEvidenciaCommandHandler(_sesionRepo, _publisher);
+    }
+
+    [Fact]
+    public async Task Handle_CuandoSesionActivaYQrValido_RegistraEvidenciaYPublicaEventos()
+    {
+        // Arrange
+        var sesion = SesionTestBuilder.Activa("Alpha");
+        var equipo = sesion.Equipos.First();
+        var qrValido = SesionTestBuilder.CodigoQrEtapaActual(sesion);
+        sesion.ClearDomainEvents();
+
+        _sesionRepo
+            .FindByIdAsync(Arg.Is<SesionId>(id => id.Valor == sesion.SesionId.Valor), Arg.Any<CancellationToken>())
+            .Returns(sesion);
+        _sesionRepo
+            .SaveAsync(Arg.Any<SesionAR>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        _publisher
+            .PublishBatchAsync(Arg.Any<IReadOnlyList<IDomainEvent>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        IReadOnlyList<IDomainEvent>? eventos = null;
+        _publisher
+            .PublishBatchAsync(Arg.Any<IReadOnlyList<IDomainEvent>>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                eventos = ci.ArgAt<IReadOnlyList<IDomainEvent>>(0).ToList();
+                return Task.CompletedTask;
+            });
+
+        // Act
+        var result = await _sut.Handle(
+            new SubmitEvidenciaCommand(
+                sesion.SesionId.Valor,
+                equipo.EquipoId.Valor,
+                qrValido),
+            CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.EvidenciaId.Should().NotBeEmpty();
+        result.Value.Resultado.Should().Be(ResultadoValidacion.Valida);
+        eventos.Should().Contain(e => e is EvidenciaRegistrada);
+        sesion.DomainEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_CuandoSesionNoExiste_LanzaNotFoundException()
+    {
+        // Arrange
+        _sesionRepo
+            .FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>())
+            .Returns((SesionAR?)null);
+
+        // Act
+        var act = () => _sut.Handle(
+            new SubmitEvidenciaCommand(Guid.NewGuid(), Guid.NewGuid(), "QR-TEST"),
+            CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Handle_CuandoEquipoNoPerteneceALaSesion_LanzaDomainException()
+    {
+        // Arrange
+        var sesion = SesionTestBuilder.Activa("Alpha");
+        var qrValido = SesionTestBuilder.CodigoQrEtapaActual(sesion);
+
+        _sesionRepo
+            .FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>())
+            .Returns(sesion);
+
+        // Act
+        var act = () => _sut.Handle(
+            new SubmitEvidenciaCommand(
+                sesion.SesionId.Valor,
+                Guid.NewGuid(),
+                qrValido),
+            CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<DomainException>();
+    }
+
+    [Fact]
+    public async Task Handle_CuandoPrimeraEvidenciaValida_EmiteEventosGanadorYTransicion()
+    {
+        // Arrange
+        var sesion = SesionTestBuilder.ActivaConEquiposDosEtapas("Alpha", "Beta");
+        var equipoGanador = sesion.Equipos.First();
+        var qrValido = SesionTestBuilder.CodigoQrEtapaActual(sesion);
+
+        _sesionRepo
+            .FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>())
+            .Returns(sesion);
+        _sesionRepo
+            .SaveAsync(Arg.Any<SesionAR>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        IReadOnlyList<IDomainEvent>? eventos = null;
+        _publisher
+            .PublishBatchAsync(Arg.Any<IReadOnlyList<IDomainEvent>>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                eventos = ci.ArgAt<IReadOnlyList<IDomainEvent>>(0).ToList();
+                return Task.CompletedTask;
+            });
+
+        // Act
+        var result = await _sut.Handle(
+            new SubmitEvidenciaCommand(
+                sesion.SesionId.Valor,
+                equipoGanador.EquipoId.Valor,
+                qrValido),
+            CancellationToken.None);
+
+        // Assert
+        result.Value.Resultado.Should().Be(ResultadoValidacion.Valida);
+        sesion.ContextoBT!.EtapaActualIndex.Should().Be(1);
+        eventos.Should().Contain(e => e is EvidenciaRegistrada);
+        eventos.Should().Contain(e => e is EvidenciaValidada);
+        eventos.Should().Contain(e => e is EtapaCompletada);
+    }
+
+    [Fact]
+    public async Task Handle_CuandoSegundaEvidenciaUsaQrEtapaAnterior_ResultadoInvalida()
+    {
+        // Arrange
+        var sesion = SesionTestBuilder.ActivaConEquiposDosEtapas("Alpha", "Beta");
+        var equipoUno = sesion.Equipos[0];
+        var equipoDos = sesion.Equipos[1];
+        var qrEtapaUno = SesionTestBuilder.CodigoQrEtapaActual(sesion);
+
+        _sesionRepo
+            .FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>())
+            .Returns(sesion);
+        _sesionRepo
+            .SaveAsync(Arg.Any<SesionAR>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        // Primera evidencia válida: define ganador y avanza etapa.
+        await _sut.Handle(
+            new SubmitEvidenciaCommand(
+                sesion.SesionId.Valor,
+                equipoUno.EquipoId.Valor,
+                qrEtapaUno),
+            CancellationToken.None);
+
+        IReadOnlyList<IDomainEvent>? eventosSegunda = null;
+        _publisher
+            .PublishBatchAsync(Arg.Any<IReadOnlyList<IDomainEvent>>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                eventosSegunda = ci.ArgAt<IReadOnlyList<IDomainEvent>>(0).ToList();
+                return Task.CompletedTask;
+            });
+
+        // Act
+        var segunda = await _sut.Handle(
+            new SubmitEvidenciaCommand(
+                sesion.SesionId.Valor,
+                equipoDos.EquipoId.Valor,
+                qrEtapaUno),
+            CancellationToken.None);
+
+        // Assert
+        segunda.Value.Resultado.Should().Be(ResultadoValidacion.Invalida);
+        eventosSegunda.Should().ContainSingle(e => e is EvidenciaRegistrada);
+    }
+}
