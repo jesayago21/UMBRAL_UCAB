@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbral.Domain.Tests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbral.Application.Tests", "tests\Umbral.Application.Tests\Umbral.Application.Tests.csproj", "{13F7B213-C165-484D-B3CF-BDC3E3FF7914}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbral.Infrastructure.Tests", "tests\Umbral.Infrastructure.Tests\Umbral.Infrastructure.Tests.csproj", "{5E337076-EA50-4C96-BF0E-557B6E9CF116}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,6 +56,10 @@ Global
 		{13F7B213-C165-484D-B3CF-BDC3E3FF7914}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13F7B213-C165-484D-B3CF-BDC3E3FF7914}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13F7B213-C165-484D-B3CF-BDC3E3FF7914}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E337076-EA50-4C96-BF0E-557B6E9CF116}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E337076-EA50-4C96-BF0E-557B6E9CF116}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E337076-EA50-4C96-BF0E-557B6E9CF116}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E337076-EA50-4C96-BF0E-557B6E9CF116}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{8F5929D1-85A8-4BF9-B3A4-0EFC2260987C} = {3531549F-E0FA-489E-A3E7-C89713EE0B63}
@@ -63,5 +69,6 @@ Global
 		{264128C7-AAC7-4E7D-B3C3-3B0DAF3040D6} = {8F5929D1-85A8-4BF9-B3A4-0EFC2260987C}
 		{7E56B1AC-45D8-449C-AB49-6EED95E65A29} = {771C3DAD-F181-4D22-8C10-E2B28DF250C4}
 		{13F7B213-C165-484D-B3CF-BDC3E3FF7914} = {771C3DAD-F181-4D22-8C10-E2B28DF250C4}
+		{5E337076-EA50-4C96-BF0E-557B6E9CF116} = {771C3DAD-F181-4D22-8C10-E2B28DF250C4}
 	EndGlobalSection
 EndGlobal
