@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
 using Umbral.Domain.Sesion;
+using Umbral.Infrastructure.Persistence.ValueConverters;
 
 namespace Umbral.Infrastructure.Persistence;
 
@@ -25,5 +26,24 @@ public sealed class UmbralDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(InfrastructureAssemblyMarker).Assembly);
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<MisionId>()
+            .HaveConversion<MisionIdValueConverter>();
+        configurationBuilder.Properties<EtapaId>()
+            .HaveConversion<EtapaIdValueConverter>();
+        configurationBuilder.Properties<PistaId>()
+            .HaveConversion<PistaIdValueConverter>();
+
+        configurationBuilder.Properties<SesionId>()
+            .HaveConversion<SesionIdValueConverter>();
+        configurationBuilder.Properties<EquipoId>()
+            .HaveConversion<EquipoIdValueConverter>();
+        configurationBuilder.Properties<EvidenciaId>()
+            .HaveConversion<EvidenciaIdValueConverter>();
+        configurationBuilder.Properties<UsuarioId>()
+            .HaveConversion<UsuarioIdValueConverter>();
     }
 }
