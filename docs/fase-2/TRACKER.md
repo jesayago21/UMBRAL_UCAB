@@ -2,7 +2,7 @@
 
 **Alcance:** `Umbral.Application` + `Umbral.Application.Tests`  
 **Rama:** `feature/fase2-application`  
-**Última actualización:** 2026-05-27 (iter-02-01)
+**Última actualización:** 2026-05-27 (iter-02-02)
 
 **Trazabilidad:** HU según `docs/TRAZABILIDAD.md`. Reglas globales **RB-01…RB-32**.  
 **NO modificar:** `Umbral.Infrastructure`, `Umbral.API`, frontend, migraciones EF en esta fase.
@@ -24,7 +24,7 @@
 | Iter | Command / Query | HU | Domain | Estado | Doc |
 |------|-----------------|-----|--------|--------|-----|
 | 02-01 | `CrearSesionBusquedaTesoroCommand` | **HU-12** | `Sesion.CrearBusquedaTesoro` | ✅ | [iter-02-01](iter-02-01-crear-sesion-busqueda-tesoro.md) |
-| 02-02 | `RegistrarEquipoCommand` | **HU-13** | `Sesion.RegistrarEquipo` | ⬜ | — |
+| 02-02 | `RegistrarEquipoCommand` | **HU-13** | `Sesion.RegistrarEquipo` | ✅ | [iter-02-02](iter-02-02-registrar-equipo.md) |
 | 02-03 | `IniciarSesionCommand`, `PausarSesionCommand`, `ReanudarSesionCommand` | **HU-14**, **HU-15** | Iniciar / Pausar / Reanudar | ⬜ | — |
 | 02-04 | `AplicarPenalizacionCommand` | **HU-16** | `AplicarPenalizacion` | ⬜ | — |
 | 02-05 | `SubmitEvidenciaCommand` | **HU-18** | `RegistrarEvidencia` | ⬜ | — |
@@ -43,7 +43,7 @@
 ## Progreso Fase 2
 
 ```
-Iter 02-01 █░░░░░░  1/7 iteraciones (~14%)
+Iter 02-02 ██░░░░░  2/7 iteraciones (~29%)
 ```
 
-**Tests Application:** 6/6 (iter-02-01)
+**Tests Application:** 13/13 (iter-02-01 + 02-02)
