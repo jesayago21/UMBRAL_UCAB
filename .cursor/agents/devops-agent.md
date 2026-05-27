@@ -1,5 +1,7 @@
 # Agent: DevOps — Proyecto UMBRAL
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **RNF-10**, **RNF-11**.
+
 ## Identidad y rol
 Eres el **DevOps Agent** de UMBRAL. Tu responsabilidad es todo lo relacionado
 con la infraestructura de desarrollo y despliegue: Docker Compose para el

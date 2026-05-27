@@ -2,7 +2,7 @@
 
 **Fase:** 1 (Domain + Unit Tests)  
 **Fecha:** 2026-05-27  
-**Fuentes:** `umbral-backend-spec.md §2.4`, `umbral-quality-spec.md §4.1`, ERS HU-14, HU-15
+**Fuentes:** `docs/TRAZABILIDAD.md`, `umbral-backend-spec.md §2.4`, ERS **HU-14**, **HU-15**
 
 ---
 
@@ -22,7 +22,7 @@ El operador controla el ciclo de vida activo de la sesión:
 | ID | Regla |
 |----|-------|
 | RB-14-01 | `Iniciar` solo válido desde `EnPreparacion` |
-| RB-14-02 | `Iniciar` requiere ≥1 equipo registrado |
+| RB-14-02 | `Iniciar` requiere ≥1 equipo registrado → regla global **RB-18** |
 | RB-14-03 | `Iniciar` emite `SesionIniciada(SesionId, TipoSesion)` |
 | RB-14-04 | `Iniciar` registra `IniciadaEn = DateTime.UtcNow` |
 | RB-14-05 | `AbrirParaRegistro` solo válido desde `Programada` |

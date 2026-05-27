@@ -2,7 +2,7 @@
 
 **Fase:** 1 (Domain + Unit Tests)  
 **Fecha:** 2026-05-27  
-**Fuentes:** `umbral-backend-spec.md §2.4`, `umbral-quality-spec.md §4.1–4.2`, ERS HU-16
+**Fuentes:** `docs/TRAZABILIDAD.md`, `umbral-backend-spec.md §2.4`, ERS **HU-16**
 
 ---
 
@@ -18,11 +18,11 @@ El operador aplica una penalización de puntaje a un equipo durante una sesión 
 |----|-------|
 | RB-16-01 | `AplicarPenalizacion` solo válido en estado `Activa` |
 | RB-16-02 | El equipo debe pertenecer a la sesión (por `EquipoId`) |
-| RB-16-03 | El puntaje no baja de cero (`Math.Max(0, valor - cantidad)`) |
+| RB-16-03 | El puntaje no baja de cero (`Math.Max(0, valor - cantidad)`) → regla global **RB-24** |
 | RB-16-04 | Emite `PenalizacionAplicada(SesionId, EquipoId, Puntos, Motivo, OperadorId)` |
 | RB-16-05 | Registra entrada en `HistorialEventos` con tipo `PenalizacionAplicada` |
 | RB-16-P1 | `Penalizacion.Puntos` debe ser `> 0` |
-| RB-16-P2 | `Penalizacion.Motivo` no puede estar vacío ni solo espacios |
+| RB-16-P2 | `Penalizacion.Motivo` no puede estar vacío ni solo espacios → **RB-20** |
 
 ---
 

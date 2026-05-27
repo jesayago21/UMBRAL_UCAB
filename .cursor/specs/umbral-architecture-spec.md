@@ -1,5 +1,7 @@
 # UMBRAL — Especificación de Arquitectura
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **Producto:** `umbral-product-spec.md`
+
 ## 1. Estilo arquitectónico
 
 UMBRAL es un **monolito con arquitectura hexagonal** (Ports & Adapters).

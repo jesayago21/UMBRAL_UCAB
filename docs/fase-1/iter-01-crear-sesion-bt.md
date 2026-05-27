@@ -2,7 +2,7 @@
 
 **Fase:** 1 (Domain + Unit Tests)
 **Fecha:** 2026-05-26
-**Fuentes de verdad:** `umbral-backend-spec.md §2.4`, `umbral-quality-spec.md §4.1`, `ddd-modeling-skill.md §3`
+**Fuentes de verdad:** `docs/TRAZABILIDAD.md`, `umbral-backend-spec.md §2.4`, `umbral-quality-spec.md §4.1`, ERS **HU-12**
 
 ---
 

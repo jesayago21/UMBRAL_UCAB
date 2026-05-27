@@ -1,5 +1,7 @@
 # UMBRAL — Especificación de Producto
 
+> **Normativa:** Esta spec y `.cursor/` son la referencia técnica actualizada. Los códigos **RB**, **RF**, **RNF** y **HU-01…HU-40** deben coincidir con `docs/TRAZABILIDAD.md` y `docs/ERS_Proyecto_UMBRAL_UCAB.md` (§7–§8 sincronizados).
+
 ## 1. Visión del producto
 
 UMBRAL es una plataforma web para diseñar y operar experiencias de investigación
@@ -64,7 +66,7 @@ Crear misión → Agregar etapas → Configurar pistas por etapa →
 Asignar código QR por etapa → Activar misión
 
 Reglas de negocio:
-- Una misión necesita al menos una etapa para activarse (RB-01).
+- Una misión necesita al menos una etapa para activarse (RB-09).
 - Solo las misiones en estado `Activa` pueden usarse para crear sesiones (RB-01).
 - El nombre de misión es único en el sistema (RB-10).
 - Cada etapa tiene su propio `CodigoQR` que los equipos deben encontrar y escanear.
@@ -114,7 +116,7 @@ Reglas de negocio:
 - Una sesión `Finalizada` o `Cancelada` no admite más operaciones.
 - Al crear la sesión se genera un código de acceso único para que los equipos
   se unan a la sala de espera.
-- Una sesión no puede iniciarse sin al menos un equipo registrado.
+- Una sesión no puede iniciarse sin al menos un equipo registrado (RB-18).
 
 ---
 
@@ -142,7 +144,7 @@ Reglas de negocio:
 Capacidades compartidas:
 - Ver estado global de la sesión y tiempo transcurrido.
 - Ver ranking en tiempo real con puntajes y posiciones.
-- Aplicar penalizaciones con motivo justificado (RF-13).
+- Aplicar penalizaciones con motivo justificado (RF-13, RB-20).
 - Cambiar estado de la sesión (pausar, reanudar, finalizar).
 - Ver historial completo de eventos.
 
@@ -255,7 +257,7 @@ Reglas de ranking (RB-08):
 Actualización en tiempo real:
 - El ranking se emite vía WebSocket en cada cambio de puntaje.
 - Si SignalR falla, el cliente recupera el ranking mediante Query REST de respaldo.
-- Latencia máxima aceptable de actualización: < 1 segundo en condiciones normales (RNF-12).
+- Latencia máxima aceptable de actualización: < 1 segundo en condiciones normales (RNF-14).
 
 ---
 
@@ -336,11 +338,15 @@ Resiliencia:
 | RNF-09 | Cobertura de pruebas backend ≥ 90%.                                     |
 | RNF-10 | Ejecutable localmente con un solo `docker compose up`.                  |
 | RNF-11 | Pipeline CI con compilación y ejecución de pruebas automáticas.         |
-| RNF-12 | Latencia de actualización en tiempo real < 1 segundo en condiciones normales.|
+| RNF-12 | Interfaz clara, usable y coherente con los flujos principales del sistema. |
+| RNF-13 | Soportar picos de concurrencia de escritura en PostgreSQL (p. ej. respuestas trivia simultáneas). |
+| RNF-14 | Latencia de actualización en tiempo real < 1 segundo en condiciones normales.|
 
 ---
 
 ## 7. Reglas de negocio consolidadas
+
+Tabla completa en `docs/TRAZABILIDAD.md`. Resumen:
 
 | Código | Regla                                                                               | Modo  |
 |--------|-------------------------------------------------------------------------------------|-------|
@@ -361,6 +367,21 @@ Resiliencia:
 | RB-15  | Los nombres de categoría son únicos. No se pueden duplicar.                        | Trivia|
 | RB-16  | Las preguntas se eliminan lógicamente, nunca físicamente.                          | Trivia|
 | RB-17  | El puntaje de trivia se otorga solo si la respuesta es correcta y llegó antes del cierre del timer. | Trivia|
+| RB-18  | Una sesión no puede iniciarse sin al menos un equipo registrado.                   | Ambos |
+| RB-19  | No se aceptan evidencias si la sesión está Pausada, Finalizada o Cancelada.      | BT    |
+| RB-20  | Toda penalización exige motivo de texto obligatorio.                               | Ambos |
+| RB-21  | Una misma pista no se entrega dos veces al mismo equipo en la misma etapa.        | BT    |
+| RB-22  | QR válido solo si coincide con el código del nodo activo.                          | BT    |
+| RB-23  | Una pista solo se libera si el equipo está en el nodo correspondiente.             | BT    |
+| RB-24  | El puntaje total del equipo nunca es inferior a cero.                              | Ambos |
+| RB-25  | Todo cambio de puntaje registra OperadorId o evento de sistema.                  | Ambos |
+| RB-26  | Sesión Finalizada o Cancelada → solo lectura (auditoría).                          | Ambos |
+| RB-27  | El operador solo administra sesiones que tiene asignadas.                          | Ambos |
+| RB-28  | Pregunta de trivia: ≥1 correcta y ≥2 incorrectas.                                  | Trivia|
+| RB-29  | Puntos de trivia se suman al puntaje global de la sesión.                          | Trivia|
+| RB-30  | No respuestas trivia si el timer ya inició al conectar el equipo.                  | Trivia|
+| RB-31  | En trivia, todos los equipos pueden puntuar si responden correctamente.             | Trivia|
+| RB-32  | Pregunta lanzada no cancelable hasta expirar timer o que todos respondan.          | Trivia|
 
 ---
 

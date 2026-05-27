@@ -1,5 +1,7 @@
 # UMBRAL — Especificación Técnica Frontend
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **RNF-12**, **RNF-14** · mobile equipo en alcance.
+
 ## 1. Visión general
 
 El frontend de UMBRAL está dividido en dos aplicaciones independientes:

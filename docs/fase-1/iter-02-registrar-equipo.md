@@ -2,7 +2,7 @@
 
 **Fase:** 1 (Domain + Unit Tests)  
 **Fecha:** 2026-05-26  
-**Fuentes:** `umbral-backend-spec.md §2.4`, `umbral-quality-spec.md §4.1`, ERS HU-13
+**Fuentes:** `docs/TRAZABILIDAD.md`, `umbral-backend-spec.md §2.4`, ERS **HU-13**
 
 ---
 
@@ -17,8 +17,8 @@ Cada equipo recibe un `CodigoAcceso` único para unirse desde mobile (Entrega 1,
 
 | ID | Regla |
 |----|-------|
-| RB-13-01 | Nombre único por sesión (comparación sin distinguir mayúsculas) |
-| RB-13-02 | Rechazo en `Finalizada` y `Cancelada` |
+| RB-13-01 | Nombre único por sesión (comparación sin distinguir mayúsculas) → regla global **RB-02** |
+| RB-13-02 | Rechazo en `Finalizada` y `Cancelada` → regla global **RB-03** |
 | RB-13-03 | `CodigoAcceso` generado por equipo al registrarse |
 | RB-13-04 | `NombreEquipo` valida y recorta espacios |
 | RB-13-05 | Entrada en `HistorialEventos` con tipo `EquipoRegistrado` |

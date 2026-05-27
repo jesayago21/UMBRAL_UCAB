@@ -10,6 +10,8 @@ ERS
 
 UCAB - 2026
 
+> **Actualización 2026-05-27:** Los códigos **RB**, **RNF** y el alcance mobile están alineados con `.cursor/specs/` y `docs/TRAZABILIDAD.md`. Usar esa tabla como referencia si hay discrepancia con el texto narrativo de este PDF exportado.
+
 1. Nombre del proyecto: UMBRAL.
 
 Descripción  general:  UMBRAL  es  una  plataforma  web  para  diseñar  misiones  de  investigación
@@ -126,10 +128,9 @@ Quedan expresamente fuera del alcance funcionalidades avanzadas como cobros en l
 
 con  dispositivos  físicos,  módulos  complejos  de  analítica  histórica,  inteligencia  artificial  aplicada  al
 
-contenido  de  las  misiones,  localización  precisa  de  participantes  o  aplicaciones  móviles  nativas.  La
+contenido  de  las  misiones,  localización  precisa  de  participantes  o  aplicaciones  móviles  nativas  puras  (Swift/Kotlin  sin  Expo).  La
 
-propuesta  debe  concentrarse  en  una  aplicación  web  bien  construida,  coherente  y  técnicamente
-defendible.
+propuesta  incluye  **web**  (administración  y  operación  en  React)  y  **cliente  equipo**  en  **React  Native  +  Expo**  (`umbral-mobile`),  coherente  y  técnicamente  defendible.
 
 5. Actores del sistema
 
@@ -376,6 +377,8 @@ el equipo ha confirmado su selección o el tiempo ha expirado.
 
 7. Requerimientos no funcionales
 
+> Tabla canónica **RNF-01 … RNF-14** en `docs/TRAZABILIDAD.md` (RNF-12 = UX; RNF-13 = concurrencia PostgreSQL; RNF-14 = latencia tiempo real).
+
 Codigo
 
 Requerimiento no funcional
@@ -454,115 +457,29 @@ trivia
 
 8. Reglas de negocio
 
-Codigo
+Ver tabla canónica completa en **`docs/TRAZABILIDAD.md`** (RB-01 … RB-32). Resumen alineado con `.cursor/specs/umbral-product-spec.md`:
 
-RB-01
-
-RB-02
-
-RB-03
-
-RB-04
-
-RB-05
-
-RB-06
-
-RB-07
-
-RB-08
-
-RB-09
-
-RB-10
-
-RB-11
-
-RB-12
-
-RB-13
-
-Regla de negocio
-
-Una misión solo puede utilizarse para crear sesiones si se encuentra activa
-
-Una sesión no puede iniciar si no posee al menos un equipo registrado.
-
-No se deben aceptar evidencias si la sesión está pausada, finalizada o
-cancelada.
-
-Solo el primer equipo en enviar una evidencia válida para el nodo activo
-recibe el puntaje. Los demás quedan inhabilitados para puntuar en ese
-nodo.
-
-El cambio de etapa es síncrono para todos; cuando un equipo resuelve el
-nodo, todos los participantes avanzan automáticamente al siguiente.
-
-El sistema debe rechazar cualquier evidencia que no corresponda
-estrictamente al nodo (tesoro) activo actual.
-
-Si transcurren 15 minutos (configurable) sin un ganador en el nodo, el
-sistema liberará automáticamente una pista para todos.
-
-En caso de igualdad de puntos, el ranking priorizará al equipo con menor
-tiempo total de ejecución acumulado.
-
-Toda penalización resta puntos al acumulado y debe quedar vinculada
-obligatoriamente a una justificación de texto.
-
-Una misma pista no puede ser entregada o cobrada dos veces al mismo
-equipo en la misma etapa.
-
-La validación vía QR es exitosa sólo si el código escaneado coincide
-exactamente con el ID del nodo marcado como activo.
-
-Una pista sólo puede liberarse si el equipo se encuentra en el nodo
-correspondiente. No se pueden "adelantar" pistas de etapas futuras.
-
-Las penalizaciones son acumulativas, pero el puntaje total de un equipo
-nunca podrá ser inferior a cero (0).
-
-UCAB - 2026
-
-RB-14
-
-RB-15
-
-RB-16
-
-RB-17
-
-RB-18
-
-RB-19
-
-RB-20
-
-RB-21
-
-Todo cambio en el puntaje de un equipo (por validación o penalización)
-debe registrar el ID del operador o evento del sistema que lo originó.
-
-Una sesión en estado "Finalizada" o "Cancelada" bloquea cualquier
-modificación de datos posterior (es de solo lectura para auditoría).
-
-El operador solo podrá administrar y liberar pistas de las sesiones que
-tenga explícitamente asignadas.
-
-Una pregunta de trivia solo es válida si posee al menos una respuesta
-correcta y dos incorrectas registradas.
-
-Los puntos obtenidos en trivia se sumarán al puntaje global del equipo en
-la sesión activa de forma acumulativa.
-
-No se aceptarán respuestas de equipos que se conecten después de que
-el temporizador de una pregunta específica haya iniciado.
-
-En los nodos de trivia, a diferencia de los tesoros, todos los equipos
-pueden puntuar simultáneamente si responden correctamente.
-
-Una vez lanzada una pregunta por el operador, no puede ser cancelada ni
-modificada hasta que el tiempo expire o todos los equipos respondan.
+| Código | Regla (resumen) | Modo |
+|--------|-----------------|------|
+| RB-01 | Sesión BT solo desde misión `Activa`. | BT |
+| RB-02 | Nombre de equipo único por sesión. | Ambos |
+| RB-03 | No registrar equipo en sesión terminal. | Ambos |
+| RB-04 | Primer evidencia válida: único que puntúa en la etapa. | BT |
+| RB-05 | Al resolver nodo, todos avanzan de etapa. | BT |
+| RB-06 | Evidencias solo para etapa activa. | BT |
+| RB-07 | Liberación automática de pistas por tiempo (configurable). | BT |
+| RB-08 | Ranking y desempate por tiempo acumulado. | Ambos |
+| RB-09 | Misión con ≥1 etapa para activarse. | BT |
+| RB-10 | Nombre de misión único. | BT |
+| RB-11 | `MisionSnapshot` inmutable en sesión. | BT |
+| RB-12–17 | Reglas de trivia (timer, categorías, puntaje). | Trivia |
+| RB-18 | Sesión no inicia sin ≥1 equipo. | Ambos |
+| RB-19 | Sin evidencias si sesión pausada/finalizada/cancelada. | BT |
+| RB-20 | Penalización con motivo obligatorio. | Ambos |
+| RB-21–23 | Pistas y QR por nodo activo. | BT |
+| RB-24 | Puntaje nunca &lt; 0. | Ambos |
+| RB-25–27 | Trazabilidad, solo lectura, operador por sesión asignada. | Ambos |
+| RB-28–32 | Formato y flujo de trivia. | Trivia |
 
 9. Historias de Usuario:
 
@@ -948,7 +865,7 @@ para que los equipos empiecen.
 
 El  sistema  bloquea  el
 inicio  si  hay  0  equipos
-registrados (RB-02)
+registrados (RB-18)
 
 Si  el  equipo  ya  está
 en
@@ -1026,7 +943,7 @@ motivo
 y
 publicar  el  evento  en
 
-(RB-06)
+(RB-20)
 
 Si  el  operador  intenta
 restar  más  puntos  de
@@ -1054,7 +971,7 @@ instantáneamente
 mediante  WebSockets
 (RNF-03).
 Tiempo  para  la siguiente
-pista (RB-14).
+pista (RB-07).
 
 tiene,
 sistema
@@ -1106,14 +1023,14 @@ de etapa.
 Como  Sistema,  quiero  identificar
 al  primer  equipo  con  evidencia
 válida  para  asignar  los  puntos
-exclusivos (RF-20, RB-11).
+exclusivos (RF-20, RB-22).
 
 envíos
 Bloquear
 posteriores
 otros
 equipos  para  el  mismo
-nodo (RB-13).
+nodo (RB-04).
 
 de
 
@@ -1294,7 +1211,7 @@ al  menos  3  opciones  de
 respuesta.  3.  Se  debe
 marcar  obligatoriamente
 una  sola  como  correcta
-(RB-17).
+(RB-28).
 
 filtrado
 

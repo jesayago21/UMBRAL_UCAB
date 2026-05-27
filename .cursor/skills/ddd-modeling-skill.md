@@ -1,5 +1,7 @@
 # Skill: DDD Modeling — Proyecto UMBRAL
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` (RB/HU/RNF). En código, `RB-xx-yy` = criterio de iteración Fase 1; `RB-xx` = regla global.
+
 ## Propósito
 Guía paso a paso para modelar, implementar y evolucionar elementos de
 Domain-Driven Design dentro del monolito hexagonal de UMBRAL.
@@ -550,7 +552,7 @@ public sealed class Puntaje : ValueObject
     public static Puntaje Zero() => new(0);
 
     public Puntaje Sumar(int cantidad) => new(Valor + cantidad);
-    public Puntaje Restar(int cantidad) => new(Math.Max(0, Valor - cantidad));
+    public Puntaje Restar(int cantidad) => new(Math.Max(0, Valor - cantidad)); // RB-24
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

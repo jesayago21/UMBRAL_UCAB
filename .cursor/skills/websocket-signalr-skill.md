@@ -1,5 +1,7 @@
 # Skill: WebSocket + SignalR — Proyecto UMBRAL
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **RNF-03**, **RNF-14**.
+
 ## Propósito
 Guía canónica para implementar comunicación en tiempo real con ASP.NET Core
 SignalR en UMBRAL. Cubre los **dos hubs** del sistema: `SesionHub` (eventos
@@ -584,7 +586,7 @@ export function useEquipoHub(
 | 6 | Los clientes implementan **reconexión automática** con backoff exponencial. | Resiliencia ante pérdidas de conectividad. |
 | 7 | Los clientes re-invocan el método de unión al grupo (`UnirseASesion`, etc.) **al reconectar**. | Los grupos SignalR se pierden al reconectar. |
 | 8 | Sesión BT: solo se conecta a `SesionHub`. Sesión Trivia: se conecta a **ambos** hubs. | Una sesión es de un único tipo, nunca mixta. |
-| 9 | Las pistas privadas se envían al grupo `equipo-{id}`. Las globales al grupo `sesion-{id}`. | Control de visibilidad por equipo (RB-07). |
+| 9 | Las pistas privadas se envían al grupo `equipo-{id}`. Las globales al grupo `sesion-{id}`. | Visibilidad por nodo/equipo (RB-21, RB-23). Liberación por tiempo: RB-07. |
 | 10 | `EnableDetailedErrors` **solo en Development**. | Evita filtración de información en producción. |
 
 ---

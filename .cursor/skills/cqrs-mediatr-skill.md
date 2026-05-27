@@ -1,5 +1,7 @@
 # Skill: CQRS + MediatR — Proyecto UMBRAL
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **RNF-04**, RF-22.
+
 ## Propósito
 Guía completa para implementar el patrón CQRS con MediatR en la capa de
 Aplicación del monolito hexagonal de UMBRAL. Cubre Commands, Queries,

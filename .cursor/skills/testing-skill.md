@@ -1,5 +1,7 @@
 # Skill: Testing — Proyecto UMBRAL
 
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **RNF-09**. HUs: `docs/fase-1/TRACKER.md`.
+
 ## Propósito
 Guía canónica de pruebas para UMBRAL. Cubre: Unit Tests de dominio y handlers
 (xUnit + FluentAssertions + NSubstitute), Integration Tests de API (WebApplicationFactory),

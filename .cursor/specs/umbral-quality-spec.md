@@ -1,5 +1,7 @@
 # UMBRAL — Especificación de Calidad y Pruebas
 
+> **HU canónicas:** numeración **HU-01…HU-40** del ERS (`docs/TRAZABILIDAD.md`). La §14 usa esa numeración; el seguimiento de Fase 1 está en `docs/fase-1/TRACKER.md`.
+
 ## 1. Estrategia general de pruebas
 
 UMBRAL adopta una pirámide de pruebas con cuatro niveles:
@@ -20,7 +22,7 @@ UMBRAL adopta una pirámide de pruebas con cuatro niveles:
 | Integración   | xUnit + Testcontainers    | Flujos críticos    | < 60s     |
 | E2E           | Playwright                | Flujo principal    | < 3 min   |
 
-**Meta académica obligatoria:** cobertura total del backend ≥ 90% (RNF-09).
+**Meta académica obligatoria:** cobertura total del backend ≥ 90% (**RNF-09**). Concurrencia trivia: **RNF-13**.
 
 ---
 
@@ -980,26 +982,29 @@ El pipeline falla si se incumple cualquiera de estas condiciones:
 
 ---
 
-## 14. HU por entrega
+## 14. HU por entrega (numeración ERS)
 
 ### Entrega 1 — Flujo BusquedaTesoro conectado de punta a punta
 
-| HU    | Descripción                                      | Capa                  | Modo |
-|-------|--------------------------------------------------|-----------------------|------|
-| HU-01 | Crear misión                                     | Web Admin             | BT   |
-| HU-02 | Agregar etapas y pistas a una misión             | Web Admin             | BT   |
-| HU-03 | Activar misión                                   | Web Admin             | BT   |
-| HU-04 | Crear sesión BusquedaTesoro desde misión activa  | Web Operador          | BT   |
-| HU-05 | Registrar equipo en sesión                       | Web Operador          | BT   |
-| HU-06 | Iniciar / Pausar / Finalizar sesión              | Web Operador          | BT   |
-| HU-07 | Unirse a sesión con código de acceso             | React Native          | BT   |
-| HU-08 | Ver pistas habilitadas                           | React Native          | BT   |
-| HU-09 | Enviar evidencia QR                              | React Native          | BT   |
-| HU-10 | Validar evidencia + asignar puntaje al ganador   | Backend               | BT   |
-| HU-11 | Liberar pistas manualmente                       | Web Operador          | BT   |
-| HU-12 | Aplicar penalización con motivo                  | Web Operador          | BT   |
-| HU-13 | Ver ranking en tiempo real vía WebSocket         | Web + React Native    | BT   |
-| HU-14 | Procesar puntaje vía consumer RabbitMQ           | Backend async         | BT   |
+| HU (ERS) | Descripción                                      | Capa                  | Modo | Fase dominio |
+|----------|--------------------------------------------------|-----------------------|------|--------------|
+| HU-01    | Crear / activar misión                           | Web Admin             | BT   | 🔶 iter soporte |
+| HU-05    | Configurar nodos (etapas)                        | Web Admin             | BT   | 🔶 iter soporte |
+| HU-06    | Registrar pistas en etapa                        | Web Admin             | BT   | 🔶 iter soporte |
+| HU-12    | Crear sesión BusquedaTesoro desde misión activa  | Web Operador          | BT   | ✅ iter-01 |
+| HU-13    | Inscripción de equipos                           | Web Operador          | BT   | ✅ iter-02 |
+| HU-14    | Control de inicio de sesión                      | Web Operador          | BT   | ✅ iter-03 |
+| HU-15    | Pausa y reanudación                              | Web Operador          | BT   | ✅ iter-03 |
+| HU-16    | Aplicar penalización con motivo                  | Web Operador          | BT   | ✅ iter-04 |
+| HU-11    | Equipo ve pistas habilitadas                     | React Native          | BT   | — |
+| HU-17    | Tablero equipo en tiempo real                    | React Native          | BT   | — |
+| HU-18    | Enviar evidencia QR                              | React Native          | BT   | ⬜ iter-05 |
+| HU-19    | Validar ganador único + puntaje                  | Backend               | BT   | ⬜ iter-05/06 |
+| HU-20    | Transición automática de etapa                   | Backend               | BT   | ⬜ iter-06 |
+| HU-21    | Ranking en tiempo real                           | Web + React Native    | BT   | — |
+| HU-23    | Cerrar sesión / reporte final                    | Web Operador          | BT   | 🔶 iter-07 |
+| —        | Liberar pistas manualmente (RF-15)               | Web Operador          | BT   | — |
+| —        | Consumer RabbitMQ recálculo (RF-19)              | Backend async         | BT   | — |
 
 **Flujo demostrable en Entrega 1:**
 
@@ -1041,25 +1046,19 @@ Operador finaliza sesión → estado final con ranking definitivo
 
 ### Entrega 2 — Modo Trivia + completar BusquedaTesoro
 
-| HU    | Descripción                                          | Capa               | Modo   |
-|-------|------------------------------------------------------|--------------------|--------|
-| HU-15 | CRUD banco de preguntas categorizadas                | Web Admin          | Trivia |
-| HU-16 | Gestión de categorías                                | Web Admin          | Trivia |
-| HU-17 | Crear sesión Trivia seleccionando preguntas          | Web Operador       | Trivia |
-| HU-18 | Sala de espera: ver equipos conectados               | Web Operador       | Trivia |
-| HU-19 | Lanzar pregunta automáticamente con timer            | Backend + Native   | Trivia |
-| HU-20 | Equipo recibe pregunta y responde antes del timer    | React Native       | Trivia |
-| HU-21 | Bloqueo de respuesta al confirmar o expirar timer    | React Native       | Trivia |
-| HU-22 | Validar respuestas al cerrar timer (server-side)     | Backend            | Trivia |
-| HU-23 | Broadcast resultado de ronda + ranking               | Backend + Native   | Trivia |
-| HU-24 | Transición automática a siguiente pregunta           | Backend            | Trivia |
-| HU-25 | Calcular puntaje por corrección y velocidad          | Backend            | Trivia |
-| HU-26 | Criterio de desempate por timestamp servidor         | Backend            | Trivia |
-| HU-27 | Finalización automática al agotar preguntas          | Backend            | Trivia |
-| HU-28 | Avance automático de etapa por tiempo (BT)           | Backend            | BT     |
-| HU-29 | Pantalla de resultado final (sesión finalizada)      | React Native       | Ambos  |
-| HU-30 | Pruebas E2E flujo BusquedaTesoro completo            | E2E                | BT     |
-| HU-31 | Pruebas E2E flujo Trivia completo                    | E2E                | Trivia |
+| HU (ERS) | Descripción (resumen)                                | Capa               | Modo   |
+|----------|------------------------------------------------------|--------------------|--------|
+| HU-24–27 | Banco de preguntas (CRUD)                            | Web Admin          | Trivia |
+| HU-28–31 | Categorías de trivia                                 | Web Admin          | Trivia |
+| HU-32    | Crear sesión Trivia                                  | Web Operador       | Trivia |
+| HU-33    | Sala de espera (equipos conectados)                  | Web Operador       | Trivia |
+| HU-34–35 | Secuencia y envío de respuestas                    | Native + Backend   | Trivia |
+| HU-36–39 | Procesamiento async, puntaje, ranking, transición  | Backend            | Trivia |
+| HU-40    | Desempate por timestamp servidor                     | Backend            | Trivia |
+| HU-09    | Liberación automática de pistas por tiempo (BT)      | Backend            | BT     |
+| HU-22    | Historial de auditoría                               | Web Admin          | Ambos  |
+| —        | E2E flujo BT completo                                | Playwright         | BT     |
+| —        | E2E flujo Trivia completo                            | Playwright         | Trivia |
 
 ---
 
