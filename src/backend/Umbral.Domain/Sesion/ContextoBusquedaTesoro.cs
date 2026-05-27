@@ -22,12 +22,28 @@ public sealed class ContextoBusquedaTesoro : Entity
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
+        if (snapshot.Etapas.Count == 0)
+            throw new DomainException(
+                "La misión debe tener al menos una etapa para iniciar una sesión.");
+
         return new ContextoBusquedaTesoro
         {
             MisionSnapshot   = snapshot,
             EtapaActualIndex = 0
         };
     }
+
+    /// <summary>Etapa activa según <see cref="EtapaActualIndex"/> (RB-06).</summary>
+    public EtapaSnapshot ObtenerEtapaActual()
+    {
+        if (EtapaActualIndex < 0 || EtapaActualIndex >= MisionSnapshot.Etapas.Count)
+            throw new DomainException("No hay etapa activa en el contexto de la sesión.");
+
+        return MisionSnapshot.Etapas[EtapaActualIndex];
+    }
+
+    public bool EsUltimaEtapa() =>
+        EtapaActualIndex >= MisionSnapshot.Etapas.Count - 1;
 
     protected override bool IdEquals(Entity other) =>
         other is ContextoBusquedaTesoro c && c._id == _id;

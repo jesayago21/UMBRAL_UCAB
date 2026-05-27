@@ -1,5 +1,6 @@
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
 using Umbral.Domain.Sesion.Events;
+using Umbral.Domain.Sesion.Validacion;
 using Umbral.Domain.Shared;
 
 namespace Umbral.Domain.Sesion;
@@ -28,9 +29,11 @@ public sealed class Sesion : AggregateRoot
 
     private readonly List<EquipoSesion> _equipos = [];
     private readonly List<EventoSesion> _historialEventos = [];
+    private readonly List<Evidencia> _evidencias = [];
 
     public IReadOnlyList<EquipoSesion> Equipos => _equipos.AsReadOnly();
     public IReadOnlyList<EventoSesion> HistorialEventos => _historialEventos.AsReadOnly();
+    public IReadOnlyList<Evidencia> Evidencias => _evidencias.AsReadOnly();
 
     private Sesion() { }
 
@@ -74,8 +77,7 @@ public sealed class Sesion : AggregateRoot
 
     /// <summary>
     /// Registra un equipo en la sesión (HU-13).
-    /// RB-13-01: nombre único por sesión (insensible a mayúsculas).
-    /// RB-13-02: no permitido en estados terminales (Finalizada, Cancelada).
+    /// Criterios iter-02: RB-13-01…03. Globales: RB-02 (nombre único), RB-03 (no en sesión terminal).
     /// RB-13-03: genera <see cref="CodigoAcceso"/> único por equipo.
     /// </summary>
     public EquipoSesion RegistrarEquipo(string nombre)
@@ -98,9 +100,9 @@ public sealed class Sesion : AggregateRoot
     }
 
     /// <summary>
-    /// Inicia la sesión: EnPreparacion → Activa.
-    /// R1: requiere al menos un equipo registrado.
-    /// R2: solo válido desde EnPreparacion.
+    /// Inicia la sesión: EnPreparacion → Activa (HU-14).
+    /// RB-18: requiere al menos un equipo registrado.
+    /// Criterios iter-03: RB-14-01…05.
     /// </summary>
     public void Iniciar()
     {
@@ -171,9 +173,7 @@ public sealed class Sesion : AggregateRoot
 
     /// <summary>
     /// Aplica una penalización a un equipo (HU-16).
-    /// RB-16-01: solo en estado Activa.
-    /// RB-16-02: el equipo debe pertenecer a la sesión.
-    /// RB-16-03: emite PenalizacionAplicada; el puntaje no baja de cero.
+    /// Criterios iter-04: RB-16-01…05. Globales: RB-20 (motivo), RB-24 (piso 0), RB-25 (OperadorId).
     /// </summary>
     public void AplicarPenalizacion(EquipoId equipoId, Penalizacion penalizacion)
     {
@@ -191,6 +191,45 @@ public sealed class Sesion : AggregateRoot
 
         RegistrarEvento("PenalizacionAplicada",
             $"equipo={equipoId.Valor};puntos={penalizacion.Puntos};motivo={penalizacion.Motivo}");
+    }
+
+    /// <summary>
+    /// Registra evidencia QR enviada por un equipo (HU-18).
+    /// RB-06: solo etapa activa. RB-19: rechaza si sesión no activa. RB-22: valida QR.
+    /// HU-19 parcial: mismo equipo no puede registrar dos evidencias válidas en la misma etapa.
+    /// </summary>
+    public Evidencia RegistrarEvidencia(EquipoId equipoId, string codigoQR)
+    {
+        if (TipoSesion != TipoSesion.BusquedaTesoro || ContextoBT is null)
+            throw new DomainException(
+                "Solo las sesiones de Búsqueda del Tesoro aceptan evidencias QR.");
+
+        var equipo = ObtenerEquipo(equipoId);
+        var qr     = CodigoQR.Crear(codigoQR);
+        var etapa  = ContextoBT.ObtenerEtapaActual();
+
+        var resultado = ValidacionEvidenciaService.Validar(this, qr);
+
+        if (resultado == ResultadoValidacion.Valida &&
+            _evidencias.Any(e =>
+                e.EquipoId == equipoId &&
+                e.EtapaId == etapa.EtapaId &&
+                e.Resultado == ResultadoValidacion.Valida))
+        {
+            resultado = ResultadoValidacion.Invalida;
+        }
+
+        var evidencia = Evidencia.Registrar(
+            SesionId, equipo.EquipoId, etapa.EtapaId, qr, resultado);
+        _evidencias.Add(evidencia);
+
+        RaiseDomainEvent(new EvidenciaRegistrada(
+            SesionId, equipo.EquipoId, etapa.EtapaId, resultado, qr.Valor));
+
+        RegistrarEvento("EvidenciaRegistrada",
+            $"equipo={equipo.EquipoId.Valor};etapa={etapa.EtapaId.Valor};resultado={resultado};qr={qr.Valor}");
+
+        return evidencia;
     }
 
     public bool EstaActiva() => Estado == EstadoSesion.Activa;
