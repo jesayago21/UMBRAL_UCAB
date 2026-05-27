@@ -51,6 +51,32 @@ internal static class SesionTestBuilder
         return sesion;
     }
 
+    public static SesionAR ActivaConEquipos(params string[] nombresEquipos)
+    {
+        var sesion = EnPreparacionSinEquipos();
+        foreach (var nombre in nombresEquipos)
+            sesion.RegistrarEquipo(nombre);
+
+        sesion.Iniciar();
+        sesion.ClearDomainEvents();
+        return sesion;
+    }
+
     public static string CodigoQrEtapaActual(SesionAR sesion)
         => sesion.ContextoBT!.ObtenerEtapaActual().CodigoQRSolucion;
+
+    public static SesionAR ActivaConEquiposDosEtapas(params string[] nombresEquipos)
+    {
+        var sesion = SesionAR.CrearBusquedaTesoro(
+            MisionSnapshot.Desde(MisionTestBuilder.ActivaConDosEtapas()),
+            UsuarioId.Nuevo());
+        sesion.ClearDomainEvents();
+        sesion.AbrirParaRegistro();
+        foreach (var nombre in nombresEquipos)
+            sesion.RegistrarEquipo(nombre);
+
+        sesion.Iniciar();
+        sesion.ClearDomainEvents();
+        return sesion;
+    }
 }

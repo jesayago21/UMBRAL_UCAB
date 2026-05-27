@@ -19,4 +19,14 @@ internal static class MisionTestBuilder
         mision.ClearDomainEvents();
         return mision;
     }
+
+    public static Mision ActivaConDosEtapas()
+    {
+        var mision = Mision.Crear("Misión de dos etapas");
+        mision.AgregarEtapa("Etapa 1", "QR-ETAPA-001");
+        mision.AgregarEtapa("Etapa 2", "QR-ETAPA-002");
+        mision.Activar();
+        mision.ClearDomainEvents();
+        return mision;
+    }
 }
