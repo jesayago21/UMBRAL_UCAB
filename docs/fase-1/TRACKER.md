@@ -2,7 +2,7 @@
 
 **Alcance:** solo dominio + `Umbral.Domain.Tests`  
 **Entrega:** 1 (criterio quality-spec)  
-**Última actualización:** 2026-05-27 (iter-06)
+**Última actualización:** 2026-05-27 (iter-07 — Fase 1 completa)
 
 **Trazabilidad:** HU **HU-01…HU-40** según ERS y `docs/TRAZABILIDAD.md`. Reglas globales **RB-01…RB-32** (no confundir con `RB-16-01` etc. de criterios locales en `iter-*.md`).
 
@@ -31,7 +31,7 @@
 | 04 | AplicarPenalizacion | **HU-16** | — | ✅ | [iter-04](iter-04-aplicar-penalizacion.md) |
 | 05 | RegistrarEvidencia (base) | **HU-18** | HU-19 (parcial) | ✅ | [iter-05](iter-05-registrar-evidencia.md) |
 | 06 | Ganador único + transición etapa | **HU-19**, **HU-20** | HU-10 | ✅ | [iter-06](iter-06-ganador-transicion-etapa.md) |
-| 07 | Cerrar/cancelar sesión | **HU-23** | — | ⬜ | — |
+| 07 | Cerrar/cancelar sesión | **HU-23** | — | ✅ | [iter-07](iter-07-cerrar-sesion.md) |
 
 ---
 
@@ -57,7 +57,7 @@
 - [x] **HU-14** Operador inicia sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
 - [x] **HU-15** Pausar / reanudar sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
 - [x] **HU-16** Aplicar penalización — ✅ iter-04 (`PuntajeTests` + `SesionAplicarPenalizacionTests`, 30 tests)
-- [ ] **HU-23** Reporte final / cerrar sesión — 🔶 código (`Finalizar`/`Cancelar`); **tests iter-07**
+- [x] **HU-23** Reporte final / cerrar sesión — ✅ iter-07 (`SesionCerrarSesionTests` + `RankingServiceTests`, 16 tests)
 
 ### Juego / Evidencia / Etapas
 
@@ -88,9 +88,9 @@
 ## Progreso Fase 1
 
 ```
-Iter 06 ████████████░░  6/7 iteraciones (86%)
+Iter 07 ██████████████  7/7 iteraciones (100%) — Fase 1 completa
 ```
 
-**Tests dominio:** 149/149  
-**HUs BT cerradas (dominio + tests):** HU-12, HU-13, HU-14, HU-15, HU-16, HU-18, HU-19, HU-20  
-**HUs con código adelantado sin tests:** HU-23
+**Tests dominio:** 170/170  
+**HUs BT cerradas (dominio + tests):** HU-12, HU-13, HU-14, HU-15, HU-16, HU-18, HU-19, HU-20, HU-23  
+**Siguiente fase:** Application (CQRS/MediatR) — ver `umbral-backend-spec.md`

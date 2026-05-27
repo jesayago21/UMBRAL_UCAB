@@ -145,7 +145,7 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionReanudada", string.Empty);
     }
 
-    /// <summary>Activa|Pausada → Finalizada.</summary>
+    /// <summary>Activa|Pausada → Finalizada (HU-23).</summary>
     public void Finalizar()
     {
         if (Estado is not (EstadoSesion.Activa or EstadoSesion.Pausada))
@@ -158,6 +158,10 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionFinalizada", string.Empty);
     }
 
+    /// <summary>
+    /// Cancela la sesión desde cualquier estado no terminal (HU-23).
+    /// Emite <see cref="Events.SesionCancelada"/> y registra motivo en historial.
+    /// </summary>
     public void Cancelar(string motivo)
     {
         if (Estado is EstadoSesion.Finalizada or EstadoSesion.Cancelada)
@@ -167,8 +171,23 @@ public sealed class Sesion : AggregateRoot
         if (string.IsNullOrWhiteSpace(motivo))
             throw new DomainException("El motivo de cancelación no puede estar vacío.");
 
+        var motivoLimpio = motivo.Trim();
         Estado       = EstadoSesion.Cancelada;
         FinalizadaEn = DateTime.UtcNow;
+        RaiseDomainEvent(new Events.SesionCancelada(SesionId, motivoLimpio));
+        RegistrarEvento("SesionCancelada", motivoLimpio);
+    }
+
+    /// <summary>
+    /// Ranking final ordenado por puntaje (HU-23). Solo en sesiones cerradas.
+    /// </summary>
+    public IReadOnlyList<PosicionRanking> ObtenerRankingFinal()
+    {
+        if (Estado is not (EstadoSesion.Finalizada or EstadoSesion.Cancelada))
+            throw new DomainException(
+                "Solo se puede obtener el ranking de sesiones finalizadas o canceladas.");
+
+        return RankingService.Calcular(Equipos);
     }
 
     /// <summary>
