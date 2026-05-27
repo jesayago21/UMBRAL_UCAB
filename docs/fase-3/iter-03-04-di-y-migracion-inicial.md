@@ -36,3 +36,16 @@ Dejar la persistencia conectada al arranque de API mediante DI y generar la migr
 
 - `dotnet ef database update` desde host quedó bloqueado por autenticación en el servicio PostgreSQL resolviendo en `localhost:5432`; para no frenar la iteración se aplicó la migración vía SQL script directamente en el contenedor local.
 - El publicador de eventos real (RabbitMQ/MassTransit) queda para una iteración específica de mensajería; en esta fase se usa `NoOpEventPublisher` para mantener el arranque funcional.
+
+## Troubleshooting — credenciales PostgreSQL en local
+
+Si `dotnet ef database update` falla con `password authentication failed for user "umbral_user"`:
+
+1. Reiniciar el stack local de infraestructura:
+   - `docker compose down -v`
+   - `docker compose up -d postgres rabbitmq`
+2. Verificar login dentro del contenedor:
+   - `docker exec umbral_postgres psql -U umbral_user -d umbral_db -c "SELECT current_user;"`
+3. Reintentar migración EF desde host:
+   - `dotnet ef database update --project src/backend/Umbral.Infrastructure --startup-project src/backend/Umbral.API`
+4. Si persiste, validar que no exista otro PostgreSQL local usando el puerto `5432`.
