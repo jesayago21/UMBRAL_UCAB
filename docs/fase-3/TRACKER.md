@@ -22,7 +22,7 @@
 |------|----------|--------|-----|
 | 03-01 | Bootstrap Infrastructure + Persistence base | ✅ | [iter-03-01](iter-03-01-bootstrap-infrastructure.md) |
 | 03-02 | Configuraciones EF Core (mapeo canónico) | ✅ | [iter-03-02](iter-03-02-configuraciones-efcore.md) |
-| 03-03 | Repositorios Infrastructure (ports driven) | ⬜ | — |
+| 03-03 | Repositorios Infrastructure (ports driven) | ✅ | [iter-03-03](iter-03-03-repositorios-infrastructure.md) |
 | 03-04 | Migración inicial + wiring DI | ⬜ | — |
 | 03-05 | Tests de infraestructura (Testcontainers) | ⬜ | — |
 
@@ -41,5 +41,5 @@
 ## Progreso Fase 3
 
 ```
-Iter 03-02 ██░░░  2/5 iteraciones (40%)
+Iter 03-03 ███░░  3/5 iteraciones (60%)
 ```
