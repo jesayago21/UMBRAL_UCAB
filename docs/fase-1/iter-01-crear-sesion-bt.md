@@ -153,7 +153,23 @@ la máquina de estados completa.
 
 ---
 
-## Pendiente para Iteración 2 — RegistrarEquipo
+## Historias de usuario (ERS) — esta iteración
+
+| HU | Título (resumen) | Capa esta iteración | Estado |
+|----|------------------|---------------------|--------|
+| **HU-12** | Operador crea sesión BT | Dominio + tests (`SesionCrearTests`) | ✅ |
+| HU-01 | Crear misión (soporte para snapshot) | Dominio + tests (`MisionTests`) | 🔶 |
+| HU-05 | Configurar etapas | Dominio + tests parciales (`MisionTests`) | 🔶 |
+| HU-06 | Registrar pistas en etapa | Dominio + tests parciales (`MisionTests`) | 🔶 |
+
+**Commit:** `feat(domain): iter-01 CrearSesionBusquedaTesoro segun umbral-backend-spec`  
+**Rama:** `feature/fase1-domain`  
+**Tests:** 30/30 — `SesionCrearTests` (12) + `MisionTests` (18)  
+**Tracker:** [TRACKER.md](TRACKER.md)
+
+---
+
+## Pendiente para Iteración 2 — RegistrarEquipo (HU-13)
 
 - Verificar `Estado` permitido para registro (spec: cualquier estado no terminal).
 - Tests para nombre duplicado, estado terminal.
