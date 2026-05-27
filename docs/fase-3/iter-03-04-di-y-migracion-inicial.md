@@ -31,10 +31,13 @@ Dejar la persistencia conectada al arranque de API mediante DI y generar la migr
   - `dotnet ef migrations add InitialCreate ...` ✅
   - `dotnet ef migrations script ...` ✅
   - Aplicación del SQL generado dentro del contenedor PostgreSQL local ✅
+  - `dotnet ef database update ...` ✅ (después de estandarizar puerto `5433` y alinear `UmbralDbContextFactory`)
 
 ## Notas
 
-- `dotnet ef database update` desde host quedó bloqueado por autenticación en el servicio PostgreSQL resolviendo en `localhost:5432`; para no frenar la iteración se aplicó la migración vía SQL script directamente en el contenedor local.
+- Se detectó conflicto local: coexistían Docker y PostgreSQL local escuchando en `5432`, lo que desviaba la conexión de `dotnet ef` al servidor incorrecto.
+- Se estandarizó PostgreSQL Docker en `localhost:5433` para evitar colisión de puertos con instalaciones locales.
+- Se ajustó la factory de diseño (`UmbralDbContextFactory`) para usar `5433` por defecto cuando no existe `ConnectionStrings__Postgres` en entorno.
 - El publicador de eventos real (RabbitMQ/MassTransit) queda para una iteración específica de mensajería; en esta fase se usa `NoOpEventPublisher` para mantener el arranque funcional.
 
 ## Troubleshooting — credenciales PostgreSQL en local
@@ -48,4 +51,6 @@ Si `dotnet ef database update` falla con `password authentication failed for use
    - `docker exec umbral_postgres psql -U umbral_user -d umbral_db -c "SELECT current_user;"`
 3. Reintentar migración EF desde host:
    - `dotnet ef database update --project src/backend/Umbral.Infrastructure --startup-project src/backend/Umbral.API`
-4. Si persiste, validar que no exista otro PostgreSQL local usando el puerto `5432`.
+4. Verificar puertos/listeners:
+   - `Get-NetTCPConnection -LocalPort 5432,5433 -State Listen`
+5. Si hay PostgreSQL local en `5432`, mantener Docker en `5433` y validar `ConnectionStrings:Postgres` con puerto `5433`.
