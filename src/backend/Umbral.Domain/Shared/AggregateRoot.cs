@@ -1,15 +1,12 @@
 namespace Umbral.Domain.Shared;
 
-public abstract class AggregateRoot<TId> : Entity<TId>
-    where TId : notnull
+public abstract class AggregateRoot : Entity
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-    protected AggregateRoot(TId id) : base(id) { }
-
-    protected void AddDomainEvent(IDomainEvent domainEvent) =>
+    protected void RaiseDomainEvent(IDomainEvent domainEvent) =>
         _domainEvents.Add(domainEvent);
 
     public void ClearDomainEvents() =>

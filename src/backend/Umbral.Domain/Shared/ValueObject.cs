@@ -2,7 +2,7 @@ namespace Umbral.Domain.Shared;
 
 public abstract class ValueObject
 {
-    protected abstract IEnumerable<object?> GetEqualityComponents();
+    protected abstract IEnumerable<object> GetEqualityComponents();
 
     public override bool Equals(object? obj)
     {
@@ -13,7 +13,8 @@ public abstract class ValueObject
 
     public override int GetHashCode() =>
         GetEqualityComponents()
-            .Aggregate(0, (hash, c) => HashCode.Combine(hash, c));
+            .Aggregate(1, (current, obj) =>
+                HashCode.Combine(current, obj?.GetHashCode() ?? 0));
 
     public static bool operator ==(ValueObject? left, ValueObject? right) =>
         Equals(left, right);

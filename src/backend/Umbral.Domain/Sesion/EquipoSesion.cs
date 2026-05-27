@@ -2,25 +2,38 @@ using Umbral.Domain.Shared;
 
 namespace Umbral.Domain.Sesion;
 
-/// <summary>
-/// Equipo participante dentro de una sesión.
-/// Iter 1: estructura mínima (id + nombre).
-/// Iter 2 añadirá puntaje, penalizaciones y lógica de registro.
-/// </summary>
-public sealed class EquipoSesion : Entity<EquipoSesionId>
+public sealed class EquipoSesion : Entity
 {
-    public string Nombre { get; }
+    public EquipoId EquipoId { get; private set; } = default!;
+    public SesionId SesionId { get; private set; } = default!;
+    public NombreEquipo Nombre { get; private set; } = default!;
+    public CodigoAcceso CodigoAcceso { get; private set; } = default!;
+    public Puntaje PuntajeTotal { get; private set; } = default!;
 
-    private EquipoSesion(EquipoSesionId id, string nombre) : base(id)
+    private EquipoSesion() { }
+
+    internal static EquipoSesion Crear(SesionId sesionId, string nombre)
     {
-        Nombre = nombre;
+        ArgumentNullException.ThrowIfNull(sesionId);
+
+        return new EquipoSesion
+        {
+            EquipoId      = EquipoId.Nuevo(),
+            SesionId      = sesionId,
+            Nombre        = NombreEquipo.Crear(nombre),
+            CodigoAcceso  = CodigoAcceso.Generar(),
+            PuntajeTotal  = Puntaje.Zero()
+        };
     }
 
-    public static EquipoSesion Crear(EquipoSesionId id, string nombre)
-    {
-        if (string.IsNullOrWhiteSpace(nombre))
-            throw new DomainException("El nombre del equipo no puede estar vacío.");
+    public void SumarPuntaje(int puntos) =>
+        PuntajeTotal = PuntajeTotal.Sumar(puntos);
 
-        return new EquipoSesion(id, nombre.Trim());
-    }
+    public void AplicarPenalizacion(Penalizacion penalizacion) =>
+        PuntajeTotal = PuntajeTotal.Restar(penalizacion.Puntos);
+
+    protected override bool IdEquals(Entity other) =>
+        other is EquipoSesion e && e.EquipoId == EquipoId;
+
+    protected override int GetIdHashCode() => EquipoId.GetHashCode();
 }
