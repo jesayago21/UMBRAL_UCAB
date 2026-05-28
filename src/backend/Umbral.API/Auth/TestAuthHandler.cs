@@ -29,7 +29,8 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
         {
             new Claim(ClaimTypes.NameIdentifier, DefaultOperadorId.ToString()),
             new Claim(ClaimTypes.Role, "Operador"),
-            new Claim(ClaimTypes.Role, "Administrador")
+            new Claim(ClaimTypes.Role, "Administrador"),
+            new Claim(ClaimTypes.Role, "EquipoParticipante")
         };
 
         var identity  = new ClaimsIdentity(claims, SchemeName);

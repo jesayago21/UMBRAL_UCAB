@@ -207,6 +207,117 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
+    public async Task POST_penalizaciones_CuandoSesionActiva_Retorna204()
+    {
+        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/penalizaciones",
+            new AplicarPenalizacionRequest(equipoId, 15, "Llegada tardía"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task POST_penalizaciones_CuandoPuntosInvalidos_Retorna400()
+    {
+        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/penalizaciones",
+            new AplicarPenalizacionRequest(equipoId, 0, "Motivo válido"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("ValidationError");
+        error.Errores.Should().ContainKey("puntos");
+    }
+
+    [Fact]
+    public async Task POST_penalizaciones_CuandoSesionNoIniciada_Retorna400()
+    {
+        var sesionId = await CrearSesionAsync();
+        var equipoId = await RegistrarEquipoYObtenerIdAsync(sesionId, "Equipo Penal");
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/penalizaciones",
+            new AplicarPenalizacionRequest(equipoId, 10, "Fuera de tiempo"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("DomainError");
+    }
+
+    [Fact]
+    public async Task POST_penalizaciones_CuandoSesionNoExiste_Retorna404()
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{Guid.NewGuid()}/penalizaciones",
+            new AplicarPenalizacionRequest(Guid.NewGuid(), 10, "Motivo"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task POST_evidencias_CuandoQrValido_Retorna201()
+    {
+        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/evidencias",
+            new SubmitEvidenciaRequest(equipoId, "QR-API-001"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var body = await response.Content.ReadFromJsonAsync<SubmitEvidenciaResponse>();
+        body!.EvidenciaId.Should().NotBeEmpty();
+        body.Resultado.Should().Be("Valida");
+    }
+
+    [Fact]
+    public async Task POST_evidencias_CuandoCodigoQrVacio_Retorna400()
+    {
+        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/evidencias",
+            new SubmitEvidenciaRequest(equipoId, ""));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("ValidationError");
+        error.Errores.Should().ContainKey("codigoQr");
+    }
+
+    [Fact]
+    public async Task POST_evidencias_CuandoQrInvalido_Retorna201ConResultadoInvalida()
+    {
+        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/evidencias",
+            new SubmitEvidenciaRequest(equipoId, "QR-INEXISTENTE"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var body = await response.Content.ReadFromJsonAsync<SubmitEvidenciaResponse>();
+        body!.Resultado.Should().Be("Invalida");
+    }
+
+    [Fact]
+    public async Task POST_evidencias_CuandoSesionNoExiste_Retorna404()
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{Guid.NewGuid()}/evidencias",
+            new SubmitEvidenciaRequest(Guid.NewGuid(), "QR-API-001"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Flujo_CrearRegistrarIniciar_CompletaSinError()
     {
         var misionId = await ApiTestData.SeedMisionActivaAsync(_services);
@@ -255,5 +366,25 @@ public sealed class SesionesControllerTests
             null);
         iniciar.EnsureSuccessStatusCode();
         return sesionId;
+    }
+
+    private async Task<(Guid SesionId, Guid EquipoId)> CrearSesionIniciadaConEquipoAsync()
+    {
+        var sesionId = await CrearSesionAsync();
+        var equipoId = await RegistrarEquipoYObtenerIdAsync(sesionId, "Equipo Juego");
+        var iniciar = await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/iniciar",
+            null);
+        iniciar.EnsureSuccessStatusCode();
+        return (sesionId, equipoId);
+    }
+
+    private async Task<Guid> RegistrarEquipoYObtenerIdAsync(Guid sesionId, string nombre)
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/equipos",
+            new RegistrarEquipoRequest(nombre));
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<RegistrarEquipoResponse>())!.EquipoId;
     }
 }

@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using Umbral.API.Auth;
 using Umbral.API.Contracts.Sesiones;
 using Umbral.API.Extensions;
+using Umbral.Application.Sesion.Commands.AplicarPenalizacion;
 using Umbral.Application.Sesion.Commands.CrearSesionBusquedaTesoro;
 using Umbral.Application.Sesion.Commands.IniciarSesion;
 using Umbral.Application.Sesion.Commands.PausarSesion;
 using Umbral.Application.Sesion.Commands.ReanudarSesion;
 using Umbral.Application.Sesion.Commands.RegistrarEquipo;
+using Umbral.Application.Sesion.Commands.SubmitEvidencia;
 
 namespace Umbral.API.Controllers;
 
@@ -86,6 +88,47 @@ public sealed class SesionesController : ControllerBase
     {
         var result = await _mediator.Send(new ReanudarSesionCommand(id), cancellationToken);
         return result.ToNoContentResult(HttpContext);
+    }
+
+    [HttpPost("{id:guid}/penalizaciones")]
+    [Authorize(Roles = "Operador,Administrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AplicarPenalizacion(
+        Guid id,
+        [FromBody] AplicarPenalizacionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new AplicarPenalizacionCommand(
+                id,
+                request.EquipoId,
+                request.Puntos,
+                request.Motivo,
+                ObtenerOperadorId()),
+            cancellationToken);
+
+        return result.ToActionResult(HttpContext, _ => new NoContentResult());
+    }
+
+    [HttpPost("{id:guid}/evidencias")]
+    [Authorize(Roles = "EquipoParticipante")]
+    [ProducesResponseType(typeof(SubmitEvidenciaResponse), StatusCodes.Status201Created)]
+    public async Task<IActionResult> SubmitEvidencia(
+        Guid id,
+        [FromBody] SubmitEvidenciaRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new SubmitEvidenciaCommand(id, request.EquipoId, request.CodigoQr),
+            cancellationToken);
+
+        return result.ToActionResult(
+            HttpContext,
+            value => new CreatedResult(
+                $"/api/v1/sesiones/{id}/evidencias/{value.EvidenciaId}",
+                new SubmitEvidenciaResponse(
+                    value.EvidenciaId,
+                    value.Resultado.ToString())));
     }
 
     private Guid ObtenerOperadorId()
