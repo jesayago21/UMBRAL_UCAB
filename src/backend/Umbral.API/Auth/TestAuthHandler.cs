@@ -11,6 +11,7 @@ namespace Umbral.API.Auth;
 public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     public const string SchemeName = "Test";
+    public const string RoleHeaderName = "X-Test-Role";
 
     public static readonly Guid DefaultOperadorId =
         Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -25,13 +26,23 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, DefaultOperadorId.ToString()),
-            new Claim(ClaimTypes.Role, "Operador"),
-            new Claim(ClaimTypes.Role, "Administrador"),
-            new Claim(ClaimTypes.Role, "EquipoParticipante")
-        };
+        var role = Request.Headers.TryGetValue(RoleHeaderName, out var roleHeader)
+            ? roleHeader.ToString()
+            : string.Empty;
+
+        var claims = string.IsNullOrWhiteSpace(role)
+            ? new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, DefaultOperadorId.ToString()),
+                new Claim(ClaimTypes.Role, "Operador"),
+                new Claim(ClaimTypes.Role, "Administrador"),
+                new Claim(ClaimTypes.Role, "EquipoParticipante")
+            }
+            : new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, DefaultOperadorId.ToString()),
+                new Claim(ClaimTypes.Role, role)
+            };
 
         var identity  = new ClaimsIdentity(claims, SchemeName);
         var principal   = new ClaimsPrincipal(identity);

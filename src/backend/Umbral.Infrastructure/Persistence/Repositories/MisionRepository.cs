@@ -25,6 +25,15 @@ public sealed class MisionRepository : IMisionRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Mision>> FindAllAsync(CancellationToken ct = default)
+    {
+        return await _db.Misiones
+            .AsNoTracking()
+            .Include("_etapas")
+            .Include("_etapas._pistas")
+            .ToListAsync(ct);
+    }
+
     public async Task SaveAsync(Mision mision, CancellationToken ct = default)
     {
         if (_db.Entry(mision).State == EntityState.Detached)
