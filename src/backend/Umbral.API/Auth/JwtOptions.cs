@@ -7,5 +7,5 @@ public sealed class JwtOptions
     public string Issuer { get; init; } = "Umbral.API";
     public string Audience { get; init; } = "Umbral.Client";
     public string Key { get; init; } = "THIS_IS_ONLY_FOR_LOCAL_DEV_CHANGE_ME_1234567890";
-    public int ExpiresMinutes { get; init; } = 60;
+    public int ExpiresMinutes { get; init; } = 480;
 }

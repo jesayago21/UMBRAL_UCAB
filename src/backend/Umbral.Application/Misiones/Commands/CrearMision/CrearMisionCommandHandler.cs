@@ -1,4 +1,5 @@
 using MediatR;
+using Umbral.Domain.Shared;
 using Umbral.Application.Common.Models;
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
 
@@ -15,6 +16,11 @@ internal sealed class CrearMisionCommandHandler : IRequestHandler<CrearMisionCom
 
     public async Task<Result<Guid>> Handle(CrearMisionCommand command, CancellationToken cancellationToken)
     {
+        var nombre = command.Nombre.Trim();
+        var exists = await _misionRepository.ExistsByNombreAsync(nombre, ct: cancellationToken);
+        if (exists)
+            throw new DomainException($"Ya existe una misión con el nombre '{nombre}'.");
+
         var mision = Mision.Crear(command.Nombre);
 
         foreach (var etapa in command.Etapas)

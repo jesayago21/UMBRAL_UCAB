@@ -1,4 +1,6 @@
 using MediatR;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Umbral.API.Contracts.Misiones;
@@ -31,13 +33,16 @@ public sealed class MisionesController : ControllerBase
         [FromBody] CrearMisionRequest request,
         CancellationToken cancellationToken)
     {
+        if (request.Etapas is null)
+            throw BuildValidationException(nameof(request.Etapas), "La misión debe incluir etapas.");
+
         var command = new CrearMisionCommand(
             request.Nombre,
             request.Etapas
                 .Select(etapa => new CrearEtapaInput(
                     etapa.Descripcion,
                     etapa.CodigoQrSolucion,
-                    etapa.Pistas.Select(pista => new CrearPistaInput(
+                    (etapa.Pistas ?? []).Select(pista => new CrearPistaInput(
                         pista.Contenido,
                         pista.TipoLiberacion,
                         pista.SegundosLiberacion)).ToList()))
@@ -99,7 +104,11 @@ public sealed class MisionesController : ControllerBase
         new(
             mision.Id,
             mision.Nombre,
+            mision.Descripcion,
+            mision.NivelDificultad,
+            mision.TiempoMaximoSeg,
             mision.Estado,
+            mision.TotalEtapas,
             mision.Etapas.Select(etapa => new EtapaMisionResponse(
                 etapa.EtapaId,
                 etapa.Orden,
@@ -110,4 +119,7 @@ public sealed class MisionesController : ControllerBase
                     pista.Contenido,
                     pista.TipoLiberacion,
                     pista.SegundosLiberacion)).ToList())).ToList());
+
+    private static ValidationException BuildValidationException(string property, string error) =>
+        new([new ValidationFailure(property, error)]);
 }

@@ -57,6 +57,17 @@ DTOs compartidos:
 - `DELETE` no elimina físicamente; aplica desactivación lógica.
 - Se mantuvo compatibilidad con reglas existentes de sesión (`CrearSesion` requiere misión activa).
 
+## Ajustes de consistencia aplicados (spec/rules)
+
+- **HU-01 (nombre único):**
+  - Validación en create/update para impedir duplicados.
+  - Índice único en BD sobre `misiones.nombre` (migración `AddUniqueIndexMisionNombre`).
+- **HU-03 (no editar con sesiones activas):**
+  - `ActualizarMisionCommandHandler` bloquea cambios si existe sesión activa de esa misión.
+- **Contrato frontend (`MisionDto`):**
+  - Se agregaron campos de compatibilidad en respuesta (`descripcion`, `nivelDificultad`, `tiempoMaximoSeg`, `totalEtapas`).
+  - En el modelo actual, `descripcion` usa `nombre`, `nivelDificultad` se expone como `"NoDefinida"` y `tiempoMaximoSeg` como `0`.
+
 ## Tests de integración agregados
 
 Archivo: `tests/Umbral.API.Tests/Controllers/MisionesControllerTests.cs`

@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Umbral.API.Auth;
 using Umbral.API.Contracts.Misiones;
+using Umbral.API.Contracts.Sesiones;
 using Umbral.API.Tests.Support;
 
 namespace Umbral.API.Tests.Controllers;
@@ -99,6 +100,50 @@ public sealed class MisionesControllerTests
         SetRole("Administrador");
         var response = await _client.GetAsync($"/api/v1/misiones/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task POST_misiones_CuandoNombreDuplicado_Retorna400()
+    {
+        SetRole("Administrador");
+        await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest("Mision Duplicada"));
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/misiones",
+            BuildCrearRequest("Mision Duplicada"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("DomainError");
+    }
+
+    [Fact]
+    public async Task PUT_misiones_CuandoTieneSesionActiva_Retorna400()
+    {
+        SetRole("Administrador");
+        var create = await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest("Mision En Uso", activar: true));
+        create.StatusCode.Should().Be(HttpStatusCode.Created);
+        var id = await ReadCreatedId(create);
+
+        var crearSesion = await _client.PostAsJsonAsync(
+            "/api/v1/sesiones/busqueda-tesoro",
+            new CrearSesionBusquedaTesoroRequest(id));
+        var sesionId = (await crearSesion.Content.ReadFromJsonAsync<CrearSesionResponse>())!.Id;
+
+        await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/equipos",
+            new RegistrarEquipoRequest("Equipo HU03"));
+        await _client.PostAsync($"/api/v1/sesiones/{sesionId}/iniciar", null);
+
+        var response = await _client.PutAsJsonAsync(
+            $"/api/v1/misiones/{id}",
+            new ActualizarMisionRequest("Mision Renombrada", true));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("DomainError");
     }
 
     private void SetRole(string role)

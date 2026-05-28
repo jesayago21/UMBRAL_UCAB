@@ -3,7 +3,11 @@ namespace Umbral.API.Contracts.Misiones;
 public sealed record MisionResponse(
     Guid Id,
     string Nombre,
+    string Descripcion,
+    string NivelDificultad,
+    int TiempoMaximoSeg,
     string Estado,
+    int TotalEtapas,
     IReadOnlyList<EtapaMisionResponse> Etapas);
 
 public sealed record EtapaMisionResponse(

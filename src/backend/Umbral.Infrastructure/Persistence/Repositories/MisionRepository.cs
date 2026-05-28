@@ -34,6 +34,32 @@ public sealed class MisionRepository : IMisionRepository
             .ToListAsync(ct);
     }
 
+    public async Task<bool> ExistsByNombreAsync(string nombre, Guid? excludeId = null, CancellationToken ct = default)
+    {
+        var normalized = nombre.Trim().ToLowerInvariant();
+
+        if (!excludeId.HasValue)
+            return await _db.Misiones.AnyAsync(x => x.Nombre.ToLower() == normalized, ct);
+
+        var excluded = new MisionId(excludeId.Value);
+        return await _db.Misiones.AnyAsync(x => x.Nombre.ToLower() == normalized && x.MisionId != excluded, ct);
+    }
+
+    public async Task<bool> HasSesionesActivasAsync(MisionId misionId, CancellationToken ct = default)
+    {
+        var missionIdValue = misionId.Valor.ToString();
+        const string sql = """
+                           SELECT EXISTS(
+                               SELECT 1
+                               FROM sesiones s
+                               INNER JOIN contextos_bt c ON c."SesionId" = s.id
+                               WHERE s.estado = 'Activa'
+                                 AND c.mision_snapshot_json ->> 'misionId' = {0}) AS "Value"
+                           """;
+
+        return await _db.Database.SqlQueryRaw<bool>(sql, missionIdValue).SingleAsync(ct);
+    }
+
     public async Task SaveAsync(Mision mision, CancellationToken ct = default)
     {
         if (_db.Entry(mision).State == EntityState.Detached)

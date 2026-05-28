@@ -65,6 +65,7 @@ Nuevas piezas:
 
 - siempre ejecuta `UseAuthentication()` + `UseAuthorization()`
 - si el entorno permite seed, migra y siembra usuarios demo al iniciar
+- expiración JWT de Admin/Operador configurada en 8h (`ExpiresMinutes = 480`)
 
 ---
 

@@ -45,4 +45,18 @@ public sealed class AuthControllerTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    [Fact]
+    public async Task POST_login_CuandoEmailVacio_Retorna400ValidationError()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/auth/login",
+            new LoginRequest("", "Umbral123!"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("ValidationError");
+        error.Errores.Should().ContainKey("email");
+    }
 }
