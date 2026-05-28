@@ -51,6 +51,7 @@ public sealed class SesionRepository : ISesionRepository
 
         await SyncContextoBtAsync(sesion, ct);
         await InsertNewChildrenAsync(sesion, ct);
+        await SyncEquiposPuntajeAsync(sesion, ct);
         await _db.SaveChangesAsync(ct);
     }
 
@@ -73,6 +74,19 @@ public sealed class SesionRepository : ISesionRepository
                  mision_snapshot_json = EXCLUDED.mision_snapshot_json
              """,
             ct);
+    }
+
+    private async Task SyncEquiposPuntajeAsync(Sesion sesion, CancellationToken ct)
+    {
+        foreach (var equipo in sesion.Equipos)
+        {
+            var puntaje = equipo.PuntajeTotal;
+            await _db.EquiposSesion
+                .Where(e => e.EquipoId == equipo.EquipoId)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(e => e.PuntajeTotal, puntaje),
+                    ct);
+        }
     }
 
     private async Task InsertNewChildrenAsync(Sesion sesion, CancellationToken ct)

@@ -318,6 +318,150 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
+    public async Task POST_finalizar_CuandoSesionActiva_Retorna204()
+    {
+        var sesionId = await CrearSesionIniciadaAsync();
+
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/finalizar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task POST_finalizar_CuandoSesionNoIniciada_Retorna400()
+    {
+        var sesionId = await CrearSesionAsync();
+
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/finalizar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("DomainError");
+    }
+
+    [Fact]
+    public async Task POST_finalizar_CuandoSesionNoExiste_Retorna404()
+    {
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{Guid.NewGuid()}/finalizar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task POST_cancelar_CuandoMotivoValido_Retorna204()
+    {
+        var sesionId = await CrearSesionIniciadaAsync();
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/cancelar",
+            new CancelarSesionRequest("Clima adverso"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task POST_cancelar_CuandoMotivoVacio_Retorna400()
+    {
+        var sesionId = await CrearSesionIniciadaAsync();
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/cancelar",
+            new CancelarSesionRequest(""));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("ValidationError");
+        error.Errores.Should().ContainKey("motivo");
+    }
+
+    [Fact]
+    public async Task POST_cancelar_CuandoSesionYaFinalizada_Retorna400()
+    {
+        var sesionId = await CrearSesionIniciadaAsync();
+
+        await _client.PostAsync($"/api/v1/sesiones/{sesionId}/finalizar", null);
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/cancelar",
+            new CancelarSesionRequest("Intento tardío"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("DomainError");
+    }
+
+    [Fact]
+    public async Task POST_cancelar_CuandoSesionNoExiste_Retorna404()
+    {
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{Guid.NewGuid()}/cancelar",
+            new CancelarSesionRequest("Motivo"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GET_ranking_CuandoEmpateOrdenaPorNombre_Retorna200()
+    {
+        var sesionId = await CrearSesionAsync();
+        await RegistrarEquipoAsync(sesionId, "Zeta");
+        await RegistrarEquipoAsync(sesionId, "Alpha");
+        await _client.PostAsync($"/api/v1/sesiones/{sesionId}/iniciar", null);
+
+        var response = await _client.GetAsync($"/api/v1/sesiones/{sesionId}/ranking");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var ranking = await response.Content.ReadFromJsonAsync<List<PosicionRankingResponse>>();
+        ranking.Should().HaveCount(2);
+        ranking![0].NombreEquipo.Should().Be("Alpha");
+        ranking[0].PuntajeTotal.Should().Be(0);
+        ranking[1].NombreEquipo.Should().Be("Zeta");
+    }
+
+    [Fact]
+    public async Task GET_ranking_DespuesDeEvidenciaValida_OrdenaPorPuntaje()
+    {
+        var sesionId = await CrearSesionAsync();
+        var alphaId = await RegistrarEquipoYObtenerIdAsync(sesionId, "Alpha");
+        var betaId = await RegistrarEquipoYObtenerIdAsync(sesionId, "Beta");
+        await _client.PostAsync($"/api/v1/sesiones/{sesionId}/iniciar", null);
+
+        await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/evidencias",
+            new SubmitEvidenciaRequest(betaId, "QR-API-001"));
+
+        var response = await _client.GetAsync($"/api/v1/sesiones/{sesionId}/ranking");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var ranking = await response.Content.ReadFromJsonAsync<List<PosicionRankingResponse>>();
+        ranking.Should().HaveCount(2);
+        ranking![0].EquipoId.Should().Be(betaId);
+        ranking[0].PuntajeTotal.Should().Be(100);
+        ranking[1].EquipoId.Should().Be(alphaId);
+        ranking[1].PuntajeTotal.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GET_ranking_CuandoSesionNoExiste_Retorna404()
+    {
+        var response = await _client.GetAsync(
+            $"/api/v1/sesiones/{Guid.NewGuid()}/ranking");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Flujo_CrearRegistrarIniciar_CompletaSinError()
     {
         var misionId = await ApiTestData.SeedMisionActivaAsync(_services);

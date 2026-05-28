@@ -6,12 +6,15 @@ using Umbral.API.Auth;
 using Umbral.API.Contracts.Sesiones;
 using Umbral.API.Extensions;
 using Umbral.Application.Sesion.Commands.AplicarPenalizacion;
+using Umbral.Application.Sesion.Commands.CancelarSesion;
 using Umbral.Application.Sesion.Commands.CrearSesionBusquedaTesoro;
+using Umbral.Application.Sesion.Commands.FinalizarSesion;
 using Umbral.Application.Sesion.Commands.IniciarSesion;
 using Umbral.Application.Sesion.Commands.PausarSesion;
 using Umbral.Application.Sesion.Commands.ReanudarSesion;
 using Umbral.Application.Sesion.Commands.RegistrarEquipo;
 using Umbral.Application.Sesion.Commands.SubmitEvidencia;
+using Umbral.Application.Sesion.Queries.GetRankingSesion;
 
 namespace Umbral.API.Controllers;
 
@@ -129,6 +132,47 @@ public sealed class SesionesController : ControllerBase
                 new SubmitEvidenciaResponse(
                     value.EvidenciaId,
                     value.Resultado.ToString())));
+    }
+
+    [HttpPost("{id:guid}/finalizar")]
+    [Authorize(Roles = "Operador,Administrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Finalizar(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new FinalizarSesionCommand(id), cancellationToken);
+        return result.ToActionResult(HttpContext, _ => new NoContentResult());
+    }
+
+    [HttpPost("{id:guid}/cancelar")]
+    [Authorize(Roles = "Operador,Administrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Cancelar(
+        Guid id,
+        [FromBody] CancelarSesionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new CancelarSesionCommand(id, request.Motivo),
+            cancellationToken);
+
+        return result.ToActionResult(HttpContext, _ => new NoContentResult());
+    }
+
+    [HttpGet("{id:guid}/ranking")]
+    [ProducesResponseType(typeof(IReadOnlyList<PosicionRankingResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerRanking(Guid id, CancellationToken cancellationToken)
+    {
+        var ranking = await _mediator.Send(new GetRankingSesionQuery(id), cancellationToken);
+
+        var response = ranking
+            .Select(x => new PosicionRankingResponse(
+                x.Posicion,
+                x.EquipoId,
+                x.NombreEquipo,
+                x.PuntajeTotal))
+            .ToList();
+
+        return Ok(response);
     }
 
     private Guid ObtenerOperadorId()
