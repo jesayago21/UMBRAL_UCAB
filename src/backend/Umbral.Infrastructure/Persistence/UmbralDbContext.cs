@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
 using Umbral.Domain.Sesion;
+using Umbral.Infrastructure.Persistence.Entities;
 using Umbral.Infrastructure.Persistence.ValueConverters;
 
 namespace Umbral.Infrastructure.Persistence;
@@ -20,6 +21,7 @@ public sealed class UmbralDbContext : DbContext
     public DbSet<Mision> Misiones => Set<Mision>();
     public DbSet<Etapa> EtapasMision => Set<Etapa>();
     public DbSet<Pista> PistasMision => Set<Pista>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

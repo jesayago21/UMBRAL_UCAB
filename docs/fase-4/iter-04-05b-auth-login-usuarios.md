@@ -1,86 +1,126 @@
 # Iteración 04-05b — Login, usuarios y JWT por rol (demo profesor)
 
-> **Estado:** ⬜ Pendiente — **obligatoria antes de 04-06 (misiones)** y antes de la muestra al profesor.
+> **Estado:** ✅ Implementada y validada.
 
-## Por qué no basta `TestAuthHandler`
+## Objetivo
 
-`TestAuthHandler` asigna **Operador + Administrador al mismo usuario ficticio**. No permite demostrar:
+Reemplazar el esquema temporal de autenticación para demo (`TestAuthHandler` con doble rol) por un flujo real:
 
-- Login como admin vs operador
-- `403 Forbidden` si un operador llama `POST /misiones`
-- `OperadorId` real distinto por usuario en `CrearSesion`
+- usuarios persistidos en BD
+- login por email/password
+- JWT firmado con rol por usuario
 
-El diseño canónico (`project-rules` §10, `backend-spec` §7) exige **usuarios en BD**, **login** y **JWT** con claim `role` y `sub` (userId).
+Esto deja lista la base para la 04-06, donde `MisionesController` exigirá `Administrador`.
 
-## Cuándo se hace
+---
 
-| Momento | Iteración |
-|---------|-----------|
-| Después de cerrar flujo de sesión API (04-04, 04-05) | — |
-| **Antes de** `MisionesController` (04-06) | **04-05b** |
-| Antes de demo / entrega académica | **04-05b** |
+## Cambios implementados
 
-Orden recomendado: `04-04` → `04-05` → **`04-05b` (auth)** → `04-06` (misiones solo Admin).
+### 1) Base de datos
 
-## Alcance técnico (sí toca BD e Infrastructure)
+Se agregó la tabla `usuarios` con migración EF:
 
-### Base de datos (nueva migración EF)
+- `src/backend/Umbral.Infrastructure/Persistence/Migrations/20260528013932_AddUsuariosAuth.cs`
 
-Tabla **`usuarios`** (nombre orientativo):
+Campos:
 
 | Columna | Tipo | Notas |
-|---------|------|--------|
-| `id` | uuid PK | = `UsuarioId` / claim `sub` |
-| `email` | varchar unique | login |
-| `password_hash` | varchar | BCrypt (`project-rules` §10.4) |
-| `rol` | varchar | `Administrador` \| `Operador` (enum string) |
-| `activo` | bool | opcional |
+|---------|------|-------|
+| `id` | `uuid` | PK |
+| `email` | `varchar(200)` | único |
+| `password_hash` | `varchar(200)` | BCrypt |
+| `rol` | `varchar(50)` | `Administrador` / `Operador` / `EquipoParticipante` |
+| `activo` | `bool` | default `true` |
 
-**No** reemplaza `sesiones.operador_id`: sigue guardando quién creó la sesión; el valor vendrá del JWT del operador logueado.
+### 2) Infrastructure (repositorio + seed)
 
-Seed de desarrollo/demo (migración o script):
+Se incorporó capa de auth en Infrastructure:
 
-- `admin@umbral.local` → rol **Administrador**
-- `operador@umbral.local` → rol **Operador**
+- `IUsuarioAuthRepository` + `UsuarioAuthRepository` para búsqueda por email.
+- `DemoUsersSeeder` para crear usuarios de demo con password BCrypt.
+- `SeedDemoUsersAsync(...)` para bootstrap automático en `Development` y `Testing`.
 
-### Infrastructure
+Credenciales de demo sembradas:
 
-- `Persistence/Configurations/UsuarioConfiguration.cs`
-- `Persistence/Repositories/UsuarioRepository.cs` (o puerto en Domain si se define `IUsuarioRepository`)
-- `Identity/` (o `Auth/`): emisión/validación JWT, BCrypt
-- DI en `InfrastructureServiceCollectionExtensions`
+- `admin@umbral.local` / `Umbral123!` → `Administrador`
+- `operador@umbral.local` / `Umbral123!` → `Operador`
+- `equipo@umbral.local` / `Umbral123!` → `EquipoParticipante`
 
-### API
+### 3) API (JWT + login)
 
-- `POST /api/v1/auth/login` — **público** (`[AllowAnonymous]`)
-- Request: email + password → Response: access token (JWT)
-- `Program.cs`: `AddAuthentication(JwtBearer)` en todos los entornos de demo; **retirar o desactivar** `TestAuthHandler` cuando exista JWT (tests pueden usar `TestAuthHandler` solo en `Testing` con helper que emite token, o login real en fixture)
-- Controllers existentes: siguen `[Authorize(Roles = ...)]`; sin token → **401**
+Se agregó JWT bearer como esquema principal fuera de `Testing`:
 
-### Application
+- `ApiServiceCollectionExtensions` ahora configura:
+  - `JwtBearer` en `Development` / `Production`
+  - `TestAuthHandler` únicamente en `Testing`
 
-- Opcional: `LoginCommand` + handler (o servicio en Infrastructure invocado desde controller delgado)
-- `ICurrentUserService` (spec): leer `sub` y `role` del `HttpContext` para commands que lo necesiten
+Nuevas piezas:
 
-### Tests
+- `JwtOptions`
+- `JwtTokenIssuer`
+- `AuthController` con `POST /api/v1/auth/login` (`[AllowAnonymous]`)
+- contratos `LoginRequest` / `LoginResponse`
 
-- Login OK → token con rol correcto
-- Operador con token → `POST /misiones` → **403** (cuando exista 04-06)
-- Admin con token → `POST /misiones` → **201**
-- Tests de integración: obtener token vía login en fixture (no dual-role fake)
+`Program.cs` ahora:
 
-## Equipo participante (mobile)
+- siempre ejecuta `UseAuthentication()` + `UseAuthorization()`
+- si el entorno permite seed, migra y siembra usuarios demo al iniciar
 
-Para la muestra web (admin/operador), **04-05b** basta con Admin + Operador.
+---
 
-`EquipoParticipante` (JWT con `sesionId` + código acceso) puede quedar para iteración posterior (evidencia mobile / 04-04 con auth de equipo), salvo que el profesor exija ese flujo en la misma demo.
+## Flujo de login
 
-## Validación demo (checklist profesor)
+1. `POST /api/v1/auth/login` recibe email/password.
+2. API busca usuario en `usuarios` por email normalizado.
+3. Valida hash con `BCrypt.Verify`.
+4. Emite JWT con claims:
+   - `sub` y `nameidentifier`: id usuario
+   - `email`
+   - `role`
+5. Retorna `200 OK` con:
+   - `accessToken`
+   - `tokenType = Bearer`
+   - `expiresIn`
+   - `role`
 
-1. Login operador → crear sesión BT → equipo → iniciar.
-2. Login admin → crear/editar misión (04-06).
-3. Mismo token operador → `POST /misiones` → **403** (si aplica).
-4. Sin token → **401** en endpoint protegido.
+Si credenciales inválidas o usuario inactivo: `401 Unauthorized`.
+
+---
+
+## Compatibilidad con iteraciones previas
+
+- Los endpoints de sesión siguen igual (`[Authorize(Roles = ...)]`).
+- En pruebas de integración se mantiene `TestAuthHandler` (`Testing`) para no romper el suite existente.
+- En ejecución normal (dev/prod), el acceso protegido requiere token JWT real.
+
+---
+
+## Tests y validación
+
+Se añadieron pruebas de integración para auth:
+
+- `POST_login_CredencialesValidas_RetornaToken`
+- `POST_login_PasswordInvalida_Retorna401`
+
+Comandos ejecutados:
+
+```powershell
+dotnet build Umbral.sln
+dotnet test tests/Umbral.API.Tests/Umbral.API.Tests.csproj
+```
+
+Resultado: **40/40 tests API en verde**.
+
+---
+
+## Checklist demo (actualizado)
+
+1. Login como operador y administrar sesión BT.
+2. Login como admin para operaciones administrativas (04-06).
+3. Sin token en endpoint protegido ⇒ `401`.
+4. Con token de rol no autorizado (cuando esté 04-06) ⇒ `403`.
+
+---
 
 ## Commit sugerido
 

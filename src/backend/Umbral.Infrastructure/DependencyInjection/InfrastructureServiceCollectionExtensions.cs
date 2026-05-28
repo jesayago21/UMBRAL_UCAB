@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
+using Umbral.Infrastructure.Auth;
 using Umbral.Infrastructure.Messaging.Publishers;
 using Umbral.Infrastructure.Persistence;
 using Umbral.Infrastructure.Persistence.Repositories;
@@ -25,6 +26,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISesionRepository, SesionRepository>();
         services.AddScoped<IMisionRepository, MisionRepository>();
         services.AddScoped<IEventPublisher, NoOpEventPublisher>();
+        services.AddScoped<IUsuarioAuthRepository, UsuarioAuthRepository>();
+        services.AddScoped<DemoUsersSeeder>();
 
         return services;
     }
