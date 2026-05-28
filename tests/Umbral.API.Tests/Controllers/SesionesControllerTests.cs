@@ -131,6 +131,82 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
+    public async Task POST_pausar_CuandoSesionActiva_Retorna204()
+    {
+        var sesionId = await CrearSesionIniciadaAsync();
+
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/pausar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task POST_pausar_CuandoSesionNoIniciada_Retorna400()
+    {
+        var sesionId = await CrearSesionAsync();
+
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/pausar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("DomainError");
+    }
+
+    [Fact]
+    public async Task POST_pausar_CuandoSesionNoExiste_Retorna404()
+    {
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{Guid.NewGuid()}/pausar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task POST_reanudar_CuandoSesionPausada_Retorna204()
+    {
+        var sesionId = await CrearSesionIniciadaAsync();
+
+        await _client.PostAsync($"/api/v1/sesiones/{sesionId}/pausar", null);
+
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/reanudar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task POST_reanudar_CuandoSesionActiva_Retorna400()
+    {
+        var sesionId = await CrearSesionIniciadaAsync();
+
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/reanudar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
+        error!.Tipo.Should().Be("DomainError");
+    }
+
+    [Fact]
+    public async Task POST_reanudar_CuandoSesionNoExiste_Retorna404()
+    {
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{Guid.NewGuid()}/reanudar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Flujo_CrearRegistrarIniciar_CompletaSinError()
     {
         var misionId = await ApiTestData.SeedMisionActivaAsync(_services);
@@ -168,5 +244,16 @@ public sealed class SesionesControllerTests
             $"/api/v1/sesiones/{sesionId}/equipos",
             new RegistrarEquipoRequest(nombre));
         response.EnsureSuccessStatusCode();
+    }
+
+    private async Task<Guid> CrearSesionIniciadaAsync()
+    {
+        var sesionId = await CrearSesionAsync();
+        await RegistrarEquipoAsync(sesionId, "Equipo Pausa");
+        var iniciar = await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/iniciar",
+            null);
+        iniciar.EnsureSuccessStatusCode();
+        return sesionId;
     }
 }

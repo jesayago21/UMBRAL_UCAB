@@ -7,6 +7,8 @@ using Umbral.API.Contracts.Sesiones;
 using Umbral.API.Extensions;
 using Umbral.Application.Sesion.Commands.CrearSesionBusquedaTesoro;
 using Umbral.Application.Sesion.Commands.IniciarSesion;
+using Umbral.Application.Sesion.Commands.PausarSesion;
+using Umbral.Application.Sesion.Commands.ReanudarSesion;
 using Umbral.Application.Sesion.Commands.RegistrarEquipo;
 
 namespace Umbral.API.Controllers;
@@ -65,6 +67,24 @@ public sealed class SesionesController : ControllerBase
     public async Task<IActionResult> Iniciar(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new IniciarSesionCommand(id), cancellationToken);
+        return result.ToNoContentResult(HttpContext);
+    }
+
+    [HttpPost("{id:guid}/pausar")]
+    [Authorize(Roles = "Operador,Administrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Pausar(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new PausarSesionCommand(id), cancellationToken);
+        return result.ToNoContentResult(HttpContext);
+    }
+
+    [HttpPost("{id:guid}/reanudar")]
+    [Authorize(Roles = "Operador,Administrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Reanudar(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ReanudarSesionCommand(id), cancellationToken);
         return result.ToNoContentResult(HttpContext);
     }
 
