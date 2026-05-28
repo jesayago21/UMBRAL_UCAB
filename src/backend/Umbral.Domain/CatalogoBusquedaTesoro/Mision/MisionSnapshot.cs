@@ -36,6 +36,13 @@ public sealed class MisionSnapshot : ValueObject
         return new MisionSnapshot(mision.MisionId, mision.Nombre, etapas);
     }
 
+    /// <summary>Reconstitución desde persistencia (no usar en lógica de negocio).</summary>
+    internal static MisionSnapshot Rehydrate(
+        MisionId misionId,
+        string nombre,
+        IReadOnlyList<EtapaSnapshot> etapas) =>
+        new(misionId, nombre, etapas);
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return MisionId;

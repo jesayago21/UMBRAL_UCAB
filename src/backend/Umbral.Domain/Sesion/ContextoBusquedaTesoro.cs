@@ -34,6 +34,18 @@ public sealed class ContextoBusquedaTesoro : Entity
         };
     }
 
+    /// <summary>Reconstitución desde persistencia (no usar en lógica de negocio).</summary>
+    internal static ContextoBusquedaTesoro Rehydrate(
+        MisionSnapshot snapshot,
+        int etapaActualIndex,
+        EquipoId? ganadorEtapaActualId) =>
+        new()
+        {
+            MisionSnapshot         = snapshot,
+            EtapaActualIndex       = etapaActualIndex,
+            GanadorEtapaActualId   = ganadorEtapaActualId
+        };
+
     /// <summary>Etapa activa según <see cref="EtapaActualIndex"/> (RB-06).</summary>
     public EtapaSnapshot ObtenerEtapaActual()
     {

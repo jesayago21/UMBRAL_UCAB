@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Umbral.Domain.Sesion;
+using Umbral.Infrastructure.Persistence.Serialization;
 
 namespace Umbral.Infrastructure.Persistence.Repositories;
 
@@ -13,6 +14,7 @@ public sealed class SesionRepository : ISesionRepository
     {
         return await _db.Sesiones
             .AsNoTracking()
+            .Include(s => s.ContextoBT)
             .Include("_equipos")
             .Include("_historialEventos")
             .Include("_evidencias")
@@ -47,8 +49,30 @@ public sealed class SesionRepository : ISesionRepository
                     .SetProperty(s => s.FinalizadaEn, sesion.FinalizadaEn),
                 ct);
 
+        await SyncContextoBtAsync(sesion, ct);
         await InsertNewChildrenAsync(sesion, ct);
         await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task SyncContextoBtAsync(Sesion sesion, CancellationToken ct)
+    {
+        if (sesion.ContextoBT is null)
+            return;
+
+        var bt      = sesion.ContextoBT;
+        var json    = MisionSnapshotPersistence.ToJson(bt.MisionSnapshot);
+        var ganador = bt.GanadorEtapaActualId?.Valor;
+
+        await _db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+             INSERT INTO contextos_bt ("SesionId", etapa_actual_index, ganador_etapa_actual_id, mision_snapshot_json)
+             VALUES ({sesion.SesionId.Valor}, {bt.EtapaActualIndex}, {ganador}, {json}::jsonb)
+             ON CONFLICT ("SesionId") DO UPDATE SET
+                 etapa_actual_index = EXCLUDED.etapa_actual_index,
+                 ganador_etapa_actual_id = EXCLUDED.ganador_etapa_actual_id,
+                 mision_snapshot_json = EXCLUDED.mision_snapshot_json
+             """,
+            ct);
     }
 
     private async Task InsertNewChildrenAsync(Sesion sesion, CancellationToken ct)

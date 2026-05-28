@@ -36,5 +36,5 @@ dotnet test tests/Umbral.API.Tests/Umbral.API.Tests.csproj
 
 - Auth: `[Authorize(Roles = "Operador,Administrador")]` con `TestAuthHandler` en Testing/Development.
 - Sin `GET` sesión por id en esta iteración (04-05+ si aplica).
-- **Infrastructure:** `SesionRepository` usa `AsNoTracking` en lecturas y `ExecuteUpdate` + inserción explícita de hijos en actualizaciones (evita `DbUpdateConcurrencyException` con navegaciones ignoradas en EF).
+- **Infrastructure:** `SesionRepository` usa `AsNoTracking` en lecturas y `ExecuteUpdate` + inserción explícita de hijos en actualizaciones. Persistencia de `ContextoBT`: ver [iter-04-02b](iter-04-02b-contexto-bt-persistencia.md).
 - Test infra: `SesionRegistrarEquipoPersistenceTests` (dos pasos crear + registrar equipo).

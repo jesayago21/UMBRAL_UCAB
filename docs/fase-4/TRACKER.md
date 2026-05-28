@@ -2,7 +2,7 @@
 
 **Alcance:** `Umbral.API` (controllers, middleware, DTOs), `tests/Umbral.API.Tests` (WebApplicationFactory + Testcontainers)  
 **Rama:** `feature/fase4-api`  
-**Última actualización:** 2026-05-27 (iter-04-02)
+**Última actualización:** 2026-05-28 (iter-04-02b ContextoBT)
 
 ---
 
@@ -22,6 +22,7 @@
 |------|----------|--------|-----|
 | 04-01 | Bootstrap API tests, middleware errores, `Result`→HTTP | ✅ | [iter-04-01](iter-04-01-bootstrap-api-tests-y-errores.md) |
 | 04-02 | `SesionesController`: crear BT, equipos, iniciar + tests | ✅ | [iter-04-02](iter-04-02-sesiones-crear-equipos-iniciar.md) |
+| 04-02b | Persistencia `ContextoBT` (cierre deuda Fase 3) | ✅ | [iter-04-02b](iter-04-02b-contexto-bt-persistencia.md) |
 | 04-03 | POST pausar / reanudar + tests | ⬜ | [iter-04-03](iter-04-03-sesiones-pausar-reanudar.md) |
 | 04-04 | POST penalización / evidencia + tests | ⬜ | [iter-04-04](iter-04-04-sesiones-penalizacion-evidencia.md) |
 | 04-05 | POST finalizar / cancelar, GET ranking + tests | ⬜ | [iter-04-05](iter-04-05-sesiones-cerrar-ranking.md) |

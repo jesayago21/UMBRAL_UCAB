@@ -38,7 +38,12 @@ public sealed class SesionConfiguration : IEntityTypeConfiguration<Sesion>
         builder.Property(x => x.FinalizadaEn)
             .HasColumnName("finalizada_en");
 
-        builder.Ignore(x => x.ContextoBT);
+        builder.OwnsOne(
+            x => x.ContextoBT,
+            ContextoBusquedaTesoroConfiguration.Configure);
+
+        builder.Navigation(x => x.ContextoBT).IsRequired(false);
+
         builder.Ignore(x => x.Equipos);
         builder.Ignore(x => x.HistorialEventos);
         builder.Ignore(x => x.Evidencias);
