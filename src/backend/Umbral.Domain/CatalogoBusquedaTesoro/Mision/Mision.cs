@@ -55,6 +55,23 @@ public sealed class Mision : AggregateRoot
         RaiseDomainEvent(new MisionActivada(MisionId));
     }
 
+    public void Desactivar()
+    {
+        if (Estado != EstadoMision.Activa)
+            throw new DomainException(
+                $"No se puede desactivar una misión en estado '{Estado}'.");
+
+        Estado = EstadoMision.Borrador;
+    }
+
+    public void Renombrar(string nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+            throw new DomainException("El nombre de la misión no puede estar vacío.");
+
+        Nombre = nombre.Trim();
+    }
+
     /// <summary>
     /// Indica si la misión puede usarse como base de una sesión BusquedaTesoro.
     /// </summary>

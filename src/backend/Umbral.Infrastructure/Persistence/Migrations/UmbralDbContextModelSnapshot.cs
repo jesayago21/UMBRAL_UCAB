@@ -76,6 +76,9 @@ namespace Umbral.Infrastructure.Persistence.Migrations
 
                     b.HasKey("MisionId");
 
+                    b.HasIndex("Nombre")
+                        .IsUnique();
+
                     b.ToTable("misiones", (string)null);
                 });
 
@@ -255,6 +258,45 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                     b.ToTable("sesiones", (string)null);
                 });
 
+            modelBuilder.Entity("Umbral.Infrastructure.Persistence.Entities.Usuario", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Activo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("activo");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("password_hash");
+
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("rol");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("usuarios", (string)null);
+                });
+
             modelBuilder.Entity("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Etapa", b =>
                 {
                     b.HasOne("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Mision", null)
@@ -298,6 +340,37 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                         .HasForeignKey("SesionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Umbral.Domain.Sesion.Sesion", b =>
+                {
+                    b.OwnsOne("Umbral.Domain.Sesion.ContextoBusquedaTesoro", "ContextoBT", b1 =>
+                        {
+                            b1.Property<Guid>("SesionId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("EtapaActualIndex")
+                                .HasColumnType("integer")
+                                .HasColumnName("etapa_actual_index");
+
+                            b1.Property<Guid?>("GanadorEtapaActualId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("ganador_etapa_actual_id");
+
+                            b1.Property<string>("MisionSnapshot")
+                                .IsRequired()
+                                .HasColumnType("jsonb")
+                                .HasColumnName("mision_snapshot_json");
+
+                            b1.HasKey("SesionId");
+
+                            b1.ToTable("contextos_bt", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("SesionId");
+                        });
+
+                    b.Navigation("ContextoBT");
                 });
 
             modelBuilder.Entity("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Etapa", b =>

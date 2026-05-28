@@ -29,5 +29,5 @@ Mapear entidades/agregados principales de `Sesion` y `Mision` en EF Core, respet
 
 ## Notas
 
-- `ContextoBusquedaTesoro` queda fuera del mapeo canónico de esta iteración por su complejidad de snapshot/VO; se mantiene ignorado en la configuración de `Sesion`.
+- `ContextoBusquedaTesoro` se dejó ignorado en 03-02 por complejidad del snapshot; **persistencia cerrada en Fase 4** ([iter-04-02b](../fase-4/iter-04-02b-contexto-bt-persistencia.md)).
 - Esta iteración no implementa repositorios todavía; corresponde a `03-03`.

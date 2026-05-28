@@ -20,6 +20,14 @@ public sealed class EtapaSnapshot : ValueObject
     public static EtapaSnapshot Desde(Etapa etapa) =>
         new(etapa.EtapaId, etapa.Orden, etapa.Descripcion, etapa.CodigoQRSolucion);
 
+    /// <summary>Reconstitución desde persistencia (no usar en lógica de negocio).</summary>
+    internal static EtapaSnapshot Rehydrate(
+        EtapaId id,
+        int orden,
+        string descripcion,
+        string codigoQr) =>
+        new(id, orden, descripcion, codigoQr);
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return EtapaId;

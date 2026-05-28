@@ -26,6 +26,9 @@ public sealed class MisionConfiguration : IEntityTypeConfiguration<Mision>
             .HasMaxLength(50)
             .IsRequired();
 
+        builder.HasIndex(x => x.Nombre)
+            .IsUnique();
+
         builder.Ignore(x => x.Etapas);
         builder.Ignore(x => x.DomainEvents);
 
