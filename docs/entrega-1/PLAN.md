@@ -59,7 +59,9 @@ Reglas no negociables:
 - **HU-01..04 — CRUD Misiones** (crear, listar/consultar, modificar, desactivar). Backend ✅; falta UI.
 - **Login con JWT por rol** (admin/operador) y demostración de **403 por rol**. Backend ✅; falta UI.
 - **Persistencia real** en PostgreSQL (ya operativa).
-- **Frontend web mínimo** que consume la API real (login + pantallas CRUD Misiones).
+- **Frontend web mínimo** que consume la API real: **login + CRUD Misiones + CRUD
+  Trivia** (categorías y preguntas). Sin esto no se demuestran las 3 capas para
+  el banco de trivia, solo misiones.
 - **Cobertura backend ≥ 90%** medida y reportada en CI.
 - **README** de arranque local + **guion de demo**.
 - **CRUD Trivia (contingencia, backend) — HU-24..31.** Banco de preguntas y
@@ -85,16 +87,16 @@ Reglas no negociables:
 2. **Pipeline CI** que ejecuta tests y reporta cobertura.
 3. **Medición + cierre de la brecha de cobertura** hasta ≥ 90%.
 4. **README + guion de demo** orientado al profesor.
-5. **CRUD Trivia backend** (contingencia): hoy `CatalogoTrivia` está vacío
-   (solo `.gitkeep`). Es un vertical completo desde cero.
+5. **CRUD Trivia backend** (E1-8..10): dominio ✅ (E1-7); faltan Application,
+   Infrastructure y API.
 
 ---
 
 ## 5.1 CRUD Trivia — alcance mínimo (contingencia, HU-24..31)
 
-> **Estado actual:** `src/backend/Umbral.Domain/CatalogoTrivia/{Pregunta,Categoria}`
-> contienen solo `.gitkeep`. **No hay nada implementado.** Es el ítem más caro
-> de Entrega 1 porque atraviesa las 4 capas + migración + tests al 90%.
+> **Estado actual:** dominio ✅ ([iter-e1-07](iter-e1-07-trivia-dominio.md)).
+> Faltan Application, Infrastructure (migración) y API antes de poder conectar
+> el frontend de trivia.
 
 ### Qué SÍ entra (mínimo)
 
@@ -114,8 +116,9 @@ Reglas no negociables:
 
 - Jugar la trivia: sesión trivia, sala de espera, lanzar rondas, recibir
   respuestas, timer, puntaje, ranking, transición y desempate (**RB-13** y demás).
-- UI de trivia en el frontend (en Entrega 1, si se pide, se demuestra por
-  **Swagger / REST**; la UI mínima de E1 sigue siendo Misiones).
+- **Gameplay** de trivia en UI (sala, rondas, timer) — Entrega 2. En Entrega 1
+  la UI de trivia es solo **administración del banco** (CRUD categorías/preguntas),
+  igual que el CRUD de misiones.
 
 ### Desglose TDD por capa (orden de construcción)
 
@@ -139,23 +142,53 @@ Reglas no negociables:
 
 ## 6. Backlog de acciones (control)
 
-| # | Acción | Tipo | Dep. | Estado |
-|---|--------|------|------|--------|
-| E1-0 | Oficializar alcance reducido en `quality-spec §13/§14` | doc | — | ✅ |
-| E1-0b | Alinear naming de proyectos de test (`quality-spec §2` ✅; `project-rules §1` ⬜) | doc | — | 🔶 |
-| E1-1 | Medir cobertura backend real (coverlet) y registrar brecha | build | — | ⬜ |
-| E1-2 | Frontend web mínimo: login + CRUD Misiones contra API real | código | E1-1 | ⬜ |
-| E1-3 | Pipeline CI: `dotnet test` + reporte cobertura, gate ≥ 90% | devops | E1-1 | ⬜ |
-| E1-4 | Cerrar brecha de cobertura con tests faltantes (TDD) | código | E1-1 | ⬜ |
-| E1-5 | README arranque local (backend + db + front) | doc | E1-2 | ⬜ |
-| E1-6 | Guion de demo para el profesor | doc | E1-2 | ⬜ |
-| E1-7 | CRUD Trivia — Dominio `Categoria`/`Pregunta` + tests (TDD) — [doc](iter-e1-07-trivia-dominio.md) | código | — | ✅ (28 tests, 198 total verde) |
-| E1-8 | CRUD Trivia — Application (commands/queries/handlers) + tests | código | E1-7 | ⬜ |
-| E1-9 | CRUD Trivia — Infrastructure (EF + repos + migración) + tests | código | E1-8 | ⬜ |
-| E1-10 | CRUD Trivia — API (`CategoriasController`, `PreguntasController`) + tests | código | E1-9 | ⬜ |
+### 6.1 Orden recomendado de ejecución (no seguir la tabla al pie de la letra)
 
-> Marca cada fila a medida que se completa. Este es el tablero de control de Entrega 1.
-> **E1-7..E1-10** es la contingencia de Trivia (ver §5.1); se puede posponer si no la piden.
+El objetivo de Entrega 1 es **demostrar frontend ↔ backend ↔ persistencia**
+con **cobertura ≥ 90%**, para **Misiones y Trivia (banco)**. Por eso **no**
+conviene saltar a E1-8 sin medir cobertura ni dejar el frontend solo en misiones.
+
+```
+Fase A — Línea base (primero)
+  E1-1   Medir cobertura actual (saber brecha antes y después de Trivia)
+  E1-3   CI con reporte de cobertura (en paralelo si quieres)
+
+Fase B — Backend listo para que el front consuma (Trivia)
+  E1-8 → E1-9 → E1-10   Application → Infra+migración → API
+  (Misiones: API ya en main ✅)
+
+Fase C — Cierre de calidad backend
+  E1-4   Re-medir y cerrar brecha hasta ≥ 90% (después de E1-10)
+
+Fase D — Frontend (las 3 capas visibles al profesor)
+  E1-2   Login + CRUD Misiones + CRUD Trivia (categorías + preguntas)
+         Depende de: E1-10 (API trivia) y API misiones existente
+
+Fase E — Entrega
+  E1-5   README
+  E1-6   Guion de demo (incluye flujo misiones Y banco trivia)
+```
+
+**Siguiente paso sugerido:** **E1-1** (medir cobertura), no E1-8.
+
+### 6.2 Tabla de ítems
+
+| # | Acción | Tipo | Dep. | Fase | Estado |
+|---|--------|------|------|------|--------|
+| E1-0 | Oficializar alcance reducido en `quality-spec §13/§14` | doc | — | — | ✅ |
+| E1-0b | Alinear naming de proyectos de test (`quality-spec §2` ✅; `project-rules §1` ⬜) | doc | — | — | 🔶 |
+| E1-1 | Medir cobertura backend real (coverlet) y registrar brecha | build | — | **A** | ⬜ |
+| E1-3 | Pipeline CI: `dotnet test` + reporte cobertura, gate ≥ 90% | devops | E1-1 | **A** | ⬜ |
+| E1-8 | CRUD Trivia — Application (commands/queries/handlers) + tests | código | E1-7 | **B** | ⬜ |
+| E1-9 | CRUD Trivia — Infrastructure (EF + repos + migración) + tests | código | E1-8 | **B** | ⬜ |
+| E1-10 | CRUD Trivia — API (`CategoriasController`, `PreguntasController`) + tests | código | E1-9 | **B** | ⬜ |
+| E1-4 | Cerrar brecha de cobertura con tests faltantes (TDD) | código | E1-10 | **C** | ⬜ |
+| E1-2 | Frontend: login + CRUD **Misiones** + CRUD **Trivia** (categorías/preguntas) | código | E1-10 | **D** | ⬜ |
+| E1-5 | README arranque local (backend + db + front) | doc | E1-2 | **E** | ⬜ |
+| E1-6 | Guion de demo para el profesor (misiones + banco trivia) | doc | E1-2 | **E** | ⬜ |
+| E1-7 | CRUD Trivia — Dominio — [doc](iter-e1-07-trivia-dominio.md) | código | — | **B** | ✅ |
+
+> Marca cada fila a medida que se completa. Usar **§6.1** como orden de trabajo.
 
 ---
 
@@ -166,8 +199,8 @@ El alcance original de la spec metía demasiado en Entrega 1. Con el recorte:
 | Fase (implícita) | Contenido | Antes | Ahora |
 |------------------|-----------|-------|-------|
 | 1–4 | Backend (Dominio → API) | E1 | ✅ E1 (hecho) |
-| 5 (nueva) | Frontend web mínimo + CI + cobertura | parte de E1 | **E1** |
-| 5b (nueva) | CRUD Trivia backend (HU-24..31, contingencia) | E2 | **E1 (opcional)** |
+| 5 (nueva) | Frontend (Misiones + banco Trivia) + CI + cobertura | parte de E1 | **E1** |
+| 5b (nueva) | CRUD Trivia backend (HU-24..31); dominio ✅ | E2 | **E1** |
 | 6 | SignalR / ranking tiempo real | E1 | **E2** |
 | 7 | Mobile (React Native) | E1 | **E2** |
 | 8 | RabbitMQ consumers (demo) | E1 | **E2** |
@@ -179,8 +212,9 @@ El alcance original de la spec metía demasiado en Entrega 1. Con el recorte:
 
 - [ ] Solución .NET compila sin warnings; 4 proyectos de test en verde.
 - [ ] **Cobertura backend ≥ 90%** sobre el código implementado, reportada por CI.
-- [ ] Frontend web hace **login real** y **CRUD de Misiones** contra la API (persistencia real).
-- [ ] Se puede demostrar **403 por rol** (operador no crea misiones).
+- [ ] Frontend web hace **login real**, **CRUD de Misiones** y **CRUD del banco Trivia**
+      (categorías + preguntas) contra la API (persistencia real).
+- [ ] Se puede demostrar **403 por rol** (operador no administra catálogo).
 - [ ] PostgreSQL levanta vía docker-compose y la app persiste datos.
 - [ ] README permite a un tercero levantar el entorno local.
 - [ ] Guion de demo ensayado.
