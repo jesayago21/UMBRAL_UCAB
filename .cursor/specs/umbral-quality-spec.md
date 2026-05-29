@@ -28,11 +28,19 @@ UMBRAL adopta una pirámide de pruebas con cuatro niveles:
 
 ## 2. Proyectos de prueba
 
+> **Estado real del repo (vigente):** los proyectos de integración se
+> implementaron como `Umbral.Infrastructure.Tests` (persistencia con
+> Testcontainers) y `Umbral.API.Tests` (API real con `WebApplicationFactory`
+> + Testcontainers). **No existe** `Umbral.E2E.Tests`; las pruebas E2E con
+> Playwright se reprograman a **Entrega 2**. La estructura ideal de abajo se
+> mantiene como referencia objetivo.
+
 tests/
-├── Umbral.Domain.Tests/         → pruebas de agregados, VOs y domain services
-├── Umbral.Application.Tests/    → pruebas de handlers y behaviors
-├── Umbral.Integration.Tests/    → pruebas con PostgreSQL real (Testcontainers)
-└── Umbral.E2E.Tests/            → pruebas end-to-end con Playwright
+├── Umbral.Domain.Tests/          → pruebas de agregados, VOs y domain services
+├── Umbral.Application.Tests/     → pruebas de handlers y behaviors
+├── Umbral.Infrastructure.Tests/  → persistencia con PostgreSQL real (Testcontainers)
+├── Umbral.API.Tests/             → API real (WebApplicationFactory + Testcontainers)
+└── Umbral.E2E.Tests/             → (Entrega 2) end-to-end con Playwright
 
 Cada proyecto referencia solo lo que necesita:
 
@@ -959,16 +967,27 @@ El pipeline falla si se incumple cualquiera de estas condiciones:
 
 ### Entrega 1 — criterios transversales
 
+> **Alcance reducido (vigente):** Entrega 1 demuestra **comunicación
+> frontend ↔ backend ↔ persistencia** con **cobertura backend ≥ 90%**,
+> usando **CRUD de Misiones + Login** como HU mínimas. El detalle de
+> control está en `docs/entrega-1/PLAN.md`. Los puntos de "punta a punta
+> con SignalR/RabbitMQ/mobile" se reprograman a **Entrega 2** (ver §7 del PLAN).
+
 - [ ] Solución .NET con 4 proyectos y dependencias correctas verificadas
       por compilación.
 - [ ] Pipeline CI corriendo y reportando cobertura.
 - [ ] **Cobertura backend ≥ 90%** sobre el código implementado.
-- [ ] Docker Compose levanta backend + PostgreSQL + RabbitMQ sin errores.
+- [ ] Docker Compose levanta backend + PostgreSQL sin errores.
+- [ ] **Frontend web mínimo** hace login real + CRUD de Misiones contra la API.
+- [ ] Demostrable **403 por rol** (operador no crea misiones).
+- [ ] README con instrucciones para levantar el entorno local.
+
+#### Reprogramado a Entrega 2 (antes en Entrega 1)
+
 - [ ] Flujo completo BusquedaTesoro demostrable de punta a punta.
 - [ ] WebSocket actualiza ranking sin recargar la página.
 - [ ] Al menos 2 consumers de RabbitMQ operativos.
 - [ ] React Native muestra flujo mínimo del equipo participante.
-- [ ] README con instrucciones para levantar el entorno local.
 
 ### Entrega 2 — criterios transversales
 
@@ -985,6 +1004,11 @@ El pipeline falla si se incumple cualquiera de estas condiciones:
 ## 14. HU por entrega (numeración ERS)
 
 ### Entrega 1 — Flujo BusquedaTesoro conectado de punta a punta
+
+> **Nota de alcance (vigente):** para la entrega académica, el demo se reduce
+> a **Login + CRUD de Misiones** (las 3 capas conectadas). Las HU de gameplay,
+> ranking en vivo, mobile y RabbitMQ de esta tabla quedan como backend listo
+> pero **no demostrado** en Entrega 1; pasan a Entrega 2. Ver `docs/entrega-1/PLAN.md`.
 
 | HU (ERS) | Descripción                                      | Capa                  | Modo | Fase dominio |
 |----------|--------------------------------------------------|-----------------------|------|--------------|
@@ -1048,8 +1072,12 @@ Operador finaliza sesión → estado final con ranking definitivo
 
 | HU (ERS) | Descripción (resumen)                                | Capa               | Modo   |
 |----------|------------------------------------------------------|--------------------|--------|
-| HU-24–27 | Banco de preguntas (CRUD)                            | Web Admin          | Trivia |
-| HU-28–31 | Categorías de trivia                                 | Web Admin          | Trivia |
+| HU-24–27 | Banco de preguntas (CRUD)                            | Web Admin          | Trivia | †
+| HU-28–31 | Categorías de trivia                                 | Web Admin          | Trivia | †
+
+> † **CRUD de Trivia (HU-24..31) adelantado a Entrega 1 como contingencia**
+> (backend, sin gameplay). Ver `docs/entrega-1/PLAN.md §5.1`. El **modo Trivia
+> jugable (HU-32..40)** permanece en Entrega 2.
 | HU-32    | Crear sesión Trivia                                  | Web Operador       | Trivia |
 | HU-33    | Sala de espera (equipos conectados)                  | Web Operador       | Trivia |
 | HU-34–35 | Secuencia y envío de respuestas                    | Native + Backend   | Trivia |
