@@ -500,8 +500,8 @@ umbral/
 ├── tests/
 │   ├── Umbral.Domain.Tests/
 │   ├── Umbral.Application.Tests/
-│   ├── Umbral.Integration.Tests/
-│   └── Umbral.E2E.Tests/
+│   ├── Umbral.Infrastructure.Tests/
+│   └── Umbral.API.Tests/
 ├── docs/
 │   └── domain-model.md
 ├── docker/

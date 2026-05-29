@@ -21,10 +21,11 @@ src/
 └── mobile/
     └── umbral-mobile/       → React Native + Expo (Equipo Participante)
 ├── tests/
-│   ├── Umbral.Domain.Tests/         → Pruebas unitarias del dominio
-│   ├── Umbral.Application.Tests/    → Pruebas unitarias de handlers
-│   ├── Umbral.Integration.Tests/    → Pruebas de integración con BD real
-│   └── Umbral.E2E.Tests/            → Pruebas end-to-end con Playwright
+│   ├── Umbral.Domain.Tests/            → Pruebas unitarias del dominio
+│   ├── Umbral.Application.Tests/       → Pruebas unitarias de handlers
+│   ├── Umbral.Infrastructure.Tests/    → Persistencia + Testcontainers (PostgreSQL)
+│   └── Umbral.API.Tests/               → API HTTP + WebApplicationFactory + Testcontainers
+│   (Umbral.E2E.Tests con Playwright → Entrega 2, aún no existe en el repo)
 ├── docker/
 │   ├── backend.Dockerfile
 │   └── frontend.Dockerfile

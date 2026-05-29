@@ -176,7 +176,7 @@ Fase E — Entrega
 | # | Acción | Tipo | Dep. | Fase | Estado |
 |---|--------|------|------|------|--------|
 | E1-0 | Oficializar alcance reducido en `quality-spec §13/§14` | doc | — | — | ✅ |
-| E1-0b | Alinear naming de proyectos de test (`quality-spec §2` ✅; `project-rules §1` ⬜) | doc | — | — | 🔶 |
+| E1-0b | Alinear naming de proyectos de test en spec y `project-rules` | doc | — | — | ✅ |
 | E1-1 | Medir cobertura backend real (coverlet) y registrar brecha | build | — | **A** | ⬜ |
 | E1-3 | Pipeline CI: `dotnet test` + reporte cobertura, gate ≥ 90% | devops | E1-1 | **A** | ⬜ |
 | E1-8 | CRUD Trivia — Application (commands/queries/handlers) + tests | código | E1-7 | **B** | ⬜ |
@@ -223,12 +223,21 @@ El alcance original de la spec metía demasiado en Entrega 1. Con el recorte:
 
 ## 9. Inconsistencias detectadas (registro)
 
-| # | Inconsistencia | Resolución acordada |
-|---|----------------|---------------------|
-| 1 | Spec/`project-rules` nombran `Umbral.Integration.Tests` y `Umbral.E2E.Tests`; el repo tiene `Umbral.API.Tests` e `Umbral.Infrastructure.Tests`, sin E2E | Actualizar la spec a la realidad (E1-0b) |
-| 2 | `quality-spec §13/§14` describe una Entrega 1 mucho más amplia (SignalR, RabbitMQ, mobile, E2E) que el mínimo del profesor | Oficializar alcance reducido (E1-0) |
-| 3 | No existen pruebas de carga / "clickload" en ninguna spec | Fuera de alcance; agregar solo si el profesor lo exige |
-| 4 | No existe un documento único de "10 fases"; solo el "Plan de 10 días" (`§15`) y el mapa implícito en `fase-1/TRACKER` | Este PLAN.md y la tabla §7 hacen las veces de roadmap de fases |
+| # | Inconsistencia | Resolución |
+|---|----------------|------------|
+| 1 | Spec/`project-rules` nombraban `Integration.Tests` / `E2E.Tests` | ✅ Alineado a `Infrastructure.Tests` + `API.Tests` (E1-0b) |
+| 2 | `quality-spec` Entrega 1 demasiado amplia vs. profesor | ✅ Alcance en este PLAN + §13/§14 quality-spec (E1-0) |
+| 3 | **"Clickload"** mal entendido como pruebas de carga | ✅ Es **Keycloak** (auth). E1: JWT propio (`iter-04-05b`). Keycloak → E2 si el curso lo exige. Ver `quality-spec §13.1` |
+| 4 | "Plan de 10 días / 10 fases" en quality-spec §15 | ✅ Eliminado; roadmap único = este `PLAN.md` §6.1 |
+
+### Autenticación — Keycloak vs JWT (E1)
+
+| Enfoque | Entrega 1 | Notas |
+|---------|-----------|--------|
+| **JWT propio** | ✅ | `POST /api/v1/auth/login`, usuarios en BD, roles, 8 h token |
+| **Keycloak** | ⬜ E2 | IdP OAuth2/OIDC; a veces se dice "clickload" en el equipo |
+
+No es obligatorio montar Keycloak para cumplir el mínimo del profesor (comunicación + roles + login).
 
 ---
 

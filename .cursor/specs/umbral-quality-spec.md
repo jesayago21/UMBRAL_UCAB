@@ -1,6 +1,8 @@
 # UMBRAL — Especificación de Calidad y Pruebas
 
-> **HU canónicas:** numeración **HU-01…HU-40** del ERS (`docs/TRAZABILIDAD.md`). La §14 usa esa numeración; el seguimiento de Fase 1 está en `docs/fase-1/TRACKER.md`.
+> **HU canónicas:** numeración **HU-01…HU-40** del ERS (`docs/TRAZABILIDAD.md`).
+> **Entrega 1 (alcance vigente):** `docs/entrega-1/PLAN.md` (reemplaza el antiguo
+> "plan de 10 días" de esta spec). Seguimiento histórico por fases: `docs/fase-*/TRACKER.md`.
 
 ## 1. Estrategia general de pruebas
 
@@ -28,19 +30,17 @@ UMBRAL adopta una pirámide de pruebas con cuatro niveles:
 
 ## 2. Proyectos de prueba
 
-> **Estado real del repo (vigente):** los proyectos de integración se
-> implementaron como `Umbral.Infrastructure.Tests` (persistencia con
-> Testcontainers) y `Umbral.API.Tests` (API real con `WebApplicationFactory`
-> + Testcontainers). **No existe** `Umbral.E2E.Tests`; las pruebas E2E con
-> Playwright se reprograman a **Entrega 2**. La estructura ideal de abajo se
-> mantiene como referencia objetivo.
+Estructura **implementada** en el repositorio (no renombrar sin consenso):
 
+```
 tests/
-├── Umbral.Domain.Tests/          → pruebas de agregados, VOs y domain services
-├── Umbral.Application.Tests/     → pruebas de handlers y behaviors
-├── Umbral.Infrastructure.Tests/  → persistencia con PostgreSQL real (Testcontainers)
-├── Umbral.API.Tests/             → API real (WebApplicationFactory + Testcontainers)
-└── Umbral.E2E.Tests/             → (Entrega 2) end-to-end con Playwright
+├── Umbral.Domain.Tests/          → dominio (sin mocks, sin BD)
+├── Umbral.Application.Tests/     → handlers y validators (Moq)
+├── Umbral.Infrastructure.Tests/  → repositorios + EF + Testcontainers (PostgreSQL)
+└── Umbral.API.Tests/             → controllers + WebApplicationFactory + Testcontainers
+```
+
+**Entrega 2 (pendiente):** `Umbral.E2E.Tests` con Playwright (flujos web completos).
 
 Cada proyecto referencia solo lo que necesita:
 
@@ -57,14 +57,16 @@ Cada proyecto referencia solo lo que necesita:
 <PackageReference Include="Moq" />
 <PackageReference Include="FluentAssertions" />
 
-<!-- Umbral.Integration.Tests.csproj -->
+<!-- Umbral.Infrastructure.Tests.csproj -->
+<ProjectReference Include="../src/backend/Umbral.Infrastructure/..." />
+<PackageReference Include="Testcontainers.PostgreSql" />
+<PackageReference Include="FluentAssertions" />
+
+<!-- Umbral.API.Tests.csproj -->
 <ProjectReference Include="../src/backend/Umbral.API/..." />
 <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
 <PackageReference Include="Testcontainers.PostgreSql" />
 <PackageReference Include="FluentAssertions" />
-
-<!-- Umbral.E2E.Tests.csproj -->
-<PackageReference Include="Microsoft.Playwright" />
 ```
 
 ---
@@ -552,7 +554,7 @@ Usan una base de datos PostgreSQL real levantada con Testcontainers.
 Se ejecutan en CI dentro del job de backend.
 
 ```csharp
-// tests/Umbral.Integration.Tests/SesionIntegrationTests.cs
+// tests/Umbral.API.Tests/SesionIntegrationTests.cs
 public class SesionIntegrationTests : IAsyncLifetime
 {
     private PostgreSqlContainer _postgres = null!;
@@ -967,27 +969,46 @@ El pipeline falla si se incumple cualquiera de estas condiciones:
 
 ### Entrega 1 — criterios transversales
 
-> **Alcance reducido (vigente):** Entrega 1 demuestra **comunicación
-> frontend ↔ backend ↔ persistencia** con **cobertura backend ≥ 90%**,
-> usando **CRUD de Misiones + Login** como HU mínimas. El detalle de
-> control está en `docs/entrega-1/PLAN.md`. Los puntos de "punta a punta
-> con SignalR/RabbitMQ/mobile" se reprograman a **Entrega 2** (ver §7 del PLAN).
+> **Fuente única de alcance y orden de trabajo:** [`docs/entrega-1/PLAN.md`](../../docs/entrega-1/PLAN.md)
+> (§4 alcance, §6.1 orden recomendado, §8 Definition of Done).
 
-- [ ] Solución .NET con 4 proyectos y dependencias correctas verificadas
-      por compilación.
-- [ ] Pipeline CI corriendo y reportando cobertura.
-- [ ] **Cobertura backend ≥ 90%** sobre el código implementado.
+Resumen alineado al PLAN:
+
+- [ ] Solución .NET con capas Domain / Application / Infrastructure / API y
+      **4 proyectos de test** (`Domain`, `Application`, `Infrastructure`, `API`).
+- [ ] Pipeline CI corriendo y reportando cobertura (**E1-3**).
+- [ ] **Cobertura backend ≥ 90%** medida y cerrada (**E1-1**, **E1-4**).
 - [ ] Docker Compose levanta backend + PostgreSQL sin errores.
-- [ ] **Frontend web mínimo** hace login real + CRUD de Misiones contra la API.
-- [ ] Demostrable **403 por rol** (operador no crea misiones).
-- [ ] README con instrucciones para levantar el entorno local.
+- [ ] **Autenticación:** login JWT por rol (admin/operador) con usuarios en BD
+      (implementado en API iter-04-05b). Ver §13.1 sobre Keycloak.
+- [ ] **Frontend web:** login + CRUD **Misiones** + CRUD **banco Trivia**
+      (categorías + preguntas) contra API real (**E1-2**).
+- [ ] Demostrable **403 por rol** en catálogo (operador no administra misiones/trivia).
+- [ ] README y guion de demo (**E1-5**, **E1-6**).
 
-#### Reprogramado a Entrega 2 (antes en Entrega 1)
+#### Reprogramado a Entrega 2
 
-- [ ] Flujo completo BusquedaTesoro demostrable de punta a punta.
-- [ ] WebSocket actualiza ranking sin recargar la página.
-- [ ] Al menos 2 consumers de RabbitMQ operativos.
-- [ ] React Native muestra flujo mínimo del equipo participante.
+- [ ] Flujo BusquedaTesoro jugable de punta a punta (sesión, evidencia, ranking en vivo).
+- [ ] WebSocket / SignalR sin recargar.
+- [ ] Consumers RabbitMQ en demo.
+- [ ] React Native (equipo participante).
+- [ ] Modo Trivia jugable (HU-32..40).
+- [ ] E2E Playwright (`Umbral.E2E.Tests`).
+- [ ] Integración con **Keycloak** como IdP externo (si el curso lo exige además del JWT propio).
+
+#### Autenticación — §13.1 Keycloak ("clickload")
+
+En conversaciones del equipo a veces se menciona **"clickload"** refiriéndose a
+**Keycloak** (proveedor de identidad / login centralizado), **no** a pruebas de
+carga (load testing) ni a "clics" en la UI.
+
+| Enfoque | Entrega 1 | Entrega 2 |
+|---------|-----------|-----------|
+| **JWT propio** (`POST /api/v1/auth/login`, BCrypt, roles en BD) | ✅ Implementado; suficiente para demo y RNF de roles | Mantener o migrar |
+| **Keycloak** (OAuth2/OIDC, realm, clientes web/mobile) | ⬜ No obligatorio en E1 | Evaluar si el profesor lo exige |
+
+Si Keycloak es obligatorio, el front redirige al login del realm y la API valida
+tokens OIDC en lugar de (o además de) el emisor JWT actual. No confundir con k6/JMeter.
 
 ### Entrega 2 — criterios transversales
 
@@ -1003,107 +1024,34 @@ El pipeline falla si se incumple cualquiera de estas condiciones:
 
 ## 14. HU por entrega (numeración ERS)
 
-### Entrega 1 — Flujo BusquedaTesoro conectado de punta a punta
+### Entrega 1 — Catálogo admin + autenticación (ver PLAN)
 
-> **Nota de alcance (vigente):** para la entrega académica, el demo se reduce
-> a **Login + CRUD de Misiones** (las 3 capas conectadas). Las HU de gameplay,
-> ranking en vivo, mobile y RabbitMQ de esta tabla quedan como backend listo
-> pero **no demostrado** en Entrega 1; pasan a Entrega 2. Ver `docs/entrega-1/PLAN.md`.
+> **Roadmap, orden de trabajo y demo:** [`docs/entrega-1/PLAN.md`](../../docs/entrega-1/PLAN.md).
+> El antiguo flujo "BT punta a punta + plan de 10 días" de esta spec **no aplica** a E1.
 
-| HU (ERS) | Descripción                                      | Capa                  | Modo | Fase dominio |
-|----------|--------------------------------------------------|-----------------------|------|--------------|
-| HU-01    | Crear / activar misión                           | Web Admin             | BT   | 🔶 iter soporte |
-| HU-05    | Configurar nodos (etapas)                        | Web Admin             | BT   | 🔶 iter soporte |
-| HU-06    | Registrar pistas en etapa                        | Web Admin             | BT   | 🔶 iter soporte |
-| HU-12    | Crear sesión BusquedaTesoro desde misión activa  | Web Operador          | BT   | ✅ iter-01 |
-| HU-13    | Inscripción de equipos                           | Web Operador          | BT   | ✅ iter-02 |
-| HU-14    | Control de inicio de sesión                      | Web Operador          | BT   | ✅ iter-03 |
-| HU-15    | Pausa y reanudación                              | Web Operador          | BT   | ✅ iter-03 |
-| HU-16    | Aplicar penalización con motivo                  | Web Operador          | BT   | ✅ iter-04 |
-| HU-11    | Equipo ve pistas habilitadas                     | React Native          | BT   | — |
-| HU-17    | Tablero equipo en tiempo real                    | React Native          | BT   | — |
-| HU-18    | Enviar evidencia QR                              | React Native          | BT   | ⬜ iter-05 |
-| HU-19    | Validar ganador único + puntaje                  | Backend               | BT   | ⬜ iter-05/06 |
-| HU-20    | Transición automática de etapa                   | Backend               | BT   | ⬜ iter-06 |
-| HU-21    | Ranking en tiempo real                           | Web + React Native    | BT   | — |
-| HU-23    | Cerrar sesión / reporte final                    | Web Operador          | BT   | 🔶 iter-07 |
-| —        | Liberar pistas manualmente (RF-15)               | Web Operador          | BT   | — |
-| —        | Consumer RabbitMQ recálculo (RF-19)              | Backend async         | BT   | — |
+**HU demostrables en Entrega 1 (frontend + API + persistencia):**
 
-**Flujo demostrable en Entrega 1:**
+| HU | Descripción | Estado típico |
+|----|-------------|---------------|
+| — | Login JWT por rol (admin / operador) | API ✅; front ⬜ |
+| HU-01..04 | CRUD Misiones | API ✅; front ⬜ |
+| HU-24..27 | CRUD Preguntas (banco trivia) | Dominio ✅; App/Infra/API ⬜ |
+| HU-28..31 | CRUD Categorías trivia | Dominio ✅; App/Infra/API ⬜ |
 
-Admin crea misión con etapas y pistas (Web)
-↓
-Operador crea sesión BT + registra equipo (Web)
-↓
-Operador inicia sesión (Web)
-↓
-Equipo se une con código de acceso (React Native)
-↓
-Equipo ve pistas + escanea/ingresa código QR (React Native)
-↓
-Backend valida evidencia → publica evento en RabbitMQ
-↓
-Consumer recalcula puntaje + Auditoría registra evento
-↓
-SignalR notifica a todos → ranking actualiza en vivo (Web + Native)
-↓
-Operador aplica penalización → ranking se reordena en tiempo real
-↓
-Operador finaliza sesión → estado final con ranking definitivo
+**Backend listo pero no demostrado en UI de E1:** HU-12..16, HU-18..23 (sesión BT),
+ranking en vivo, RabbitMQ, mobile.
 
-
-**Script de demo para el profesor:**
-
-[Web Admin]      Mostrar misión creada con etapas y pistas configuradas
-[Web Operador]   Crear sesión BT → código de acceso generado
-[React Native]   Equipo se une con el código → ve pantalla de juego
-[Web Operador]   Iniciar sesión → estado cambia a Activa en tiempo real
-[React Native]   Equipo ve pistas → ingresa/escanea QR
-[Terminal/Logs]  Mostrar evento publicado en RabbitMQ + consumer procesando
-[Web Operador]   Ranking actualiza automáticamente sin recargar (WebSocket)
-[Web Operador]   Aplicar penalización → ranking se reordena en vivo
-[Web Operador]   Finalizar sesión → estado Finalizada con ranking definitivo
-[CI/Terminal]   Mostrar pruebas corriendo + reporte cobertura ≥ 90%
+**Script de demo:** ver §6 y §8 de `docs/entrega-1/PLAN.md`.
 
 ---
 
-### Entrega 2 — Modo Trivia + completar BusquedaTesoro
+### Entrega 2 — Gameplay BT + Trivia jugable + E2E
 
-| HU (ERS) | Descripción (resumen)                                | Capa               | Modo   |
-|----------|------------------------------------------------------|--------------------|--------|
-| HU-24–27 | Banco de preguntas (CRUD)                            | Web Admin          | Trivia | †
-| HU-28–31 | Categorías de trivia                                 | Web Admin          | Trivia | †
-
-> † **CRUD de Trivia (HU-24..31) adelantado a Entrega 1 como contingencia**
-> (backend, sin gameplay). Ver `docs/entrega-1/PLAN.md §5.1`. El **modo Trivia
-> jugable (HU-32..40)** permanece en Entrega 2.
-| HU-32    | Crear sesión Trivia                                  | Web Operador       | Trivia |
-| HU-33    | Sala de espera (equipos conectados)                  | Web Operador       | Trivia |
-| HU-34–35 | Secuencia y envío de respuestas                    | Native + Backend   | Trivia |
-| HU-36–39 | Procesamiento async, puntaje, ranking, transición  | Backend            | Trivia |
-| HU-40    | Desempate por timestamp servidor                     | Backend            | Trivia |
-| HU-09    | Liberación automática de pistas por tiempo (BT)      | Backend            | BT     |
-| HU-22    | Historial de auditoría                               | Web Admin          | Ambos  |
-| —        | E2E flujo BT completo                                | Playwright         | BT     |
-| —        | E2E flujo Trivia completo                            | Playwright         | Trivia |
-
----
-
-## 15. Plan de 10 días — Entrega 1
-
-| Día     | Foco                          | Entregable clave                              |
-|---------|-------------------------------|-----------------------------------------------|
-| 1 – 2   | Dominio + pruebas             | Agregados, VOs, domain tests ≥ 90%            |
-| 3 – 4   | Application + Infrastructure  | Handlers, validators, EF Core, repositorios   |
-| 5 – 6   | API + RabbitMQ + SignalR      | Controllers, JWT, hubs, 2 consumers           |
-| 7 – 8   | Frontend Web                  | Admin + Operador conectados con API real       |
-| 9       | React Native mínimo           | Join + Dashboard BT + WebSocket               |
-| 10      | Cierre y demo                 | CI verde, docker compose up, ensayo demo      |
-
-### División sugerida 
-Persona A (Cursor)  → genera código, pruebas, configuraciones
-Persona B (Tú)      → dirige, revisa, corre, integra y corrige
-
-
+| HU (ERS) | Descripción (resumen) | Modo |
+|----------|----------------------|------|
+| HU-09..23, HU-11, HU-17, HU-21 | Completar y demostrar BusquedaTesoro en vivo | BT |
+| HU-32..40 | Sesión trivia, rondas, ranking, transición | Trivia |
+| HU-22 | Historial de auditoría | Ambos |
+| — | E2E Playwright (`Umbral.E2E.Tests`) | Ambos |
+| — | Keycloak como IdP (si el curso lo exige) | Auth |
 

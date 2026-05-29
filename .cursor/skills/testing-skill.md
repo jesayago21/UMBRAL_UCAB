@@ -676,7 +676,7 @@ describe("SesionScreen", () => {
 <PackageReference Include="Moq" Version="4.*" />                        ← Moq (NO NSubstitute)
 <PackageReference Include="FluentValidation.TestHelper" Version="11.*" />
 
-<!-- tests/Umbral.Integration.Tests/ + Umbral.API.Tests/ -->
+<!-- tests/Umbral.Infrastructure.Tests/ + Umbral.API.Tests/ -->
 <PackageReference Include="Testcontainers.PostgreSql" Version="3.*" />
 <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.*" />
 ```

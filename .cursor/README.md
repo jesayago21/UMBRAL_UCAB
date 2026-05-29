@@ -10,6 +10,7 @@ Documentación de agentes, reglas y specs para el asistente de IA.
 | [`specs/umbral-product-spec.md`](specs/umbral-product-spec.md) | Producto, módulos, RF, patrones |
 | [`docs/ERS_Proyecto_UMBRAL_UCAB.md`](../docs/ERS_Proyecto_UMBRAL_UCAB.md) | ERS académico (HU narrativas) |
 | [`docs/fase-1/TRACKER.md`](../docs/fase-1/TRACKER.md) | Progreso dominio Fase 1 |
+| [`docs/entrega-1/PLAN.md`](../docs/entrega-1/PLAN.md) | **Alcance y backlog Entrega 1** (vigente) |
 
 ## Estructura
 
