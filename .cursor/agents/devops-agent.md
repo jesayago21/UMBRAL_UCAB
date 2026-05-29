@@ -17,8 +17,13 @@ de entorno, scripts de arranque y cualquier tarea de CI/CD o contenedorización.
 | API Backend | .NET 8 (Docker) | 5000 |
 | PostgreSQL | postgres:16-alpine | 5432 |
 | RabbitMQ | rabbitmq:3.13-management-alpine | 5672 / 15672 |
+| **Keycloak** | quay.io/keycloak/keycloak:24 | **8080** |
 | Web Admin | Vite dev server | 5173 |
 | Mobile | Expo dev server | 8081 |
+
+> **Autenticación:** desde Entrega 1 se usa **Keycloak** (realm `umbral`,
+> importado al arrancar). Reemplaza el JWT propio. Ver
+> `.cursor/skills/keycloak-auth-skill.md`.
 
 ---
 
@@ -70,6 +75,22 @@ services:
     networks:
       - umbral_net
 
+  # ── Keycloak (identidad / OIDC) ──────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: umbral_keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/keycloak:/opt/keycloak/data/import:ro   # umbral-realm.json
+    networks:
+      - umbral_net
+
   # ── API Backend ──────────────────────────────────────────────
   api:
     build:
@@ -83,6 +104,8 @@ services:
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Username: umbral_user
       RabbitMQ__Password: umbral_pass
+      Keycloak__Authority: "http://keycloak:8080/realms/umbral"
+      Keycloak__Audience: "umbral-api"
     ports:
       - "5000:5000"
     depends_on:
@@ -90,6 +113,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     networks:
       - umbral_net
     restart: unless-stopped

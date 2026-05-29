@@ -387,20 +387,27 @@ Administrador      → gestión de misiones, catálogo, usuarios
 Operador           → gestión y ejecución de sesiones
 EquipoParticipante → acceso solo a su sesión activa
 
-### 10.2 JWT
-- El token incluye: `userId`, `rol`, `sesionId` (para equipos).
-- Expiración: 8 horas para Admin/Operador, duración de la sesión para Equipos.
-- Refresh token implementado para equipos durante sesiones activas.
+### 10.2 Autenticación — Keycloak (OIDC)
+
+> Desde Entrega 1 la identidad la gestiona **Keycloak** (realm `umbral`). Detalle
+> en `.cursor/skills/keycloak-auth-skill.md`. **No** hay login propio ni tabla
+> `usuarios` en la BD del backend.
+
+- Flujo **Authorization Code + PKCE**: el frontend redirige al login de Keycloak.
+- La API es **resource server**: valida el `access_token` por `Authority`/JWKS del
+  realm. No emite tokens ni guarda contraseñas.
+- Roles del realm: `Administrador`, `Operador`, `EquipoParticipante`, transportados
+  en `realm_access.roles` y mapeados a claims `role`.
 
 ### 10.3 Autorización por endpoint
-- Todo endpoint requiere autenticación excepto: login y health check.
+- Todo endpoint requiere autenticación excepto: health check (y el callback OIDC).
 - Los endpoints de operación requieren rol `Operador` o `Administrador`.
 - Los endpoints de participación validan que el equipo pertenece a la sesión.
 
 ### 10.4 Datos sensibles
-- Passwords hasheados con BCrypt. Nunca almacenados en texto plano.
+- Las contraseñas las gestiona **Keycloak** (no se almacenan en la BD del backend).
 - Códigos QR nunca expuestos completos en logs ni en respuestas de listing.
-- Los tokens JWT no se loguean nunca.
+- Los access tokens no se loguean nunca.
 
 ---
 

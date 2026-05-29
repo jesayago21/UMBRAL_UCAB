@@ -1048,9 +1048,14 @@ public abstract class EvidenciaProcessorBase
 ## 7. Seguridad
 
 ### 7.1 Roles y claims
-Claim: role = "Administrador" | "Operador" | "EquipoParticipante"
-Claim: sub  = userId (Guid)
-Claim: sesionId = sesionId (solo para EquipoParticipante)
+
+> Identidad gestionada por **Keycloak** (realm `umbral`). La API valida el token
+> (resource server). Ver `.cursor/skills/keycloak-auth-skill.md`.
+
+Claim: realm_access.roles = ["Administrador" | "Operador" | "EquipoParticipante"]
+       (se aplana a claims `role` en la API)
+Claim: sub  = userId en Keycloak (Guid/UUID)
+Claim: sesionId = sesionId (solo para EquipoParticipante; via mapper de Keycloak)
 
 ### 7.2 Endpoints por rol
 

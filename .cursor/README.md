@@ -16,7 +16,7 @@ Documentación de agentes, reglas y specs para el asistente de IA.
 
 - `rules/` — convenciones de repo y código
 - `specs/` — arquitectura, backend, frontend, calidad
-- `skills/` — guías por tecnología (DDD, CQRS, EF, SignalR, RabbitMQ, tests)
+- `skills/` — guías por tecnología (DDD, CQRS, EF, SignalR, RabbitMQ, tests, **Keycloak**)
 - `agents/` — prompts por rol (architect, backend, frontend, qa, devops)
 
 ## Clientes

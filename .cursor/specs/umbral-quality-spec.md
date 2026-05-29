@@ -979,8 +979,8 @@ Resumen alineado al PLAN:
 - [ ] Pipeline CI corriendo y reportando cobertura (**E1-3**).
 - [ ] **Cobertura backend ≥ 90%** medida y cerrada (**E1-1**, **E1-4**).
 - [ ] Docker Compose levanta backend + PostgreSQL sin errores.
-- [ ] **Autenticación:** login JWT por rol (admin/operador) con usuarios en BD
-      (implementado en API iter-04-05b). Ver §13.1 sobre Keycloak.
+- [ ] **Autenticación:** **Keycloak (OIDC)** — login real por rol vía realm
+      `umbral`. La API valida tokens (resource server). Ver §13.1.
 - [ ] **Frontend web:** login + CRUD **Misiones** + CRUD **banco Trivia**
       (categorías + preguntas) contra API real (**E1-2**).
 - [ ] Demostrable **403 por rol** en catálogo (operador no administra misiones/trivia).
@@ -994,21 +994,24 @@ Resumen alineado al PLAN:
 - [ ] React Native (equipo participante).
 - [ ] Modo Trivia jugable (HU-32..40).
 - [ ] E2E Playwright (`Umbral.E2E.Tests`).
-- [ ] Integración con **Keycloak** como IdP externo (si el curso lo exige además del JWT propio).
 
-#### Autenticación — §13.1 Keycloak ("clickload")
+> Nota: **Keycloak (OIDC)** ya entra en **Entrega 1** (§13.1), no es pendiente de E2.
 
-En conversaciones del equipo a veces se menciona **"clickload"** refiriéndose a
-**Keycloak** (proveedor de identidad / login centralizado), **no** a pruebas de
-carga (load testing) ni a "clics" en la UI.
+#### §13.1 Autenticación — Keycloak (OIDC), vigente en Entrega 1
 
-| Enfoque | Entrega 1 | Entrega 2 |
-|---------|-----------|-----------|
-| **JWT propio** (`POST /api/v1/auth/login`, BCrypt, roles en BD) | ✅ Implementado; suficiente para demo y RNF de roles | Mantener o migrar |
-| **Keycloak** (OAuth2/OIDC, realm, clientes web/mobile) | ⬜ No obligatorio en E1 | Evaluar si el profesor lo exige |
+La identidad se gestiona con **Keycloak** (a veces el equipo lo llama "clickload";
+**no** es load testing). El **JWT propio** anterior (`POST /auth/login`, BCrypt,
+tabla `usuarios`) **se reemplaza** por Keycloak. Guía: `.cursor/skills/keycloak-auth-skill.md`.
 
-Si Keycloak es obligatorio, el front redirige al login del realm y la API valida
-tokens OIDC en lugar de (o además de) el emisor JWT actual. No confundir con k6/JMeter.
+| Aspecto | Decisión Entrega 1 |
+|---------|--------------------|
+| Flujo | Authorization Code + PKCE (frontend → login del realm) |
+| Usuarios / roles | En el realm `umbral` (sin tabla `usuarios` propia) |
+| API | Resource server: valida token por `Authority`/JWKS; no emite |
+| Tests | Integración con **`TestAuthHandler`** (Keycloak no se levanta en CI); smoke manual |
+| Cobertura | El wiring de Keycloak se excluye (configuración, como `Program.cs`) |
+
+Demostrable: login real distinto admin/operador y **403 por rol** en el catálogo.
 
 ### Entrega 2 — criterios transversales
 
@@ -1033,7 +1036,7 @@ tokens OIDC en lugar de (o además de) el emisor JWT actual. No confundir con k6
 
 | HU | Descripción | Estado típico |
 |----|-------------|---------------|
-| — | Login JWT por rol (admin / operador) | API ✅; front ⬜ |
+| — | Login por rol con **Keycloak (OIDC)** | realm + API bearer ⬜; front ⬜ |
 | HU-01..04 | CRUD Misiones | API ✅; front ⬜ |
 | HU-24..27 | CRUD Preguntas (banco trivia) | Dominio ✅; App/Infra/API ⬜ |
 | HU-28..31 | CRUD Categorías trivia | Dominio ✅; App/Infra/API ⬜ |
@@ -1053,5 +1056,4 @@ ranking en vivo, RabbitMQ, mobile.
 | HU-32..40 | Sesión trivia, rondas, ranking, transición | Trivia |
 | HU-22 | Historial de auditoría | Ambos |
 | — | E2E Playwright (`Umbral.E2E.Tests`) | Ambos |
-| — | Keycloak como IdP (si el curso lo exige) | Auth |
 
