@@ -1,6 +1,5 @@
 using Umbral.API.Extensions;
 using Umbral.Application.DependencyInjection;
-using Umbral.Infrastructure.Auth;
 using Umbral.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,9 +10,6 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddUmbralApi(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
-
-await app.Services.SeedDemoUsersAsync(
-    app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"));
 
 app.UseUmbralExceptionHandling();
 

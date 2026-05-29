@@ -216,9 +216,9 @@ Fase E — Entrega
 | E1-8 | CRUD Trivia — Application (commands/queries/handlers) + tests | código | E1-7 | **B** | ⬜ |
 | E1-9 | CRUD Trivia — Infrastructure (EF + repos + migración) + tests | código | E1-8 | **B** | ⬜ |
 | E1-10 | CRUD Trivia — API (`CategoriasController`, `PreguntasController`) + tests | código | E1-9 | **B** | ⬜ |
-| E1-K1 | Keycloak en `docker-compose` + realm export (roles, clients, usuarios demo) | devops | — | **B** | ⬜ |
-| E1-K2 | API valida token Keycloak (`Authority`/JWKS) + mapeo `realm_access.roles` | código | E1-K1 | **B** | ⬜ |
-| E1-K3 | Eliminar JWT propio (`AuthController`, `JwtTokenIssuer`, `Usuario`, BCrypt) + migración drop `usuarios` | código | E1-K2 | **B** | ⬜ |
+| E1-K1 | Keycloak en `docker-compose` + realm export (roles, clients, usuarios demo) — [doc](iter-e1-0K-keycloak.md) | devops | — | **B** | ✅ |
+| E1-K2 | API valida token Keycloak (`Authority`/JWKS) + mapeo `realm_access.roles` | código | E1-K1 | **B** | ✅ |
+| E1-K3 | Eliminar JWT propio (`AuthController`, `JwtTokenIssuer`, `Usuario`, BCrypt) + migración drop `usuarios` | código | E1-K2 | **B** | ✅ |
 | E1-4 | Cerrar brecha de cobertura con tests faltantes (TDD) | código | E1-10, E1-K3 | **C** | ⬜ |
 | E1-2 | Frontend: CRUD **Misiones** + CRUD **Trivia** (categorías/preguntas) | código | E1-10 | **D** | ⬜ |
 | E1-K4 | Frontend login **OIDC** contra Keycloak (`react-oidc-context`) | código | E1-K2, E1-2 | **D** | ⬜ |
