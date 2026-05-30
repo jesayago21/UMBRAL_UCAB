@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoTrivia.Categoria;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
 using Umbral.Infrastructure.Messaging.Publishers;
@@ -24,6 +26,8 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddScoped<ISesionRepository, SesionRepository>();
         services.AddScoped<IMisionRepository, MisionRepository>();
+        services.AddScoped<ICategoriaRepository, CategoriaRepository>();
+        services.AddScoped<IPreguntaRepository, PreguntaRepository>();
         services.AddScoped<IEventPublisher, NoOpEventPublisher>();
 
         return services;

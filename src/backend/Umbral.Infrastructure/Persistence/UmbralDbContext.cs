@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoTrivia.Categoria;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Sesion;
 using Umbral.Infrastructure.Persistence.ValueConverters;
 
@@ -20,6 +22,9 @@ public sealed class UmbralDbContext : DbContext
     public DbSet<Mision> Misiones => Set<Mision>();
     public DbSet<Etapa> EtapasMision => Set<Etapa>();
     public DbSet<Pista> PistasMision => Set<Pista>();
+
+    public DbSet<Categoria> Categorias => Set<Categoria>();
+    public DbSet<Pregunta> Preguntas => Set<Pregunta>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,5 +50,9 @@ public sealed class UmbralDbContext : DbContext
             .HaveConversion<EvidenciaIdValueConverter>();
         configurationBuilder.Properties<UsuarioId>()
             .HaveConversion<UsuarioIdValueConverter>();
+        configurationBuilder.Properties<CategoriaId>()
+            .HaveConversion<CategoriaIdValueConverter>();
+        configurationBuilder.Properties<PreguntaId>()
+            .HaveConversion<PreguntaIdValueConverter>();
     }
 }

@@ -214,7 +214,7 @@ Fase E — Entrega
 | E1-1 | Medir cobertura backend real (coverlet) y registrar brecha | build | — | **A** | ⬜ |
 | E1-3 | Pipeline CI: `dotnet test` + reporte cobertura, gate ≥ 90% | devops | E1-1 | **A** | ⬜ |
 | E1-8 | CRUD Trivia — Application (commands/queries/handlers) + tests — [doc](iter-e1-08-trivia-application.md) | código | E1-7 | **B** | ✅ |
-| E1-9 | CRUD Trivia — Infrastructure (EF + repos + migración) + tests | código | E1-8 | **B** | ⬜ |
+| E1-9 | CRUD Trivia — Infrastructure (EF + repos + migración) + tests — [doc](iter-e1-09-trivia-infrastructure.md) | código | E1-8 | **B** | ✅ |
 | E1-10 | CRUD Trivia — API (`CategoriasController`, `PreguntasController`) + tests | código | E1-9 | **B** | ⬜ |
 | E1-K1 | Keycloak en `docker-compose` + realm export (roles, clients, usuarios demo) — [doc](iter-e1-0K-keycloak.md) | devops | — | **B** | ✅ |
 | E1-K2 | API valida token Keycloak (`Authority`/JWKS) + mapeo `realm_access.roles` | código | E1-K1 | **B** | ✅ |

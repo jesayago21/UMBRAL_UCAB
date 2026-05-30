@@ -1,4 +1,6 @@
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoTrivia.Categoria;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Shared;
 
@@ -37,4 +39,39 @@ internal static class DomainTestData
         mision.ClearDomainEvents();
         return mision;
     }
+
+    public static Categoria CategoriaPersistencia(string nombre = "Categoría persistencia de prueba")
+    {
+        var categoria = Categoria.Crear(nombre);
+        categoria.ClearDomainEvents();
+        return categoria;
+    }
+
+    public static Pregunta PreguntaPersistenciaSinCategoria(string enunciado = "Enunciado persistencia de prueba")
+    {
+        var pregunta = Pregunta.Crear(
+            enunciado,
+            Dificultad.Facil,
+            OpcionesPersistencia());
+        pregunta.ClearDomainEvents();
+        return pregunta;
+    }
+
+    public static Pregunta PreguntaPersistenciaConCategoria(CategoriaId categoriaId)
+    {
+        var pregunta = Pregunta.Crear(
+            "Enunciado con categoría persistencia de prueba",
+            Dificultad.Media,
+            OpcionesPersistencia(),
+            categoriaId);
+        pregunta.ClearDomainEvents();
+        return pregunta;
+    }
+
+    private static IReadOnlyList<OpcionRespuesta> OpcionesPersistencia() =>
+    [
+        OpcionRespuesta.Crear("Opción correcta persistencia", true),
+        OpcionRespuesta.Crear("Opción incorrecta 1 persistencia", false),
+        OpcionRespuesta.Crear("Opción incorrecta 2 persistencia", false)
+    ];
 }
