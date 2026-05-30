@@ -215,7 +215,7 @@ Fase E — Entrega
   E1-6   Guion de demo (admin + operador + 403 + opcional mobile login)
 ```
 
-**Siguiente paso inmediato:** **E1-2a/2b** → E1-5/E1-6. **E1-M1** solo si sobra tiempo.
+**Siguiente paso inmediato:** **E1-2b** → E1-5/E1-6. **E1-M1** solo si sobra tiempo.
 
 ### 6.2 Tabla de ítems
 
@@ -234,7 +234,7 @@ Fase E — Entrega
 | E1-4 | Cerrar brecha de cobertura con tests faltantes (TDD) — total **96%** — [doc](iter-e1-01-cobertura-baseline.md) | código | E1-10, E1-K3 | **C** | ✅ |
 | E1-2 | Frontend: CRUD **Misiones** + CRUD **Trivia** (categorías/preguntas) — [doc](iter-e1-02-frontend-crud.md) | código | E1-10 | **D** | ✅ |
 | E1-K4 | Frontend login **OIDC** contra Keycloak (`react-oidc-context`); redirect admin/operador — [doc](iter-e1-K4-oidc-web.md) | código | E1-K2, E1-2 | **D** | ✅ |
-| E1-2a | Afinar UI admin (E1-2): errores, estados vacíos, navegación | código | E1-2 | **D** | ⬜ |
+| E1-2a | Afinar UI admin (E1-2): errores, estados vacíos, navegación — [doc](iter-e1-2a-admin-polish.md) | código | E1-2, E1-K4 | **D** | ✅ |
 | E1-2b | Pantalla **operador**: sesión BT mínima + ranking poll — [doc](iter-e1-02b-operador-sesiones.md) | código | E1-K4 | **D** | ⬜ |
 | E1-M1 | **(Opcional)** Mobile `umbral-mobile`: solo login OIDC — [doc](iter-e1-M1-mobile-login-opcional.md) | código | E1-K4 | **D** | ⬜ |
 | E1-5 | README arranque local (backend + db + Keycloak + web [+ mobile]) | doc | E1-K4, E1-2b | **E** | ⬜ |

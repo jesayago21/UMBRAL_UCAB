@@ -11,28 +11,26 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   ].join(' ')
 
 export function OperadorLayout() {
-  const { username, rol } = useAuthStore()
+  const { username } = useAuthStore()
   const logout = useOidcLogout()
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div>
-            <p className="text-lg font-semibold text-indigo-700">UMBRAL — Operador</p>
-            <p className="text-xs text-slate-500">
-              {username ?? '—'} · {rol ?? 'sin rol'}
-            </p>
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div>
+              <p className="text-lg font-semibold text-indigo-700">UMBRAL</p>
+              <p className="text-xs text-slate-500">Sesiones · {username ?? '—'}</p>
+            </div>
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
+              Operador
+            </span>
           </div>
-          <nav className="flex flex-wrap items-center gap-2">
+          <nav className="flex flex-wrap items-center gap-2" aria-label="Panel operador">
             <NavLink to="/operador/sesiones" className={linkClass} end>
               Sesiones
             </NavLink>
-            {rol === 'Administrador' && (
-              <NavLink to="/admin/misiones" className={linkClass}>
-                Catálogo admin
-              </NavLink>
-            )}
             <button
               type="button"
               onClick={() => void logout()}

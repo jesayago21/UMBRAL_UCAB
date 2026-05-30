@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { OperadorLayout } from '@/components/layout/OperadorLayout'
 import { CategoriasPage } from '@/pages/admin/CategoriasPage'
@@ -20,12 +20,13 @@ export function AppRouter() {
         element={
           <RequireRoles
             roles={['Administrador']}
-            deniedMessage="Se requiere rol Administrador para el catálogo. Inicia sesión como admin o usa el panel de operador."
+            deniedMessage="El catálogo es solo para Administrador. Cierra sesión e inicia como admin, o usa la cuenta operador para sesiones."
           >
             <AdminLayout />
           </RequireRoles>
         }
       >
+        <Route index element={<Navigate to="misiones" replace />} />
         <Route path="misiones" element={<MisionesPage />} />
         <Route path="categorias" element={<CategoriasPage />} />
         <Route path="preguntas" element={<PreguntasPage />} />
@@ -35,8 +36,8 @@ export function AppRouter() {
         path="/operador"
         element={
           <RequireRoles
-            roles={['Operador', 'Administrador']}
-            deniedMessage="Se requiere rol Operador o Administrador para gestionar sesiones."
+            roles={['Operador']}
+            deniedMessage="Las sesiones en vivo son solo para Operador. Usa la cuenta operador o cierra sesión como administrador."
           >
             <OperadorLayout />
           </RequireRoles>

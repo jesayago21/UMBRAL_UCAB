@@ -1,7 +1,11 @@
 import { useState } from 'react'
+import { PageHeader } from '@/components/admin/PageHeader'
+import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { LoadingState } from '@/components/shared/LoadingState'
+import { SuccessAlert } from '@/components/shared/SuccessAlert'
 import { useCategorias } from '@/hooks/useCategorias'
+import { useSuccessMessage } from '@/hooks/useSuccessMessage'
 import {
   useActualizarPregunta,
   useCrearPregunta,
@@ -9,6 +13,16 @@ import {
   usePreguntas,
 } from '@/hooks/usePreguntas'
 import { getApiErrorMessage } from '@/services/apiClient'
+import {
+  btnDangerLink,
+  btnLink,
+  btnPrimary,
+  btnSecondary,
+  cardClass,
+  cardHighlightClass,
+  inputClass,
+  selectClass,
+} from '@/styles/ui'
 import type { DificultadPregunta, OpcionRespuestaDto, PreguntaDto } from '@/types/trivia.types'
 
 const DIFICULTADES: DificultadPregunta[] = ['Facil', 'Media', 'Dificil']
@@ -37,9 +51,10 @@ export function PreguntasPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [createOpciones, setCreateOpciones] = useState<OpcionRespuestaDto[]>(emptyOpciones)
   const [editOpciones, setEditOpciones] = useState<OpcionRespuestaDto[]>(emptyOpciones)
+  const { successMessage, showSuccess, clearSuccess } = useSuccessMessage()
 
   const { data: categorias } = useCategorias()
-  const { data, isLoading, isError, error } = usePreguntas({
+  const { data, isLoading, isError, error, refetch, isFetching } = usePreguntas({
     enunciado: enunciadoFiltro || undefined,
     dificultad: dificultadFiltro || undefined,
     categoriaId: categoriaFiltro || undefined,
@@ -47,6 +62,9 @@ export function PreguntasPage() {
   const crear = useCrearPregunta()
   const actualizar = useActualizarPregunta()
   const eliminar = useEliminarPregunta()
+
+  const isSaving = crear.isPending || actualizar.isPending || eliminar.isPending
+  const hasFilters = Boolean(enunciadoFiltro || dificultadFiltro || categoriaFiltro)
 
   const categoriaNombre = (id: string | null) =>
     categorias?.find((c) => c.id === id)?.nombre ?? '—'
@@ -71,6 +89,7 @@ export function PreguntasPage() {
       setShowCreate(false)
       setCreateOpciones(emptyOpciones())
       event.currentTarget.reset()
+      showSuccess('Pregunta creada.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
     }
@@ -98,6 +117,7 @@ export function PreguntasPage() {
         },
       })
       setEditTarget(null)
+      showSuccess('Pregunta actualizada.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
     }
@@ -105,8 +125,10 @@ export function PreguntasPage() {
 
   const handleDelete = async (pregunta: PreguntaDto) => {
     if (!window.confirm('¿Eliminar esta pregunta?')) return
+    setFormError(null)
     try {
       await eliminar.mutateAsync(pregunta.id)
+      showSuccess('Pregunta eliminada.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
     }
@@ -115,6 +137,7 @@ export function PreguntasPage() {
   const renderOpcionesEditor = (
     opciones: OpcionRespuestaDto[],
     setOpciones: (next: OpcionRespuestaDto[]) => void,
+    radioGroupName: string,
   ) => (
     <div className="space-y-2">
       <p className="text-sm font-medium text-slate-700">Opciones (mín. 3, una correcta)</p>
@@ -122,7 +145,7 @@ export function PreguntasPage() {
         <div key={index} className="flex items-center gap-2">
           <input
             type="radio"
-            name="correcta"
+            name={radioGroupName}
             checked={opcion.esCorrecta}
             onChange={() =>
               setOpciones(
@@ -138,13 +161,14 @@ export function PreguntasPage() {
               setOpciones(next)
             }}
             placeholder={`Opción ${index + 1}`}
-            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className={`${inputClass} flex-1`}
           />
           {opciones.length > 3 && (
             <button
               type="button"
+              disabled={isSaving}
               onClick={() => setOpciones(opciones.filter((_, i) => i !== index))}
-              className="text-sm text-red-600"
+              className={btnDangerLink}
             >
               Quitar
             </button>
@@ -154,45 +178,54 @@ export function PreguntasPage() {
       <button
         type="button"
         onClick={() => setOpciones([...opciones, { texto: '', esCorrecta: false }])}
-        className="text-sm text-indigo-600 hover:underline"
+        className={btnLink}
       >
         + Añadir opción
       </button>
     </div>
   )
 
+  const clearFilters = () => {
+    setEnunciadoFiltro('')
+    setDificultadFiltro('')
+    setCategoriaFiltro('')
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold">Preguntas de trivia</h2>
-          <p className="text-sm text-slate-500">HU-32..35 — banco de preguntas</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setShowCreate(true)
-            setEditTarget(null)
-            setFormError(null)
-            setCreateOpciones(emptyOpciones())
-          }}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-        >
-          Nueva pregunta
-        </button>
-      </div>
+      <PageHeader
+        title="Preguntas"
+        description="Banco de trivia: mínimo 3 opciones y exactamente una correcta."
+        action={
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={() => {
+              setShowCreate(true)
+              setEditTarget(null)
+              setFormError(null)
+              setCreateOpciones(emptyOpciones())
+            }}
+            className={btnPrimary}
+          >
+            Nueva pregunta
+          </button>
+        }
+      />
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <input
           value={enunciadoFiltro}
           onChange={(e) => setEnunciadoFiltro(e.target.value)}
           placeholder="Filtrar por enunciado"
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className={`${inputClass} max-w-xs`}
+          aria-label="Filtrar por enunciado"
         />
         <select
           value={dificultadFiltro}
           onChange={(e) => setDificultadFiltro(e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className={selectClass}
+          aria-label="Filtrar por dificultad"
         >
           <option value="">Todas las dificultades</option>
           {DIFICULTADES.map((d) => (
@@ -204,7 +237,8 @@ export function PreguntasPage() {
         <select
           value={categoriaFiltro}
           onChange={(e) => setCategoriaFiltro(e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className={selectClass}
+          aria-label="Filtrar por categoría"
         >
           <option value="">Todas las categorías</option>
           {categorias?.map((c) => (
@@ -213,40 +247,43 @@ export function PreguntasPage() {
             </option>
           ))}
         </select>
+        {hasFilters && (
+          <button type="button" onClick={clearFilters} className={btnSecondary}>
+            Limpiar filtros
+          </button>
+        )}
+        {isFetching && !isLoading && (
+          <span className="text-xs text-slate-500">Actualizando…</span>
+        )}
       </div>
 
+      {successMessage && (
+        <SuccessAlert message={successMessage} onDismiss={clearSuccess} />
+      )}
       {formError && <ErrorState message={formError} />}
 
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="space-y-4 rounded-xl border border-slate-200 bg-white p-4"
+          className={`${cardClass} space-y-4`}
         >
-          <h3 className="font-medium">Crear pregunta</h3>
+          <h3 className="font-medium text-slate-900">Crear pregunta</h3>
           <textarea
             name="enunciado"
             required
             rows={2}
             placeholder="Enunciado"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className={inputClass}
           />
           <div className="flex flex-wrap gap-3">
-            <select
-              name="dificultad"
-              required
-              defaultValue="Facil"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            >
+            <select name="dificultad" required defaultValue="Facil" className={selectClass}>
               {DIFICULTADES.map((d) => (
                 <option key={d} value={d}>
                   {d}
                 </option>
               ))}
             </select>
-            <select
-              name="categoriaId"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            >
+            <select name="categoriaId" className={selectClass}>
               <option value="">Sin categoría</option>
               {categorias?.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -255,15 +292,16 @@ export function PreguntasPage() {
               ))}
             </select>
           </div>
-          {renderOpcionesEditor(createOpciones, setCreateOpciones)}
+          {renderOpcionesEditor(createOpciones, setCreateOpciones, 'correcta-create')}
           <div className="flex gap-2">
-            <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white">
-              Guardar
+            <button type="submit" disabled={isSaving} className={btnPrimary}>
+              {crear.isPending ? 'Guardando…' : 'Guardar'}
             </button>
             <button
               type="button"
+              disabled={isSaving}
               onClick={() => setShowCreate(false)}
-              className="rounded-lg border px-4 py-2 text-sm"
+              className={btnSecondary}
             >
               Cancelar
             </button>
@@ -272,24 +310,21 @@ export function PreguntasPage() {
       )}
 
       {editTarget && (
-        <form
-          onSubmit={handleUpdate}
-          className="space-y-4 rounded-xl border border-indigo-200 bg-indigo-50/40 p-4"
-        >
-          <h3 className="font-medium">Editar pregunta</h3>
+        <form onSubmit={handleUpdate} className={`${cardHighlightClass} space-y-4`}>
+          <h3 className="font-medium text-slate-900">Editar pregunta</h3>
           <textarea
             name="enunciado"
             required
             rows={2}
             defaultValue={editTarget.enunciado}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className={inputClass}
           />
           <div className="flex flex-wrap gap-3">
             <select
               name="dificultad"
               required
               defaultValue={editTarget.dificultad}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className={selectClass}
             >
               {DIFICULTADES.map((d) => (
                 <option key={d} value={d}>
@@ -300,7 +335,7 @@ export function PreguntasPage() {
             <select
               name="categoriaId"
               defaultValue={editTarget.categoriaId ?? ''}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className={selectClass}
             >
               <option value="">Sin categoría</option>
               {categorias?.map((c) => (
@@ -310,15 +345,16 @@ export function PreguntasPage() {
               ))}
             </select>
           </div>
-          {renderOpcionesEditor(editOpciones, setEditOpciones)}
+          {renderOpcionesEditor(editOpciones, setEditOpciones, 'correcta-edit')}
           <div className="flex gap-2">
-            <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white">
+            <button type="submit" disabled={isSaving} className={btnPrimary}>
               Actualizar
             </button>
             <button
               type="button"
+              disabled={isSaving}
               onClick={() => setEditTarget(null)}
-              className="rounded-lg border px-4 py-2 text-sm"
+              className={btnSecondary}
             >
               Cancelar
             </button>
@@ -327,14 +363,27 @@ export function PreguntasPage() {
       )}
 
       {isLoading && <LoadingState />}
-      {isError && <ErrorState message={getApiErrorMessage(error)} />}
+      {isError && (
+        <ErrorState message={getApiErrorMessage(error)} onRetry={() => void refetch()} />
+      )}
 
-      {data && (
+      {data && data.length === 0 && !isLoading && (
+        <EmptyState
+          title={hasFilters ? 'Sin resultados' : 'Sin preguntas'}
+          description={
+            hasFilters
+              ? 'Ajusta los filtros o créalas desde «Nueva pregunta».'
+              : 'Crea preguntas con al menos 3 opciones antes de usar trivia en sesión.'
+          }
+        />
+      )}
+
+      {data && data.length > 0 && (
         <div className="space-y-3">
           {data.map((pregunta) => (
             <article
               key={pregunta.id}
-              className="rounded-xl border border-slate-200 bg-white p-4 text-sm"
+              className="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -346,6 +395,7 @@ export function PreguntasPage() {
                 <div className="flex gap-3">
                   <button
                     type="button"
+                    disabled={isSaving}
                     onClick={() => {
                       setEditTarget(pregunta)
                       setShowCreate(false)
@@ -356,14 +406,15 @@ export function PreguntasPage() {
                       )
                       setFormError(null)
                     }}
-                    className="text-indigo-600 hover:underline"
+                    className={btnLink}
                   >
                     Editar
                   </button>
                   <button
                     type="button"
+                    disabled={isSaving}
                     onClick={() => void handleDelete(pregunta)}
-                    className="text-red-600 hover:underline"
+                    className={btnDangerLink}
                   >
                     Eliminar
                   </button>
@@ -379,11 +430,6 @@ export function PreguntasPage() {
               </ul>
             </article>
           ))}
-          {data.length === 0 && (
-            <p className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-slate-500">
-              No hay preguntas con esos filtros.
-            </p>
-          )}
         </div>
       )}
     </div>
