@@ -77,7 +77,8 @@ export function PreguntasPage() {
       setFormError(validation)
       return
     }
-    const form = new FormData(event.currentTarget)
+    const formEl = event.currentTarget
+    const form = new FormData(formEl)
     const categoriaId = String(form.get('categoriaId') || '')
     try {
       await crear.mutateAsync({
@@ -88,7 +89,6 @@ export function PreguntasPage() {
       })
       setShowCreate(false)
       setCreateOpciones(emptyOpciones())
-      event.currentTarget.reset()
       showSuccess('Pregunta creada.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))

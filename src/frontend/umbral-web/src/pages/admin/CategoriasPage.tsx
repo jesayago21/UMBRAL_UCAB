@@ -42,10 +42,11 @@ export function CategoriasPage() {
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError(null)
-    const form = new FormData(event.currentTarget)
+    const formEl = event.currentTarget
+    const form = new FormData(formEl)
     try {
       await crear.mutateAsync({ nombre: String(form.get('nombre')) })
-      event.currentTarget.reset()
+      formEl.reset()
       showSuccess('Categoría creada.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))

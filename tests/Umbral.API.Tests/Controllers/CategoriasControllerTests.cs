@@ -96,6 +96,42 @@ public sealed class CategoriasControllerTests
     }
 
     [Fact]
+    public async Task DELETE_categorias_CuandoTienePreguntas_QuitaCategoriaDePreguntasYRetorna204()
+    {
+        SetRole("Administrador");
+        var create = await _client.PostAsJsonAsync(
+            "/api/v1/categorias",
+            new CrearCategoriaRequest($"Categoría con preguntas {Guid.NewGuid():N}"));
+        create.StatusCode.Should().Be(HttpStatusCode.Created);
+        var categoriaId = await ReadCreatedId(create);
+
+        var pregunta = await _client.PostAsJsonAsync(
+            "/api/v1/preguntas",
+            new CrearPreguntaRequest(
+                "Pregunta ligada a categoría API",
+                "Facil",
+                categoriaId,
+                [
+                    new OpcionRespuestaRequest("A", true),
+                    new OpcionRespuestaRequest("B", false),
+                    new OpcionRespuestaRequest("C", false),
+                ]));
+        pregunta.StatusCode.Should().Be(HttpStatusCode.Created);
+        var preguntaId = await ReadCreatedId(pregunta);
+
+        var delete = await _client.DeleteAsync($"/api/v1/categorias/{categoriaId}");
+        delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var getPregunta = await _client.GetAsync($"/api/v1/preguntas/{preguntaId}");
+        getPregunta.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await getPregunta.Content.ReadFromJsonAsync<PreguntaResponse>();
+        body!.CategoriaId.Should().BeNull();
+
+        var getCategoria = await _client.GetAsync($"/api/v1/categorias/{categoriaId}");
+        getCategoria.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task GET_categorias_por_id_CuandoNoExiste_Retorna404()
     {
         SetRole("Administrador");

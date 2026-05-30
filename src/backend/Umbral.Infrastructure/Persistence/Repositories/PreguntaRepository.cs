@@ -36,7 +36,15 @@ public sealed class PreguntaRepository : IPreguntaRepository
     public async Task SaveAsync(Pregunta pregunta, CancellationToken ct = default)
     {
         if (_db.Entry(pregunta).State == EntityState.Detached)
-            await _db.Preguntas.AddAsync(pregunta, ct);
+        {
+            var exists = await _db.Preguntas
+                .AnyAsync(x => x.PreguntaId == pregunta.PreguntaId, ct);
+
+            if (exists)
+                _db.Preguntas.Update(pregunta);
+            else
+                await _db.Preguntas.AddAsync(pregunta, ct);
+        }
 
         await _db.SaveChangesAsync(ct);
     }
