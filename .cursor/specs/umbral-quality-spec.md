@@ -1015,17 +1015,19 @@ Resumen alineado al PLAN:
 - [ ] Docker Compose levanta backend + PostgreSQL sin errores.
 - [ ] **Autenticación:** **Keycloak (OIDC)** — login real por rol vía realm
       `umbral`. La API valida tokens (resource server). Ver §13.1.
-- [ ] **Frontend web:** login + CRUD **Misiones** + CRUD **banco Trivia**
-      (categorías + preguntas) contra API real (**E1-2**).
-- [ ] Demostrable **403 por rol** en catálogo (operador no administra misiones/trivia).
+- [x] **Frontend web admin:** CRUD **Misiones** + CRUD **banco Trivia** (**E1-2**).
+- [ ] **Login OIDC** web (**E1-K4**); reemplaza pegar JWT.
+- [ ] **Pantalla operador** mínima: sesión BT por REST, ranking poll (**E1-2b**).
+- [ ] Demostrable **403 por rol** (operador no administra catálogo).
+- [ ] *(Opcional)* **Mobile** solo login OIDC (**E1-M1**).
 - [ ] README y guion de demo (**E1-5**, **E1-6**).
 
 #### Reprogramado a Entrega 2
 
-- [ ] Flujo BusquedaTesoro jugable de punta a punta (sesión, evidencia, ranking en vivo).
-- [ ] WebSocket / SignalR sin recargar.
+- [ ] Gameplay completo BT (evidencia QR mobile, penalización UI avanzada).
+- [ ] Ranking en tiempo real / **SignalR** (E1 usa solo GET ranking + refresh).
 - [ ] Consumers RabbitMQ en demo.
-- [ ] React Native (equipo participante).
+- [ ] **React Native** gameplay (equipo participante); E1 solo login opcional.
 - [ ] Modo Trivia jugable (HU-32..40).
 - [ ] E2E Playwright (`Umbral.E2E.Tests`).
 
@@ -1070,13 +1072,13 @@ Demostrable: login real distinto admin/operador y **403 por rol** en el catálog
 
 | HU | Descripción | Estado típico |
 |----|-------------|---------------|
-| — | Login por rol con **Keycloak (OIDC)** | realm + API bearer ⬜; front ⬜ |
-| HU-01..04 | CRUD Misiones | API ✅; front ⬜ |
-| HU-24..27 | CRUD Preguntas (banco trivia) | Dominio ✅; App/Infra/API ⬜ |
-| HU-28..31 | CRUD Categorías trivia | Dominio ✅; App/Infra/API ⬜ |
+| — | Login por rol con **Keycloak (OIDC)** | API ✅; front ⬜ (**E1-K4**) |
+| HU-01..04 | CRUD Misiones | API ✅; front ✅ (**E1-2**) |
+| HU-24..31 | CRUD Trivia (banco) | API ✅; front ✅ (**E1-2**) |
+| HU-12..16 | Sesión BT operador (mínimo REST) | API ✅; front ⬜ (**E1-2b**) |
 
-**Backend listo pero no demostrado en UI de E1:** HU-12..16, HU-18..23 (sesión BT),
-ranking en vivo, RabbitMQ, mobile.
+**Backend listo, UI E2:** evidencia QR, SignalR, trivia jugable, RabbitMQ demo.
+**Mobile E1 opcional:** solo login (**E1-M1**).
 
 **Script de demo:** ver §6 y §8 de `docs/entrega-1/PLAN.md`.
 

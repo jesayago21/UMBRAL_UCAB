@@ -1,8 +1,8 @@
 # Entrega 1 — Plan de control y alcance
 
 > **Estado:** plan vigente (alcance reducido aprobado)
-> **Última actualización:** 2026-05-29
-> **Decisión base:** Entrega 1 demuestra **comunicación frontend ↔ backend ↔ persistencia** con **cobertura backend ≥ 90%**, usando **CRUD de Misiones + Login** como historias de usuario mínimas. Las sesiones en vivo, ranking, "jugar", RabbitMQ, SignalR, mobile, Trivia y E2E se mueven a **Entrega 2**.
+> **Última actualización:** 2026-05-30
+> **Decisión base:** Entrega 1 demuestra **comunicación frontend ↔ backend ↔ persistencia** con **cobertura backend ≥ 90%**: catálogo admin (misiones + trivia), **login OIDC**, **pantalla operador mínima** (sesión BT sin SignalR) y, si hay tiempo, **login mobile** (solo auth). Gameplay completo, SignalR, RabbitMQ demo y E2E → **Entrega 2**.
 
 ---
 
@@ -12,7 +12,7 @@
 2. **Cobertura de pruebas ≥ 90%** (backend) — RNF-09.
 3. Algunas **historias de usuario mínimas** demostrables (CRUD).
 
-Todo lo demás (sesiones en vivo, ranking, gameplay) **no se muestra** en Entrega 1.
+Lo que **no** se muestra en E1: ranking en vivo (SignalR), trivia jugable, evidencia QR en mobile, E2E.
 
 ---
 
@@ -44,12 +44,14 @@ Reglas no negociables:
 | API (`Umbral.API`) | ✅ Misiones + Sesiones + Trivia + Keycloak | 60 tests API |
 | Persistencia (PostgreSQL + migraciones) | ✅ | `Persistence/Migrations` + `AddCatalogoTrivia` |
 | Proyectos de test | ✅ 4 proyectos | **385 tests** en verde |
-| **Frontend web** | ❌ **No existe** | `src/frontend/` ausente |
+| **Frontend web** (`umbral-web`) | 🔶 Admin CRUD ✅ | [E1-2](iter-e1-02-frontend-crud.md); falta OIDC, operador, afinado |
 | **CI (cobertura)** | ✅ | [E1-3](iter-e1-03-ci-coverage.md) — `.github/workflows/ci.yml` |
 | Cobertura real ≥ 90% | ✅ **96% total** | [E1-1/E1-4](iter-e1-01-cobertura-baseline.md) — `scripts/run-coverage.ps1` |
 | CatalogoTrivia (Pregunta/Categoria) | ✅ Backend completo | E1-7..E1-10 |
-| Keycloak OIDC | ✅ Backend | E1-K1..K3; falta front (E1-K4) |
-| Mobile / SignalR / RabbitMQ demo / Trivia jugable / E2E | ❌ Fuera de alcance E1 | → Entrega 2 |
+| Keycloak OIDC | 🔶 Backend ✅; front ⬜ | E1-K1..K3; **E1-K4** |
+| Pantalla operador (sesiones BT) | ⬜ | **E1-2b** — API sesiones ✅ |
+| Mobile login (opcional) | ⬜ | **E1-M1** si hay tiempo |
+| SignalR / RabbitMQ demo / Trivia jugable / E2E / mobile gameplay | ❌ E2 | → Entrega 2 |
 
 ---
 
@@ -62,9 +64,15 @@ Reglas no negociables:
   **403 por rol**. Reemplaza el JWT propio. Detalle en **§5.2** y
   `.cursor/skills/keycloak-auth-skill.md`.
 - **Persistencia real** en PostgreSQL (ya operativa).
-- **Frontend web mínimo** que consume la API real: **login + CRUD Misiones + CRUD
-  Trivia** (categorías y preguntas). Sin esto no se demuestran las 3 capas para
-  el banco de trivia, solo misiones.
+- **Frontend web** (`umbral-web`): **login OIDC** + CRUD **Misiones** + CRUD **Trivia**
+  (categorías y preguntas) — E1-2 ✅ base; **E1-K4** cierra auth real.
+- **Pantalla operador (mínima)** — E1-2b: crear sesión BT, equipos, iniciar/pausar/
+  reanudar/finalizar/cancelar, ver **ranking por polling** (sin SignalR). Backend
+  de sesiones ✅ (`SesionesController`).
+- **Mobile login (opcional)** — E1-M1: scaffold Expo + OIDC Keycloak; **sin**
+  gameplay ni QR (→ E2).
+- **Afinado** del admin ya entregado (mensajes, UX, redirect por rol) — E1-2a,
+  en paralelo con K4/2b.
 - **Cobertura backend ≥ 90%** medida y reportada en CI.
 - **README** de arranque local + **guion de demo**.
 - **CRUD Trivia (contingencia, backend) — HU-24..31.** Banco de preguntas y
@@ -73,25 +81,26 @@ Reglas no negociables:
 
 ### 4.2 FUERA de alcance (→ Entrega 2)
 
-- Sesiones en vivo, control inicio/pausa, evidencia, penalización **mostradas en UI**.
-- **Ranking en tiempo real / SignalR**.
-- **Consumers RabbitMQ**.
-- **React Native (mobile)**.
-- **Modo Trivia jugable** (sala de espera, rondas, respuestas, ranking, transición) — HU-32..40.
+- **Dashboard operador completo** (SignalR, sala de espera trivia, panel en vivo).
+- **Ranking en tiempo real / SignalR** (en E1 solo GET `/ranking` con refresh manual).
+- **Evidencia QR** y flujo **EquipoParticipante** en mobile.
+- **Consumers RabbitMQ** en demo.
+- **Modo Trivia jugable** (HU-32..40).
 - **E2E con Playwright**.
+- **Vitest / cobertura frontend ≥ 80%** (gate E2).
 
-> Nota: el backend de sesiones (crear/iniciar/pausar/evidencia/penalización/ranking) **ya está implementado y probado**, pero **no se demuestra** en Entrega 1. Es "crédito adelantado" para Entrega 2.
+> El backend de sesiones (incl. evidencia y penalización) **ya está implementado**.
+> E1-2b demuestra el **subconjunto operador** vía REST; el resto de la UX en vivo → E2.
 
 ---
 
 ## 5. Gaps a cerrar (lo que falta de verdad)
 
-1. **Frontend web** (gap #1, bloqueante para demostrar las 3 capas).
-2. **Pipeline CI** que ejecuta tests y reporta cobertura.
-3. **Medición + cierre de la brecha de cobertura** hasta ≥ 90%.
-4. **README + guion de demo** orientado al profesor.
-5. **CRUD Trivia backend** (E1-8..10): dominio ✅ (E1-7); faltan Application,
-   Infrastructure y API.
+1. **E1-K4** — Login OIDC web (reemplaza pegar token).
+2. **E1-2a** — Afinar UI admin (E1-2).
+3. **E1-2b** — Pantalla operador + lectura misiones activas para Operador (API mínima).
+4. **E1-M1** *(opcional)* — Mobile solo login.
+5. **README + guion de demo** (E1-5, E1-6).
 
 ---
 
@@ -195,16 +204,19 @@ Fase B — Backend listo para que el front consuma
 Fase C — Cierre de calidad backend
   E1-4   Re-medir y cerrar brecha hasta ≥ 90% (después de E1-10 y E1-K3)
 
-Fase D — Frontend (las 3 capas visibles al profesor)
-  E1-2   CRUD Misiones + CRUD Trivia (categorías + preguntas)
-  E1-K4  Login OIDC contra Keycloak (depende de E1-K2)
+Fase D — Frontend web (orden acordado 2026-05-30)
+  E1-2   CRUD Misiones + CRUD Trivia ✅
+  E1-K4  Login OIDC Keycloak (redirect por rol)
+  E1-2a  Afinar UI admin (mensajes, flujos, 403 claro)
+  E1-2b  Pantalla operador — sesión BT mínima (sin SignalR)
+  E1-M1  *(opcional, si hay tiempo)* Mobile — solo login OIDC
 
 Fase E — Entrega
-  E1-5   README (incluye arranque de Keycloak)
-  E1-6   Guion de demo (login Keycloak + misiones + banco trivia + 403 por rol)
+  E1-5   README (incluye arranque de Keycloak + web + operador)
+  E1-6   Guion de demo (admin + operador + 403 + opcional mobile login)
 ```
 
-**Siguiente paso sugerido:** **E1-K4** (login OIDC Keycloak) → **E1-5** (README arranque local).
+**Siguiente paso inmediato:** **E1-K4** → **E1-2a/2b** → E1-5/E1-6. **E1-M1** solo si sobra tiempo.
 
 ### 6.2 Tabla de ítems
 
@@ -222,9 +234,12 @@ Fase E — Entrega
 | E1-K3 | Eliminar JWT propio (`AuthController`, `JwtTokenIssuer`, `Usuario`, BCrypt) + migración drop `usuarios` | código | E1-K2 | **B** | ✅ |
 | E1-4 | Cerrar brecha de cobertura con tests faltantes (TDD) — total **96%** — [doc](iter-e1-01-cobertura-baseline.md) | código | E1-10, E1-K3 | **C** | ✅ |
 | E1-2 | Frontend: CRUD **Misiones** + CRUD **Trivia** (categorías/preguntas) — [doc](iter-e1-02-frontend-crud.md) | código | E1-10 | **D** | ✅ |
-| E1-K4 | Frontend login **OIDC** contra Keycloak (`react-oidc-context`) | código | E1-K2, E1-2 | **D** | ⬜ |
-| E1-5 | README arranque local (backend + db + Keycloak + front) | doc | E1-2 | **E** | ⬜ |
-| E1-6 | Guion de demo para el profesor (Keycloak + misiones + banco trivia) | doc | E1-2 | **E** | ⬜ |
+| E1-K4 | Frontend login **OIDC** contra Keycloak (`react-oidc-context`); redirect admin/operador | código | E1-K2, E1-2 | **D** | ⬜ |
+| E1-2a | Afinar UI admin (E1-2): errores, estados vacíos, navegación | código | E1-2 | **D** | ⬜ |
+| E1-2b | Pantalla **operador**: sesión BT mínima + ranking poll — [doc](iter-e1-02b-operador-sesiones.md) | código | E1-K4 | **D** | ⬜ |
+| E1-M1 | **(Opcional)** Mobile `umbral-mobile`: solo login OIDC — [doc](iter-e1-M1-mobile-login-opcional.md) | código | E1-K4 | **D** | ⬜ |
+| E1-5 | README arranque local (backend + db + Keycloak + web [+ mobile]) | doc | E1-K4, E1-2b | **E** | ⬜ |
+| E1-6 | Guion de demo (admin + operador + 403; mobile opcional) | doc | E1-5 | **E** | ⬜ |
 | E1-7 | CRUD Trivia — Dominio — [doc](iter-e1-07-trivia-dominio.md) | código | — | **B** | ✅ |
 
 > Marca cada fila a medida que se completa. Usar **§6.1** como orden de trabajo.
@@ -238,10 +253,12 @@ El alcance original de la spec metía demasiado en Entrega 1. Con el recorte:
 | Fase (implícita) | Contenido | Antes | Ahora |
 |------------------|-----------|-------|-------|
 | 1–4 | Backend (Dominio → API) | E1 | ✅ E1 (hecho) |
-| 5 (nueva) | Frontend (Misiones + banco Trivia) + CI + cobertura | parte de E1 | **E1** |
-| 5b (nueva) | CRUD Trivia backend (HU-24..31); dominio ✅ | E2 | **E1** |
+| 5 | Frontend admin (Misiones + Trivia) + CI + cobertura | E1 | **E1** (E1-2 ✅) |
+| 5b | CRUD Trivia backend (HU-24..31) | E2 | **E1** ✅ |
+| 5c | Operador sesiones BT mínimo (UI REST) | E2 | **E1** (E1-2b) |
+| 5d | Mobile login opcional | E2 | **E1** opcional (E1-M1) |
 | 6 | SignalR / ranking tiempo real | E1 | **E2** |
-| 7 | Mobile (React Native) | E1 | **E2** |
+| 7 | Mobile gameplay (QR, trivia, sesión equipo) | E1 | **E2** |
 | 8 | RabbitMQ consumers (demo) | E1 | **E2** |
 | 9–10 | Trivia jugable (HU-32..40) + E2E Playwright | E2 | **E2** |
 
@@ -251,10 +268,11 @@ El alcance original de la spec metía demasiado en Entrega 1. Con el recorte:
 
 - [ ] Solución .NET compila sin warnings; 4 proyectos de test en verde.
 - [ ] **Cobertura backend ≥ 90%** sobre el código implementado, reportada por CI.
-- [ ] **Login real con Keycloak (OIDC)** distinto admin/operador.
-- [ ] Frontend web hace **CRUD de Misiones** y **CRUD del banco Trivia**
-      (categorías + preguntas) contra la API (persistencia real).
-- [ ] Se puede demostrar **403 por rol** (operador no administra catálogo).
+- [ ] **Login real con Keycloak (OIDC)** distinto admin/operador (**E1-K4**).
+- [x] Frontend web: **CRUD Misiones** y **CRUD banco Trivia** (**E1-2**).
+- [ ] **Pantalla operador** mínima: crear sesión BT, equipos, controles, ranking poll (**E1-2b**).
+- [ ] Se puede demostrar **403 por rol** (operador no entra a `/admin/*`).
+- [ ] *(Opcional)* **Mobile** solo login (**E1-M1**).
 - [ ] PostgreSQL **y Keycloak** levantan vía docker-compose; la app persiste datos
       y valida tokens del realm.
 - [ ] README permite a un tercero levantar el entorno local.

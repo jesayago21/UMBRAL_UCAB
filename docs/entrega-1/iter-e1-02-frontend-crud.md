@@ -99,11 +99,13 @@ Prueba manual end-to-end: crear categoría → pregunta con 3 opciones → misi�
 
 ---
 
-## Pendiente (fuera de E1-2)
+## Siguiente trabajo (plan ampliado 2026-05-30)
 
 | Ítem | Acción |
 |------|--------|
-| **E1-K4** | Login OIDC Keycloak |
-| **E1-5** | README arranque unificado |
-| **E1-6** | Guion demo profesor |
-| Entrega 2 | Vitest + gate cobertura frontend 80% |
+| **E1-K4** | Login OIDC — [iter-e1-K4-oidc-web.md](iter-e1-K4-oidc-web.md) |
+| **E1-2a** | Afinar UI admin (mensajes, vacíos, navegación) |
+| **E1-2b** | Pantalla operador — [iter-e1-02b-operador-sesiones.md](iter-e1-02b-operador-sesiones.md) |
+| **E1-M1** | *(Opcional)* Mobile solo login — [iter-e1-M1-mobile-login-opcional.md](iter-e1-M1-mobile-login-opcional.md) |
+| **E1-5 / E1-6** | README + guion demo |
+| Entrega 2 | Vitest 80%, SignalR, mobile gameplay, E2E |
