@@ -12,10 +12,9 @@ export function getOidcConfig(): AuthProviderProps {
     post_logout_redirect_uri: `${window.location.origin}/login`,
     response_type: 'code',
     scope: 'openid profile email',
+    automaticSilentRenew: false,
     onSigninCallback: () => {
-      const path = window.location.pathname + window.location.search
-      window.history.replaceState({}, document.title, path)
+      window.history.replaceState({}, document.title, '/callback')
     },
-    automaticSilentRenew: true,
   }
 }

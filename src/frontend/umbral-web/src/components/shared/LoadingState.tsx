@@ -4,8 +4,8 @@ interface LoadingStateProps {
 
 export function LoadingState({ label = 'Cargando…' }: LoadingStateProps) {
   return (
-    <div className="flex items-center justify-center py-16 text-slate-500">
-      {label}
+    <div className="flex min-h-[12rem] items-center justify-center text-slate-600">
+      <p className="text-sm font-medium">{label}</p>
     </div>
   )
 }

@@ -54,6 +54,6 @@ export function HomeRedirect() {
   if (rol === 'Operador') return <Navigate to="/operador/sesiones" replace />
 
   return (
-    <AccessDenied message="El rol EquipoParticipante usa la app mobile (E2 / E1-M1 opcional)." />
+    <AccessDenied message="El rol EquipoParticipante usa la app mobile. Cierra sesión para entrar con admin u operador." />
   )
 }
