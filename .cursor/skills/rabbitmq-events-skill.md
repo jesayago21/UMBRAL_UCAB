@@ -50,16 +50,16 @@ Consumer A           Consumer B
 ## 2. Estructura de carpetas
 
 ```
-src/Umbral.Application/
+src/backend/Umbral.Application/
 └── Common/
     └── Interfaces/
         └── IEventPublisher.cs            ← puerto de salida (Ports en Domain)
 
-src/Umbral.Domain/
+src/backend/Umbral.Domain/
 └── Ports/
     └── IEventPublisher.cs               ← definido en Domain (puerto driven)
 
-src/Umbral.Infrastructure/
+src/backend/Umbral.Infrastructure/
 └── Messaging/
     ├── Publishers/
     │   └── MassTransitEventPublisher.cs  ← implementación de IEventPublisher

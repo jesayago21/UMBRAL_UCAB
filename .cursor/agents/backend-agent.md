@@ -136,25 +136,28 @@ Lee y aplica estos skills al realizar tareas relacionadas:
 ```bash
 # Crear migración
 dotnet ef migrations add NombreMigracion \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # Aplicar migración
 dotnet ef database update \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # Ejecutar tests de backend
 dotnet test tests/Umbral.Domain.Tests
 dotnet test tests/Umbral.Application.Tests
 dotnet test tests/Umbral.Infrastructure.Tests
-dotnet test tests/Umbral.Api.Tests
+dotnet test tests/Umbral.API.Tests
+
+# Cobertura (gate RNF-09 ≥ 90%)
+.\scripts\run-coverage.ps1 -Threshold 90
 
 # Build
-dotnet build src/Umbral.Api
+dotnet build src/backend/Umbral.API/Umbral.API.csproj
 
 # Watch mode (desarrollo)
-dotnet watch run --project src/Umbral.Api
+dotnet watch run --project src/backend/Umbral.API
 ```
 
 ---
@@ -176,6 +179,6 @@ dotnet watch run --project src/Umbral.Api
 <PackageReference Include="MassTransit.RabbitMQ" Version="8.*" />
 <PackageReference Include="MassTransit.EntityFrameworkCore" Version="8.*" />
 
-<!-- Umbral.Api -->
+<!-- Umbral.API -->
 <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="8.*" />
 ```

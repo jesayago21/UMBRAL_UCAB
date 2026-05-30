@@ -54,7 +54,7 @@ solo se conecta al hub `sesion`.
 ## 3. Estructura de carpetas
 
 ```
-src/Umbral.Infrastructure/
+src/backend/Umbral.Infrastructure/
 └── RealTime/
     ├── Hubs/
     │   ├── SesionHub.cs               ← Hub sesión + BT
@@ -63,7 +63,7 @@ src/Umbral.Infrastructure/
     │   └── ITriviaHubClient.cs        ← interfaz tipada del cliente
     └── NotificacionRealTimeService.cs ← implementación de INotificacionRealTime
 
-src/Umbral.Domain/
+src/backend/Umbral.Domain/
 └── Ports/
     └── INotificacionRealTime.cs       ← puerto de salida (en Domain)
 ```

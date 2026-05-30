@@ -66,7 +66,7 @@ tests/
 │       ├── SesionRepositoryTests.cs       ← Testcontainers
 │       └── UmbralDbContextTests.cs
 │
-└── Umbral.Api.Tests/
+└── Umbral.API.Tests/
     ├── Controllers/
     │   └── SesionesControllerTests.cs     ← WebApplicationFactory
     └── Hubs/
@@ -249,7 +249,7 @@ public sealed class PuntuacionTests
 
 ## 4. Unit Tests — Application (Handlers)
 
-### 4.1 Command Handler con mocks
+### 4.1 Command Handler con mocks (NSubstitute)
 
 ```csharp
 // tests/Umbral.Application.Tests/Sesion/Commands/CrearSesionCommandHandlerTests.cs
@@ -257,20 +257,14 @@ namespace Umbral.Application.Tests.Sesion.Commands;
 
 public sealed class CrearSesionCommandHandlerTests
 {
-    private readonly Mock<ISesionRepository> _sesionRepoMock;
-    private readonly Mock<IUnitOfWork> _uowMock;
-    private readonly Mock<IEventPublisher> _publisherMock;
+    private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
+    private readonly IUnitOfWork _uow = Substitute.For<IUnitOfWork>();
+    private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
     private readonly CrearSesionCommandHandler _handler;
 
     public CrearSesionCommandHandlerTests()
     {
-        _sesionRepoMock = new Mock<ISesionRepository>();
-        _uowMock = new Mock<IUnitOfWork>();
-        _publisherMock = new Mock<IEventPublisher>();
-        _handler = new CrearSesionCommandHandler(
-            _sesionRepoMock.Object,
-            _uowMock.Object,
-            _publisherMock.Object);
+        _handler = new CrearSesionCommandHandler(_sesionRepo, _uow, _publisher);
     }
 
     [Fact]
@@ -286,12 +280,9 @@ public sealed class CrearSesionCommandHandlerTests
 
         // Assert
         result.Should().NotBeEmpty();
-        _sesionRepoMock.Verify(
-            r => r.AgregarAsync(It.IsAny<Sesion>(), It.IsAny<CancellationToken>()),
-            Times.Once);
-        _uowMock.Verify(
-            u => u.GuardarAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
+        await _sesionRepo.Received(1).AgregarAsync(
+            Arg.Any<Sesion>(), Arg.Any<CancellationToken>());
+        await _uow.Received(1).GuardarAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -304,9 +295,8 @@ public sealed class CrearSesionCommandHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert — se publicó el Integration Event después de persistir
-        _publisherMock.Verify(
-            p => p.PublicarAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()),
-            Times.AtLeastOnce);
+        await _publisher.Received().PublicarAsync(
+            Arg.Any<object>(), Arg.Any<CancellationToken>());
     }
 }
 ```
@@ -449,8 +439,8 @@ public sealed class SesionRepositoryTests : IAsyncLifetime
 ## 6. Integration Tests — API con WebApplicationFactory
 
 ```csharp
-// tests/Umbral.Api.Tests/Controllers/SesionesControllerTests.cs
-namespace Umbral.Api.Tests.Controllers;
+// tests/Umbral.API.Tests/Controllers/SesionesControllerTests.cs
+namespace Umbral.API.Tests.Controllers;
 
 public sealed class SesionesControllerTests : IClassFixture<UmbralWebAppFactory>
 {
@@ -500,7 +490,7 @@ public sealed class SesionesControllerTests : IClassFixture<UmbralWebAppFactory>
     }
 }
 
-// tests/Umbral.Api.Tests/UmbralWebAppFactory.cs
+// tests/Umbral.API.Tests/UmbralWebAppFactory.cs
 public sealed class UmbralWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
@@ -673,13 +663,16 @@ describe("SesionScreen", () => {
 <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
 
 <!-- tests/Umbral.Application.Tests/ -->
-<PackageReference Include="Moq" Version="4.*" />                        ← Moq (NO NSubstitute)
+<PackageReference Include="NSubstitute" Version="5.*" />
 <PackageReference Include="FluentValidation.TestHelper" Version="11.*" />
 
 <!-- tests/Umbral.Infrastructure.Tests/ + Umbral.API.Tests/ -->
-<PackageReference Include="Testcontainers.PostgreSql" Version="3.*" />
+<PackageReference Include="Testcontainers.PostgreSql" Version="4.*" />
 <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.*" />
 ```
+
+> **Cobertura:** ver `.cursor/specs/umbral-quality-spec.md` §11.1.b (`coverlet.runsettings`,
+> `scripts/run-coverage.ps1`).
 
 ---
 

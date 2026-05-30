@@ -69,4 +69,89 @@ public sealed class ActualizarPreguntaCommandHandlerTests
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
+
+    [Fact]
+    public async Task Handle_CuandoPreguntaEliminada_LanzaNotFoundException()
+    {
+        var pregunta = TriviaTestBuilder.PreguntaSinCategoria();
+        pregunta.Eliminar();
+
+        _preguntaRepo.FindByIdAsync(Arg.Any<PreguntaId>(), Arg.Any<CancellationToken>())
+            .Returns(pregunta);
+
+        var command = ComandoConCategoria(pregunta.PreguntaId.Valor, null);
+
+        var act = () => _sut.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+        await _preguntaRepo.DidNotReceive().SaveAsync(Arg.Any<Pregunta>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_CuandoAsignaCategoriaExistente_PersisteConCategoria()
+    {
+        var pregunta = TriviaTestBuilder.PreguntaSinCategoria();
+        var categoria = TriviaTestBuilder.UnaCategoria();
+
+        _preguntaRepo.FindByIdAsync(Arg.Any<PreguntaId>(), Arg.Any<CancellationToken>())
+            .Returns(pregunta);
+        _categoriaRepo.FindByIdAsync(Arg.Any<CategoriaId>(), Arg.Any<CancellationToken>())
+            .Returns(categoria);
+
+        var command = ComandoConCategoria(pregunta.PreguntaId.Valor, categoria.CategoriaId.Valor);
+
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        pregunta.CategoriaId.Should().Be(categoria.CategoriaId);
+        await _preguntaRepo.Received(1).SaveAsync(pregunta, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_CuandoCategoriaNoExiste_LanzaNotFoundException()
+    {
+        var pregunta = TriviaTestBuilder.PreguntaSinCategoria();
+
+        _preguntaRepo.FindByIdAsync(Arg.Any<PreguntaId>(), Arg.Any<CancellationToken>())
+            .Returns(pregunta);
+        _categoriaRepo.FindByIdAsync(Arg.Any<CategoriaId>(), Arg.Any<CancellationToken>())
+            .Returns((Categoria?)null);
+
+        var command = ComandoConCategoria(pregunta.PreguntaId.Valor, Guid.NewGuid());
+
+        var act = () => _sut.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Handle_CuandoCategoriaEliminada_LanzaNotFoundException()
+    {
+        var pregunta = TriviaTestBuilder.PreguntaSinCategoria();
+        var categoria = TriviaTestBuilder.UnaCategoria();
+        categoria.Eliminar();
+
+        _preguntaRepo.FindByIdAsync(Arg.Any<PreguntaId>(), Arg.Any<CancellationToken>())
+            .Returns(pregunta);
+        _categoriaRepo.FindByIdAsync(Arg.Any<CategoriaId>(), Arg.Any<CancellationToken>())
+            .Returns(categoria);
+
+        var command = ComandoConCategoria(pregunta.PreguntaId.Valor, categoria.CategoriaId.Valor);
+
+        var act = () => _sut.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    private static ActualizarPreguntaCommand ComandoConCategoria(Guid preguntaId, Guid? categoriaId)
+        => new(
+            preguntaId,
+            "Enunciado actualizado",
+            "Media",
+            categoriaId,
+            [
+                new OpcionRespuestaInput("A", true),
+                new OpcionRespuestaInput("B", false),
+                new OpcionRespuestaInput("C", false)
+            ]);
 }

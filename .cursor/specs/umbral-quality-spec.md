@@ -12,7 +12,7 @@ UMBRAL adopta una pirámide de pruebas con cuatro niveles:
                ┌┴─────────────┴┐
                │  Integración  │  ← Testcontainers (BD + API real)
               ┌┴───────────────┴┐
-              │    Aplicación   │  ← xUnit + Moq (handlers aislados)
+              │    Aplicación   │  ← xUnit + NSubstitute (handlers aislados)
              ┌┴─────────────────┴┐
              │      Dominio      │  ← xUnit puro (sin mocks)
              └───────────────────┘
@@ -20,7 +20,7 @@ UMBRAL adopta una pirámide de pruebas con cuatro niveles:
 | Nivel         | Herramienta               | Cobertura objetivo | Velocidad |
 |---------------|---------------------------|--------------------|-----------|
 | Dominio       | xUnit + FluentAssertions  | 100%               | < 1s      |
-| Aplicación    | xUnit + Moq               | ≥ 90%              | < 5s      |
+| Aplicación    | xUnit + NSubstitute       | ≥ 90%              | < 5s      |
 | Integración   | xUnit + Testcontainers    | Flujos críticos    | < 60s     |
 | E2E           | Playwright                | Flujo principal    | < 3 min   |
 
@@ -35,7 +35,7 @@ Estructura **implementada** en el repositorio (no renombrar sin consenso):
 ```
 tests/
 ├── Umbral.Domain.Tests/          → dominio (sin mocks, sin BD)
-├── Umbral.Application.Tests/     → handlers y validators (Moq)
+├── Umbral.Application.Tests/     → handlers y validators (NSubstitute)
 ├── Umbral.Infrastructure.Tests/  → repositorios + EF + Testcontainers (PostgreSQL)
 └── Umbral.API.Tests/             → controllers + WebApplicationFactory + Testcontainers
 ```
@@ -54,7 +54,7 @@ Cada proyecto referencia solo lo que necesita:
 <ProjectReference Include="../src/backend/Umbral.Application/..." />
 <ProjectReference Include="../src/backend/Umbral.Domain/..." />
 <PackageReference Include="xunit" />
-<PackageReference Include="Moq" />
+<PackageReference Include="NSubstitute" />
 <PackageReference Include="FluentAssertions" />
 
 <!-- Umbral.Infrastructure.Tests.csproj -->
@@ -442,61 +442,44 @@ public class SesionBuilder
 
 ## 6. Pruebas de Aplicación (Handlers)
 
-Los handlers se prueban con repositorios falsos (Moq).
+Los handlers se prueban con repositorios falsos (**NSubstitute**).
 Nunca con base de datos real.
 
 ```csharp
-public class CrearSesionBusquedaTesoroCommandHandlerTests
+public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
 {
-    private readonly Mock<ISesionRepository>  _sesionRepo  = new();
-    private readonly Mock<IMisionRepository>  _misionRepo  = new();
-    private readonly Mock<IEventPublisher>    _publisher   = new();
+    private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
+    private readonly IMisionRepository _misionRepo = Substitute.For<IMisionRepository>();
+    private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
     private readonly CrearSesionBusquedaTesoroCommandHandler _sut;
 
     public CrearSesionBusquedaTesoroCommandHandlerTests()
     {
         _sut = new CrearSesionBusquedaTesoroCommandHandler(
-            _sesionRepo.Object,
-            _misionRepo.Object,
-            _publisher.Object);
+            _sesionRepo, _misionRepo, _publisher);
     }
 
     [Fact]
     public async Task Handle_CuandoMisionActiva_CreaSesionYPublicaEvento()
     {
         // Arrange
-        var misionId = Guid.NewGuid();
-        var mision   = MisionBuilder.Activa().Build();
-
+        var mision = MisionTestBuilder.Activa();
         _misionRepo
-            .Setup(r => r.FindByIdAsync(
-                It.Is<MisionId>(id => id.Valor == misionId),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mision);
-
-        _sesionRepo
-            .Setup(r => r.SaveAsync(
-                It.IsAny<Sesion>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .FindByIdAsync(Arg.Any<MisionId>(), Arg.Any<CancellationToken>())
+            .Returns(mision);
 
         var command = new CrearSesionBusquedaTesoroCommand(
-            misionId, Guid.NewGuid());
+            mision.MisionId.Valor, Guid.NewGuid());
 
         // Act
         var result = await _sut.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Value.Should().NotBeEmpty();
-
-        _sesionRepo.Verify(r => r.SaveAsync(
-            It.IsAny<Sesion>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-
-        _publisher.Verify(p => p.PublishBatchAsync(
-            It.Is<IReadOnlyList<IDomainEvent>>(
-                eventos => eventos.Any(e => e is SesionCreada)),
-            It.IsAny<CancellationToken>()), Times.Once);
+        result.IsSuccess.Should().BeTrue();
+        await _sesionRepo.Received(1).SaveAsync(
+            Arg.Any<Sesion>(), Arg.Any<CancellationToken>());
+        await _publisher.Received(1).PublishBatchAsync(
+            Arg.Any<IReadOnlyList<IDomainEvent>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -504,10 +487,8 @@ public class CrearSesionBusquedaTesoroCommandHandlerTests
     {
         // Arrange
         _misionRepo
-            .Setup(r => r.FindByIdAsync(
-                It.IsAny<MisionId>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Mision?)null);
+            .FindByIdAsync(Arg.Any<MisionId>(), Arg.Any<CancellationToken>())
+            .Returns((Mision?)null);
 
         var command = new CrearSesionBusquedaTesoroCommand(
             Guid.NewGuid(), Guid.NewGuid());
@@ -517,31 +498,27 @@ public class CrearSesionBusquedaTesoroCommandHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
-        _sesionRepo.Verify(r => r.SaveAsync(
-            It.IsAny<Sesion>(),
-            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task Handle_CuandoMisionInactiva_LanzaDomainException()
     {
         // Arrange
-        var mision = MisionBuilder.Inactiva().Build();
-
+        var mision = MisionTestBuilder.Inactiva();
         _misionRepo
-            .Setup(r => r.FindByIdAsync(
-                It.IsAny<MisionId>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mision);
+            .FindByIdAsync(Arg.Any<MisionId>(), Arg.Any<CancellationToken>())
+            .Returns(mision);
 
         var command = new CrearSesionBusquedaTesoroCommand(
-            Guid.NewGuid(), Guid.NewGuid());
+            mision.MisionId.Valor, Guid.NewGuid());
 
         // Act
         var act = async () => await _sut.Handle(command, CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<DomainException>();
+        await _sesionRepo.DidNotReceive().SaveAsync(
+            Arg.Any<Sesion>(), Arg.Any<CancellationToken>());
     }
 }
 ```
@@ -901,6 +878,60 @@ describe('TriviaQuestion', () => {
 </PropertyGroup>
 ```
 
+> **Nota:** estas props aplican cuando coverlet corre vía MSBuild. La **medición
+> oficial del repo** (E1-1, E1-4, CI) usa el recolector VSTest — ver §11.1.b.
+
+### 11.1.b Ejecución de cobertura backend (vigente en Entrega 1)
+
+Artefactos en la raíz del repositorio:
+
+| Artefacto | Rol |
+|-----------|-----|
+| `coverlet.runsettings` | Exclusiones del recolector `--collect:"XPlat Code Coverage"` |
+| `tests/Directory.Build.props` | `coverlet.collector` compartido en los 4 proyectos de test |
+| `scripts/run-coverage.ps1` | Orquesta test → XML → reporte HTML + gate opcional |
+
+**Comando canónico (local y defensa):**
+
+```powershell
+.\scripts\run-coverage.ps1 -Threshold 90
+# Con navegador: .\scripts\run-coverage.ps1 -Open
+```
+
+**Requisitos:** Docker en marcha (Testcontainers en Infrastructure/API), .NET 8,
+`reportgenerator` (el script lo instala como dotnet global tool si falta).
+
+**Salida:** `coverage/report/index.html` (gitignored; se regenera en cada corrida).
+
+**Exclusiones en `coverlet.runsettings` (alineadas con §12):**
+
+- `ExcludeByFile`: `**/Migrations/**/*.cs` — migraciones EF y `ModelSnapshot`.
+- `ExcludeByAttribute`: `GeneratedCodeAttribute`, `CompilerGeneratedAttribute`,
+  `ExcludeFromCodeCoverageAttribute` — boilerplate de `record` y artefactos de diseño.
+
+**Convención `[ExcludeFromCodeCoverage]`:** factorías solo de CLI (p. ej.
+`UmbralDbContextFactory`, `IDesignTimeDbContextFactory`) y wiring puro no probado
+en runtime (p. ej. registro JWT Keycloak en producción — §13.1; los tests usan
+`TestAuthHandler` en entorno `Testing`).
+
+**Gate RNF-09:** line coverage **total** backend ≥ 90%. El script con
+`-Threshold 90` falla con exit code 1 si no se cumple. Documentación operativa:
+`docs/entrega-1/iter-e1-01-cobertura-baseline.md`.
+
+**Comando manual equivalente:**
+
+```powershell
+dotnet test Umbral.sln -c Release `
+  --collect:"XPlat Code Coverage" `
+  --settings coverlet.runsettings `
+  --results-directory coverage
+
+reportgenerator `
+  -reports:"coverage/**/coverage.cobertura.xml" `
+  -targetdir:"coverage/report" `
+  -reporttypes:"Html;TextSummary"
+```
+
 ### 11.2 Configuración de cobertura (Vitest)
 
 ```typescript
@@ -946,6 +977,7 @@ El pipeline falla si se incumple cualquiera de estas condiciones:
 ## 12. Qué NO debe testearse
 
 - Migraciones de EF Core (excluidas de cobertura).
+- Factorías de diseño EF (`*DbContextFactory`) — marcar `[ExcludeFromCodeCoverage]`.
 - `Program.cs` y configuración de DI.
 - Clases generadas automáticamente.
 - DTOs y records sin lógica.

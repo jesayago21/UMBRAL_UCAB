@@ -95,7 +95,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: src/Umbral.Api/Dockerfile
+      dockerfile: src/backend/Umbral.API/Dockerfile
     container_name: umbral_api
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -133,24 +133,23 @@ networks:
 ## Dockerfile — API Backend
 
 ```dockerfile
-# src/Umbral.Api/Dockerfile
+# src/backend/Umbral.API/Dockerfile
 
 # ── Stage 1: Build ───────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Restaurar dependencias (cacheado si solo cambia el código)
-COPY ["src/Umbral.Api/Umbral.Api.csproj", "src/Umbral.Api/"]
-COPY ["src/Umbral.Application/Umbral.Application.csproj", "src/Umbral.Application/"]
-COPY ["src/Umbral.Domain/Umbral.Domain.csproj", "src/Umbral.Domain/"]
-COPY ["src/Umbral.Infrastructure/Umbral.Infrastructure.csproj", "src/Umbral.Infrastructure/"]
-COPY ["src/Umbral.Contracts/Umbral.Contracts.csproj", "src/Umbral.Contracts/"]
-RUN dotnet restore "src/Umbral.Api/Umbral.Api.csproj"
+COPY ["src/backend/Umbral.API/Umbral.API.csproj", "src/backend/Umbral.API/"]
+COPY ["src/backend/Umbral.Application/Umbral.Application.csproj", "src/backend/Umbral.Application/"]
+COPY ["src/backend/Umbral.Domain/Umbral.Domain.csproj", "src/backend/Umbral.Domain/"]
+COPY ["src/backend/Umbral.Infrastructure/Umbral.Infrastructure.csproj", "src/backend/Umbral.Infrastructure/"]
+RUN dotnet restore "src/backend/Umbral.API/Umbral.API.csproj"
 
 # Copiar el resto y publicar
 COPY . .
-WORKDIR "/src/src/Umbral.Api"
-RUN dotnet publish "Umbral.Api.csproj" -c Release -o /app/publish
+WORKDIR "/src/src/backend/Umbral.API"
+RUN dotnet publish "Umbral.API.csproj" -c Release -o /app/publish
 
 # ── Stage 2: Runtime ─────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
@@ -163,7 +162,7 @@ USER appuser
 COPY --from=build /app/publish .
 
 EXPOSE 5000
-ENTRYPOINT ["dotnet", "Umbral.Api.dll"]
+ENTRYPOINT ["dotnet", "Umbral.API.dll"]
 ```
 
 ---
@@ -196,8 +195,8 @@ docker compose ps
 
 # Ejecutar migraciones de EF Core contra la BD de Docker
 dotnet ef database update \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # Conectar a PostgreSQL directamente
 docker exec -it umbral_postgres psql -U umbral_user -d umbral_db
@@ -231,7 +230,7 @@ RABBITMQ_PASS=<password-seguro>
 ```
 
 ```json
-// src/Umbral.Api/appsettings.json
+// src/backend/Umbral.API/appsettings.json
 {
   "ConnectionStrings": {
     "Postgres": "Host=localhost;Port=5432;Database=umbral_db;Username=umbral_user;Password=umbral_pass"
@@ -251,7 +250,7 @@ RABBITMQ_PASS=<password-seguro>
   "AllowedHosts": "*"
 }
 
-// src/Umbral.Api/appsettings.Development.json
+// src/backend/Umbral.API/appsettings.Development.json
 {
   "ConnectionStrings": {
     "Postgres": "Host=postgres;Port=5432;Database=umbral_db;Username=umbral_user;Password=umbral_pass"
@@ -346,11 +345,11 @@ docker compose up postgres rabbitmq -d
 
 # 3. Aplicar migraciones
 dotnet ef database update \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # 4. Arrancar la API en modo watch
-dotnet watch run --project src/Umbral.Api
+dotnet watch run --project src/backend/Umbral.API
 
 # 5. Arrancar el frontend web
 cd apps/web && npm install && npm run dev
@@ -378,8 +377,8 @@ curl -s -u umbral_user:umbral_pass http://localhost:15672/api/queues | jq '.[].n
 
 # Ver migraciones aplicadas
 dotnet ef migrations list \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 ```
 
 ---

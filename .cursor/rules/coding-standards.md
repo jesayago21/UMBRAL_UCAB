@@ -278,7 +278,7 @@ public sealed class GetRankingSesionQueryHandler
 
 ## 7. Pruebas
 
-### 7.1 Unitarias (xUnit + Moq)
+### 7.1 Unitarias — Dominio (xUnit + FluentAssertions)
 ```csharp
 public class SesionTests
 {
@@ -305,6 +305,13 @@ public class SesionTests
     }
 }
 ```
+
+### 7.1b Unitarias — Application (xUnit + NSubstitute)
+
+Los handlers mockan puertos con **NSubstitute** (`Substitute.For<>`, `.Returns()`,
+`.Received()`). Ver `.cursor/skills/testing-skill.md` §4 y `.cursor/specs/umbral-quality-spec.md` §6.
+
+---
 
 ### 7.2 Naming obligatorio
 [Metodo][Escenario][ResultadoEsperado]

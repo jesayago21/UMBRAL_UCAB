@@ -17,9 +17,9 @@
 | SignalR                 | 8.0       | WebSockets                               |
 | Serilog                 | 3.x       | Logging estructurado                     |
 | xUnit                   | 2.x       | Framework de pruebas                     |
-| Moq                     | 4.x       | Mocking en pruebas                       |
+| NSubstitute             | 5.x       | Mocking en pruebas (Application)         |
 | FluentAssertions        | 6.x       | Aserciones legibles                      |
-| Testcontainers          | 3.x       | PostgreSQL en pruebas de integración     |
+| Testcontainers          | 4.x       | PostgreSQL en pruebas de integración     |
 | BCrypt.Net              | 4.x       | Hash de contraseñas                      |
 
 ---

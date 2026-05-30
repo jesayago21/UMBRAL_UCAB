@@ -525,24 +525,24 @@ volumes:
 
 # Crear migración
 dotnet ef migrations add NombreMigracion \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api \
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API \
   --output-dir Persistence/Migrations
 
 # Aplicar migración
 dotnet ef database update \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # Revertir última migración
 dotnet ef migrations remove \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # Generar SQL sin aplicar (para revisión)
 dotnet ef migrations script \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api \
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API \
   --output migration.sql
 ```
 

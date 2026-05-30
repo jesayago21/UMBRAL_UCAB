@@ -1,7 +1,7 @@
 # Entrega 1 — Plan de control y alcance
 
 > **Estado:** plan vigente (alcance reducido aprobado)
-> **Última actualización:** 2026-05-28
+> **Última actualización:** 2026-05-29
 > **Decisión base:** Entrega 1 demuestra **comunicación frontend ↔ backend ↔ persistencia** con **cobertura backend ≥ 90%**, usando **CRUD de Misiones + Login** como historias de usuario mínimas. Las sesiones en vivo, ranking, "jugar", RabbitMQ, SignalR, mobile, Trivia y E2E se mueven a **Entrega 2**.
 
 ---
@@ -38,16 +38,17 @@ Reglas no negociables:
 
 | Capa / artefacto | Estado | Evidencia |
 |------------------|--------|-----------|
-| Dominio (`Umbral.Domain`) | ✅ Fase 1 completa | `docs/fase-1/TRACKER.md` — 170 tests |
-| Application (`Umbral.Application`) | ✅ Fase 2 completa | `docs/fase-2/TRACKER.md` — 50 tests |
-| Infrastructure (`Umbral.Infrastructure`) | ✅ Fase 3 completa | EF Core + PostgreSQL + Testcontainers |
-| API (`Umbral.API`) | ✅ Fase 4 completa | CRUD Misiones, Auth JWT, endpoints sesión |
-| Persistencia (PostgreSQL + migraciones) | ✅ | `Persistence/Migrations` |
-| Proyectos de test | ✅ 4 proyectos | `Domain/Application/Infrastructure/API .Tests` |
+| Dominio (`Umbral.Domain`) | ✅ Fase 1 + Trivia | 198 tests Domain |
+| Application (`Umbral.Application`) | ✅ Fase 2 + Trivia | 79 tests Application |
+| Infrastructure (`Umbral.Infrastructure`) | ✅ EF + Trivia + Keycloak | 14 tests Testcontainers |
+| API (`Umbral.API`) | ✅ Misiones + Sesiones + Trivia + Keycloak | 60 tests API |
+| Persistencia (PostgreSQL + migraciones) | ✅ | `Persistence/Migrations` + `AddCatalogoTrivia` |
+| Proyectos de test | ✅ 4 proyectos | **385 tests** en verde |
 | **Frontend web** | ❌ **No existe** | `src/frontend/` ausente |
 | **CI (cobertura)** | ❌ **No existe** | `.github/workflows/` ausente |
-| Cobertura real ≥ 90% | ⚠️ **Sin medir** | pendiente correr coverlet |
-| CatalogoTrivia (Pregunta/Categoria) | ❌ Vacío (solo `.gitkeep`) | contingencia E1 → §5.1 |
+| Cobertura real ≥ 90% | ✅ **96% total** | [E1-1/E1-4](iter-e1-01-cobertura-baseline.md) — `scripts/run-coverage.ps1` |
+| CatalogoTrivia (Pregunta/Categoria) | ✅ Backend completo | E1-7..E1-10 |
+| Keycloak OIDC | ✅ Backend | E1-K1..K3; falta front (E1-K4) |
 | Mobile / SignalR / RabbitMQ demo / Trivia jugable / E2E | ❌ Fuera de alcance E1 | → Entrega 2 |
 
 ---
@@ -203,7 +204,7 @@ Fase E — Entrega
   E1-6   Guion de demo (login Keycloak + misiones + banco trivia + 403 por rol)
 ```
 
-**Siguiente paso sugerido:** **E1-1** (medir cobertura), no E1-8.
+**Siguiente paso sugerido:** **E1-3** (CI con gate de cobertura) o **E1-2** (frontend CRUD).
 
 ### 6.2 Tabla de ítems
 
@@ -211,7 +212,7 @@ Fase E — Entrega
 |---|--------|------|------|------|--------|
 | E1-0 | Oficializar alcance reducido en `quality-spec §13/§14` | doc | — | — | ✅ |
 | E1-0b | Alinear naming de proyectos de test en spec y `project-rules` | doc | — | — | ✅ |
-| E1-1 | Medir cobertura backend real (coverlet) y registrar brecha | build | — | **A** | ⬜ |
+| E1-1 | Medir cobertura backend real (coverlet) y registrar brecha — [doc](iter-e1-01-cobertura-baseline.md) | build | — | **A** | ✅ |
 | E1-3 | Pipeline CI: `dotnet test` + reporte cobertura, gate ≥ 90% | devops | E1-1 | **A** | ⬜ |
 | E1-8 | CRUD Trivia — Application (commands/queries/handlers) + tests — [doc](iter-e1-08-trivia-application.md) | código | E1-7 | **B** | ✅ |
 | E1-9 | CRUD Trivia — Infrastructure (EF + repos + migración) + tests — [doc](iter-e1-09-trivia-infrastructure.md) | código | E1-8 | **B** | ✅ |
@@ -219,7 +220,7 @@ Fase E — Entrega
 | E1-K1 | Keycloak en `docker-compose` + realm export (roles, clients, usuarios demo) — [doc](iter-e1-0K-keycloak.md) | devops | — | **B** | ✅ |
 | E1-K2 | API valida token Keycloak (`Authority`/JWKS) + mapeo `realm_access.roles` | código | E1-K1 | **B** | ✅ |
 | E1-K3 | Eliminar JWT propio (`AuthController`, `JwtTokenIssuer`, `Usuario`, BCrypt) + migración drop `usuarios` | código | E1-K2 | **B** | ✅ |
-| E1-4 | Cerrar brecha de cobertura con tests faltantes (TDD) | código | E1-10, E1-K3 | **C** | ⬜ |
+| E1-4 | Cerrar brecha de cobertura con tests faltantes (TDD) — total **96%** — [doc](iter-e1-01-cobertura-baseline.md) | código | E1-10, E1-K3 | **C** | ✅ |
 | E1-2 | Frontend: CRUD **Misiones** + CRUD **Trivia** (categorías/preguntas) | código | E1-10 | **D** | ⬜ |
 | E1-K4 | Frontend login **OIDC** contra Keycloak (`react-oidc-context`) | código | E1-K2, E1-2 | **D** | ⬜ |
 | E1-5 | README arranque local (backend + db + Keycloak + front) | doc | E1-2 | **E** | ⬜ |
@@ -280,7 +281,7 @@ El código del JWT propio se elimina en **E1-K3**.
 
 ## 10. Riesgos
 
-- **Cobertura < 90%**: hasta no medir (E1-1) no se conoce la brecha. Riesgo principal de la entrega.
+- **Cobertura < 90%**: **resuelto** — E1-1 midió baseline (87.6%) y E1-4 la cerró a **96%** total (385 tests). Falta solo automatizar el gate en CI (E1-3).
 - **Frontend desde cero**: es el mayor esfuerzo nuevo; conviene mantenerlo mínimo (login + CRUD).
 - **Keycloak (nuevo)**: curva de aprendizaje (realm, clients, mapeo de roles, OIDC en
   el front). Mitigación: realm export versionado, `TestAuthHandler` en tests (no se

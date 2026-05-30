@@ -143,16 +143,20 @@ Para toda tarea de QA, leer y aplicar: `.cursor/skills/testing-skill.md`
 # Backend — ejecutar todos los tests
 dotnet test
 
-# Backend — con cobertura
-dotnet test --collect:"XPlat Code Coverage"
-dotnet tool install -g dotnet-reportgenerator-globaltool
-reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report"
+# Backend — con cobertura (canónico, ver quality-spec §11.1.b)
+.\scripts\run-coverage.ps1 -Threshold 90
+
+# Backend — cobertura manual
+dotnet test Umbral.sln -c Release \
+  --collect:"XPlat Code Coverage" \
+  --settings coverlet.runsettings \
+  --results-directory coverage
 
 # Backend — solo una capa
 dotnet test tests/Umbral.Domain.Tests
 dotnet test tests/Umbral.Application.Tests
 dotnet test tests/Umbral.Infrastructure.Tests
-dotnet test tests/Umbral.Api.Tests
+dotnet test tests/Umbral.API.Tests
 
 # Frontend web
 npm run test              # vitest
