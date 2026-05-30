@@ -1,53 +1,52 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import { AdminLayout } from '@/components/layout/AdminLayout'
+import { OperadorLayout } from '@/components/layout/OperadorLayout'
 import { CategoriasPage } from '@/pages/admin/CategoriasPage'
 import { MisionesPage } from '@/pages/admin/MisionesPage'
 import { PreguntasPage } from '@/pages/admin/PreguntasPage'
+import { CallbackPage } from '@/pages/auth/CallbackPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
-import { useAuthStore } from '@/store/authStore'
-
-function RequireAdmin({ children }: { children: React.ReactNode }) {
-  const { estaAutenticado, rol } = useAuthStore()
-
-  if (!estaAutenticado()) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (rol !== 'Administrador') {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="max-w-md rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-          <h1 className="text-lg font-semibold text-red-800">Acceso denegado</h1>
-          <p className="mt-2 text-sm text-red-700">
-            Se requiere rol Administrador para el catálogo (E1-2).
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  return <>{children}</>
-}
+import { OperadorSesionesPage } from '@/pages/operador/OperadorSesionesPage'
+import { HomeRedirect, RequireRoles } from '@/router/guards'
 
 export function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/callback" element={<CallbackPage />} />
+
       <Route
         path="/admin"
         element={
-          <RequireAdmin>
+          <RequireRoles
+            roles={['Administrador']}
+            deniedMessage="Se requiere rol Administrador para el catálogo. Inicia sesión como admin o usa el panel de operador."
+          >
             <AdminLayout />
-          </RequireAdmin>
+          </RequireRoles>
         }
       >
-        <Route index element={<Navigate to="misiones" replace />} />
         <Route path="misiones" element={<MisionesPage />} />
         <Route path="categorias" element={<CategoriasPage />} />
         <Route path="preguntas" element={<PreguntasPage />} />
       </Route>
-      <Route path="/" element={<Navigate to="/admin/misiones" replace />} />
-      <Route path="*" element={<Navigate to="/admin/misiones" replace />} />
+
+      <Route
+        path="/operador"
+        element={
+          <RequireRoles
+            roles={['Operador', 'Administrador']}
+            deniedMessage="Se requiere rol Operador o Administrador para gestionar sesiones."
+          >
+            <OperadorLayout />
+          </RequireRoles>
+        }
+      >
+        <Route path="sesiones" element={<OperadorSesionesPage />} />
+      </Route>
+
+      <Route path="/" element={<HomeRedirect />} />
+      <Route path="*" element={<HomeRedirect />} />
     </Routes>
   )
 }

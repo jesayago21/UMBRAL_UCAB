@@ -48,7 +48,7 @@ Reglas no negociables:
 | **CI (cobertura)** | ✅ | [E1-3](iter-e1-03-ci-coverage.md) — `.github/workflows/ci.yml` |
 | Cobertura real ≥ 90% | ✅ **96% total** | [E1-1/E1-4](iter-e1-01-cobertura-baseline.md) — `scripts/run-coverage.ps1` |
 | CatalogoTrivia (Pregunta/Categoria) | ✅ Backend completo | E1-7..E1-10 |
-| Keycloak OIDC | 🔶 Backend ✅; front ⬜ | E1-K1..K3; **E1-K4** |
+| Keycloak OIDC | ✅ Backend + web OIDC | E1-K1..K4 — [doc](iter-e1-K4-oidc-web.md) |
 | Pantalla operador (sesiones BT) | ⬜ | **E1-2b** — API sesiones ✅ |
 | Mobile login (opcional) | ⬜ | **E1-M1** si hay tiempo |
 | SignalR / RabbitMQ demo / Trivia jugable / E2E / mobile gameplay | ❌ E2 | → Entrega 2 |
@@ -96,8 +96,7 @@ Reglas no negociables:
 
 ## 5. Gaps a cerrar (lo que falta de verdad)
 
-1. **E1-K4** — Login OIDC web (reemplaza pegar token).
-2. **E1-2a** — Afinar UI admin (E1-2).
+1. **E1-2a** — Afinar UI admin (E1-2).
 3. **E1-2b** — Pantalla operador + lectura misiones activas para Operador (API mínima).
 4. **E1-M1** *(opcional)* — Mobile solo login.
 5. **README + guion de demo** (E1-5, E1-6).
@@ -216,7 +215,7 @@ Fase E — Entrega
   E1-6   Guion de demo (admin + operador + 403 + opcional mobile login)
 ```
 
-**Siguiente paso inmediato:** **E1-K4** → **E1-2a/2b** → E1-5/E1-6. **E1-M1** solo si sobra tiempo.
+**Siguiente paso inmediato:** **E1-2a/2b** → E1-5/E1-6. **E1-M1** solo si sobra tiempo.
 
 ### 6.2 Tabla de ítems
 
@@ -234,7 +233,7 @@ Fase E — Entrega
 | E1-K3 | Eliminar JWT propio (`AuthController`, `JwtTokenIssuer`, `Usuario`, BCrypt) + migración drop `usuarios` | código | E1-K2 | **B** | ✅ |
 | E1-4 | Cerrar brecha de cobertura con tests faltantes (TDD) — total **96%** — [doc](iter-e1-01-cobertura-baseline.md) | código | E1-10, E1-K3 | **C** | ✅ |
 | E1-2 | Frontend: CRUD **Misiones** + CRUD **Trivia** (categorías/preguntas) — [doc](iter-e1-02-frontend-crud.md) | código | E1-10 | **D** | ✅ |
-| E1-K4 | Frontend login **OIDC** contra Keycloak (`react-oidc-context`); redirect admin/operador | código | E1-K2, E1-2 | **D** | ⬜ |
+| E1-K4 | Frontend login **OIDC** contra Keycloak (`react-oidc-context`); redirect admin/operador — [doc](iter-e1-K4-oidc-web.md) | código | E1-K2, E1-2 | **D** | ✅ |
 | E1-2a | Afinar UI admin (E1-2): errores, estados vacíos, navegación | código | E1-2 | **D** | ⬜ |
 | E1-2b | Pantalla **operador**: sesión BT mínima + ranking poll — [doc](iter-e1-02b-operador-sesiones.md) | código | E1-K4 | **D** | ⬜ |
 | E1-M1 | **(Opcional)** Mobile `umbral-mobile`: solo login OIDC — [doc](iter-e1-M1-mobile-login-opcional.md) | código | E1-K4 | **D** | ⬜ |
@@ -268,7 +267,7 @@ El alcance original de la spec metía demasiado en Entrega 1. Con el recorte:
 
 - [ ] Solución .NET compila sin warnings; 4 proyectos de test en verde.
 - [ ] **Cobertura backend ≥ 90%** sobre el código implementado, reportada por CI.
-- [ ] **Login real con Keycloak (OIDC)** distinto admin/operador (**E1-K4**).
+- [x] **Login real con Keycloak (OIDC)** distinto admin/operador (**E1-K4**).
 - [x] Frontend web: **CRUD Misiones** y **CRUD banco Trivia** (**E1-2**).
 - [ ] **Pantalla operador** mínima: crear sesión BT, equipos, controles, ranking poll (**E1-2b**).
 - [ ] Se puede demostrar **403 por rol** (operador no entra a `/admin/*`).

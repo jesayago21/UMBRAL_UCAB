@@ -17,7 +17,7 @@
 | `src/frontend/umbral-web/.env.example` | `VITE_API_URL` |
 | `src/backend/Umbral.API/Program.cs` | CORS `FrontendDev` → `localhost:5173` |
 | `src/frontend/umbral-web/src/pages/admin/*` | CRUD Misiones, Categorías, Preguntas |
-| `src/frontend/umbral-web/src/pages/auth/LoginPage.tsx` | Login dev (pegar token) — **E1-K4** lo reemplaza |
+| `src/frontend/umbral-web/src/pages/auth/LoginPage.tsx` | Login OIDC (**E1-K4**) |
 | `src/frontend/umbral-web/src/router/AppRouter.tsx` | Rutas + guard `Administrador` |
 
 ---
@@ -53,15 +53,14 @@ Todas las rutas requieren `[Authorize(Roles = "Administrador")]`:
 
 1. **Infra:** PostgreSQL + Keycloak (`docker compose up -d`).
 2. **API:** `dotnet run --project src/backend/Umbral.API` (puerto 5000).
-3. **Token:** usuario `admin` / `Umbral123!` — ver comandos en `iter-e1-0K-keycloak.md` (en Windows usar `curl.exe` o `Invoke-RestMethod`, no `curl` a secas).
-4. **Front:**
+3. **Front** (login OIDC — ya no hace falta pegar token; ver [E1-K4](iter-e1-K4-oidc-web.md)):
    ```powershell
    cd src/frontend/umbral-web
    copy .env.example .env
    npm install
    npm run dev
    ```
-5. Abrir `http://localhost:5173/login`, pegar el Bearer token, entrar al catálogo.
+5. Abrir `http://localhost:5173/login` → **Iniciar sesión con Keycloak** (`admin` / `Umbral123!`).
 
 **Build producción:** `npm run build` → artefactos en `dist/`.
 
@@ -77,12 +76,13 @@ Todas las rutas requieren `[Authorize(Roles = "Administrador")]`:
 
 ---
 
-## Auth (temporal vs E1-K4)
+## Auth (E1-K4)
 
-- **E1-2:** `LoginPage` acepta JWT pegado; valida payload y exige rol `Administrador`.
-- **E1-K4:** reemplazar por `react-oidc-context` + redirect Keycloak (sin pegar token).
+- `react-oidc-context` + PKCE → `OidcAuthBridge` sincroniza token con `authStore`.
+- Redirect: `admin` → catálogo; `operador` → `/operador/sesiones`.
+- Ver [iter-e1-K4-oidc-web.md](iter-e1-K4-oidc-web.md).
 
-El `apiClient` ya adjunta `Authorization: Bearer` y hace logout en 401.
+El `apiClient` adjunta `Authorization: Bearer` y hace logout en 401.
 
 ---
 
@@ -103,7 +103,7 @@ Prueba manual end-to-end: crear categoría → pregunta con 3 opciones → misi�
 
 | Ítem | Acción |
 |------|--------|
-| **E1-K4** | Login OIDC — [iter-e1-K4-oidc-web.md](iter-e1-K4-oidc-web.md) |
+| **E1-K4** | Login OIDC — [iter-e1-K4-oidc-web.md](iter-e1-K4-oidc-web.md) ✅ |
 | **E1-2a** | Afinar UI admin (mensajes, vacíos, navegación) |
 | **E1-2b** | Pantalla operador — [iter-e1-02b-operador-sesiones.md](iter-e1-02b-operador-sesiones.md) |
 | **E1-M1** | *(Opcional)* Mobile solo login — [iter-e1-M1-mobile-login-opcional.md](iter-e1-M1-mobile-login-opcional.md) |

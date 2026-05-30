@@ -1016,7 +1016,7 @@ Resumen alineado al PLAN:
 - [ ] **Autenticación:** **Keycloak (OIDC)** — login real por rol vía realm
       `umbral`. La API valida tokens (resource server). Ver §13.1.
 - [x] **Frontend web admin:** CRUD **Misiones** + CRUD **banco Trivia** (**E1-2**).
-- [ ] **Login OIDC** web (**E1-K4**); reemplaza pegar JWT.
+- [x] **Login OIDC** web (**E1-K4**).
 - [ ] **Pantalla operador** mínima: sesión BT por REST, ranking poll (**E1-2b**).
 - [ ] Demostrable **403 por rol** (operador no administra catálogo).
 - [ ] *(Opcional)* **Mobile** solo login OIDC (**E1-M1**).
@@ -1072,7 +1072,7 @@ Demostrable: login real distinto admin/operador y **403 por rol** en el catálog
 
 | HU | Descripción | Estado típico |
 |----|-------------|---------------|
-| — | Login por rol con **Keycloak (OIDC)** | API ✅; front ⬜ (**E1-K4**) |
+| — | Login por rol con **Keycloak (OIDC)** | API ✅; front ✅ (**E1-K4**) |
 | HU-01..04 | CRUD Misiones | API ✅; front ✅ (**E1-2**) |
 | HU-24..31 | CRUD Trivia (banco) | API ✅; front ✅ (**E1-2**) |
 | HU-12..16 | Sesión BT operador (mínimo REST) | API ✅; front ⬜ (**E1-2b**) |

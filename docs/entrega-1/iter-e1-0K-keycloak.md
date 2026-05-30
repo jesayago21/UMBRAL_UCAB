@@ -6,7 +6,7 @@
 
 > **Alcance:** se sustituye el JWT propio (`iter-04-05b`) por **Keycloak** como
 > Identity Provider. La API pasa a ser **resource server** (valida tokens contra
-> el realm; no emite tokens). El login OIDC del frontend (E1-K4) queda pendiente.
+> el realm; no emite tokens). Login OIDC web en **E1-K4** — [iter-e1-K4-oidc-web.md](iter-e1-K4-oidc-web.md).
 
 ---
 
@@ -142,14 +142,12 @@ Infrastructure 7, API 46). Se eliminaron 3 tests del `AuthController`.
 | Criterio DoD | Estado |
 |--------------|--------|
 | PostgreSQL **y Keycloak** levantan vía docker-compose | ✅ (compose + realm import) |
-| Login real con Keycloak distinto admin/operador | 🔶 backend listo; falta UI (E1-K4) |
-| 403 por rol (operador no administra catálogo) | 🔶 mapeo de roles listo; se demuestra con E1-10 + E1-K4 |
+| Login real con Keycloak distinto admin/operador | ✅ E1-K4 (OIDC web) |
+| 403 por rol (operador no administra catálogo) | ✅ guards `/admin/*` |
 
 ---
 
 ## Pendiente — siguientes iteraciones
 
-- **E1-K4**: login OIDC en el frontend (`react-oidc-context` / `oidc-client-ts`)
-  contra `umbral-web`, adjuntar `Bearer` a las llamadas a la API.
-- **E1-5/E1-6**: README + guion de demo incluyen arranque de Keycloak y el smoke
-  de login real + 403 por rol.
+- **E1-2b**: UI operador (sesiones BT) consumiendo la misma sesión OIDC.
+- **E1-5/E1-6**: README + guion de demo (login Keycloak, admin, operador, 403).

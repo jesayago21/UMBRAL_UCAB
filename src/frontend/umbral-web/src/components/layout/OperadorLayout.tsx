@@ -10,7 +10,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
   ].join(' ')
 
-export function AdminLayout() {
+export function OperadorLayout() {
   const { username, rol } = useAuthStore()
   const logout = useOidcLogout()
 
@@ -19,24 +19,18 @@ export function AdminLayout() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
           <div>
-            <p className="text-lg font-semibold text-indigo-700">UMBRAL</p>
+            <p className="text-lg font-semibold text-indigo-700">UMBRAL — Operador</p>
             <p className="text-xs text-slate-500">
               {username ?? '—'} · {rol ?? 'sin rol'}
             </p>
           </div>
           <nav className="flex flex-wrap items-center gap-2">
-            <NavLink to="/admin/misiones" className={linkClass}>
-              Misiones
-            </NavLink>
-            <NavLink to="/admin/categorias" className={linkClass}>
-              Categorías
-            </NavLink>
-            <NavLink to="/admin/preguntas" className={linkClass}>
-              Preguntas
+            <NavLink to="/operador/sesiones" className={linkClass} end>
+              Sesiones
             </NavLink>
             {rol === 'Administrador' && (
-              <NavLink to="/operador/sesiones" className={linkClass}>
-                Operador
+              <NavLink to="/admin/misiones" className={linkClass}>
+                Catálogo admin
               </NavLink>
             )}
             <button
