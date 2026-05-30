@@ -126,4 +126,4 @@ oficial y (b) cubrir con tests las clases de negocio que sí debían probarse.
 
 | Ítem | Acción |
 |------|--------|
-| **E1-3** | Workflow CI que ejecute `run-coverage.ps1 -Threshold 90` (o equivalente) y publique el HTML como artefacto |
+| **E1-3** | ~~Workflow CI~~ ✅ ver `iter-e1-03-ci-coverage.md` |

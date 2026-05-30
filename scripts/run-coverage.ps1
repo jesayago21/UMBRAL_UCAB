@@ -39,6 +39,12 @@ if (-not (Get-Command reportgenerator -ErrorAction SilentlyContinue)) {
     dotnet tool install -g dotnet-reportgenerator-globaltool | Out-Null
 }
 
+$homeDir = if ($env:USERPROFILE) { $env:USERPROFILE } else { $env:HOME }
+$dotnetTools = Join-Path $homeDir ".dotnet/tools"
+if ((Test-Path $dotnetTools) -and ($env:PATH -notlike "*$dotnetTools*")) {
+    $env:PATH = "$dotnetTools$([IO.Path]::PathSeparator)$env:PATH"
+}
+
 Write-Host ">> Generando reporte HTML..." -ForegroundColor Cyan
 reportgenerator `
     -reports:(Join-Path $CoverageDir "**/coverage.cobertura.xml") `

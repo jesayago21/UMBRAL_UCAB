@@ -1,0 +1,50 @@
+# CI backend — tests + cobertura ≥ 90% (E1-3 / RNF-09).
+# Requiere Docker (Testcontainers en Infrastructure y API).
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (test + cobertura)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore Umbral.sln
+
+      - name: Build (Release)
+        run: dotnet build Umbral.sln -c Release --no-restore
+
+      - name: Tests + cobertura (gate ≥ 90%)
+        run: bash scripts/run-coverage.sh --threshold 90
+
+      - name: Subir reporte HTML de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/report/
+          retention-days: 14

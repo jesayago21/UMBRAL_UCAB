@@ -915,8 +915,10 @@ en runtime (p. ej. registro JWT Keycloak en producción — §13.1; los tests us
 `TestAuthHandler` en entorno `Testing`).
 
 **Gate RNF-09:** line coverage **total** backend ≥ 90%. El script con
-`-Threshold 90` falla con exit code 1 si no se cumple. Documentación operativa:
-`docs/entrega-1/iter-e1-01-cobertura-baseline.md`.
+`-Threshold 90` (PowerShell) o `--threshold 90` (bash) falla con exit code 1 si no
+se cumple. **CI:** `.github/workflows/ci.yml` ejecuta el gate en cada push/PR.
+Documentación operativa: `docs/entrega-1/iter-e1-01-cobertura-baseline.md`,
+`docs/entrega-1/iter-e1-03-ci-coverage.md`.
 
 **Comando manual equivalente:**
 

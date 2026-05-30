@@ -45,7 +45,7 @@ Reglas no negociables:
 | Persistencia (PostgreSQL + migraciones) | ✅ | `Persistence/Migrations` + `AddCatalogoTrivia` |
 | Proyectos de test | ✅ 4 proyectos | **385 tests** en verde |
 | **Frontend web** | ❌ **No existe** | `src/frontend/` ausente |
-| **CI (cobertura)** | ❌ **No existe** | `.github/workflows/` ausente |
+| **CI (cobertura)** | ✅ | [E1-3](iter-e1-03-ci-coverage.md) — `.github/workflows/ci.yml` |
 | Cobertura real ≥ 90% | ✅ **96% total** | [E1-1/E1-4](iter-e1-01-cobertura-baseline.md) — `scripts/run-coverage.ps1` |
 | CatalogoTrivia (Pregunta/Categoria) | ✅ Backend completo | E1-7..E1-10 |
 | Keycloak OIDC | ✅ Backend | E1-K1..K3; falta front (E1-K4) |
@@ -204,7 +204,7 @@ Fase E — Entrega
   E1-6   Guion de demo (login Keycloak + misiones + banco trivia + 403 por rol)
 ```
 
-**Siguiente paso sugerido:** **E1-3** (CI con gate de cobertura) o **E1-2** (frontend CRUD).
+**Siguiente paso sugerido:** **E1-2** (frontend CRUD Misiones + Trivia) → **E1-K4** (login OIDC).
 
 ### 6.2 Tabla de ítems
 
@@ -213,7 +213,7 @@ Fase E — Entrega
 | E1-0 | Oficializar alcance reducido en `quality-spec §13/§14` | doc | — | — | ✅ |
 | E1-0b | Alinear naming de proyectos de test en spec y `project-rules` | doc | — | — | ✅ |
 | E1-1 | Medir cobertura backend real (coverlet) y registrar brecha — [doc](iter-e1-01-cobertura-baseline.md) | build | — | **A** | ✅ |
-| E1-3 | Pipeline CI: `dotnet test` + reporte cobertura, gate ≥ 90% | devops | E1-1 | **A** | ⬜ |
+| E1-3 | Pipeline CI: `dotnet test` + reporte cobertura, gate ≥ 90% — [doc](iter-e1-03-ci-coverage.md) | devops | E1-1 | **A** | ✅ |
 | E1-8 | CRUD Trivia — Application (commands/queries/handlers) + tests — [doc](iter-e1-08-trivia-application.md) | código | E1-7 | **B** | ✅ |
 | E1-9 | CRUD Trivia — Infrastructure (EF + repos + migración) + tests — [doc](iter-e1-09-trivia-infrastructure.md) | código | E1-8 | **B** | ✅ |
 | E1-10 | CRUD Trivia — API (`CategoriasController`, `PreguntasController`) + tests — [doc](iter-e1-10-trivia-api.md) | código | E1-9 | **B** | ✅ |
