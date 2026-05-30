@@ -32,6 +32,6 @@ export async function actualizarMision(
   await apiClient.put(`/misiones/${id}`, body)
 }
 
-export async function desactivarMision(id: string): Promise<void> {
+export async function eliminarMision(id: string): Promise<void> {
   await apiClient.delete(`/misiones/${id}`)
 }

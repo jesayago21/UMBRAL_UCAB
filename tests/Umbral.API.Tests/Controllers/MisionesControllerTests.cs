@@ -78,10 +78,10 @@ public sealed class MisionesControllerTests
     }
 
     [Fact]
-    public async Task DELETE_misiones_CuandoActiva_DesactivaYRetorna204()
+    public async Task DELETE_misiones_CuandoSinSesiones_EliminaMisionYEtapas_Retorna204()
     {
         SetRole("Administrador");
-        var create = await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest("Mision Desactivar", activar: true));
+        var create = await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest("Mision Eliminar", activar: true));
         create.StatusCode.Should().Be(HttpStatusCode.Created);
         var id = await ReadCreatedId(create);
 
@@ -89,9 +89,7 @@ public sealed class MisionesControllerTests
         delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var get = await _client.GetAsync($"/api/v1/misiones/{id}");
-        get.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await get.Content.ReadFromJsonAsync<MisionResponse>();
-        body!.Estado.Should().Be("Inactiva");
+        get.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

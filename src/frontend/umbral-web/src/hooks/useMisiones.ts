@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   actualizarMision,
   crearMision,
-  desactivarMision,
+  eliminarMision,
   getMision,
   listMisiones,
 } from '@/services/misionService'
@@ -50,10 +50,10 @@ export function useActualizarMision() {
   })
 }
 
-export function useDesactivarMision() {
+export function useEliminarMision() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => desactivarMision(id),
+    mutationFn: (id: string) => eliminarMision(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: MISIONES_KEY })
     },

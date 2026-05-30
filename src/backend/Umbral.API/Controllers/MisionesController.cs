@@ -7,7 +7,7 @@ using Umbral.API.Contracts.Misiones;
 using Umbral.API.Extensions;
 using Umbral.Application.Misiones.Commands.ActualizarMision;
 using Umbral.Application.Misiones.Commands.CrearMision;
-using Umbral.Application.Misiones.Commands.DesactivarMision;
+using Umbral.Application.Misiones.Commands.EliminarMision;
 using Umbral.Application.Misiones.Models;
 using Umbral.Application.Misiones.Queries.GetMisionById;
 using Umbral.Application.Misiones.Queries.ListMisiones;
@@ -94,9 +94,9 @@ public sealed class MisionesController : ControllerBase
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Administrador")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Desactivar(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new DesactivarMisionCommand(id), cancellationToken);
+        var result = await _mediator.Send(new EliminarMisionCommand(id), cancellationToken);
         return result.ToNoContentResult(HttpContext);
     }
 

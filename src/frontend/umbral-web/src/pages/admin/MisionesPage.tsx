@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { emptyEtapa, EtapasEditor } from '@/components/admin/EtapasEditor'
+import { MisionEtapasPanel } from '@/components/admin/MisionEtapasPanel'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -7,7 +9,7 @@ import { SuccessAlert } from '@/components/shared/SuccessAlert'
 import {
   useActualizarMision,
   useCrearMision,
-  useDesactivarMision,
+  useEliminarMision,
   useMisiones,
 } from '@/hooks/useMisiones'
 import { useSuccessMessage } from '@/hooks/useSuccessMessage'
@@ -22,13 +24,15 @@ import {
   inputClass,
   selectClass,
 } from '@/styles/ui'
-import type { MisionDto } from '@/types/mision.types'
+import type { CrearEtapaRequest, MisionDto } from '@/types/mision.types'
 
 export function MisionesPage() {
   const [nombreFiltro, setNombreFiltro] = useState('')
   const [estadoFiltro, setEstadoFiltro] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const [createEtapas, setCreateEtapas] = useState<CrearEtapaRequest[]>([emptyEtapa()])
   const [editTarget, setEditTarget] = useState<MisionDto | null>(null)
+  const [detailTarget, setDetailTarget] = useState<MisionDto | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const { successMessage, showSuccess, clearSuccess } = useSuccessMessage()
 
@@ -40,29 +44,34 @@ export function MisionesPage() {
   const { data, isLoading, isError, error, refetch, isFetching } = useMisiones(params)
   const crear = useCrearMision()
   const actualizar = useActualizarMision()
-  const desactivar = useDesactivarMision()
+  const eliminar = useEliminarMision()
 
-  const isSaving = crear.isPending || actualizar.isPending || desactivar.isPending
+  const isSaving = crear.isPending || actualizar.isPending || eliminar.isPending
   const hasFilters = Boolean(nombreFiltro || estadoFiltro)
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError(null)
     const form = new FormData(event.currentTarget)
+    const etapasValidas = createEtapas.filter(
+      (e) => e.descripcion.trim() && e.codigoQrSolucion.trim(),
+    )
+    if (etapasValidas.length === 0) {
+      setFormError('Agrega al menos una etapa con descripción y código QR.')
+      return
+    }
     try {
       await crear.mutateAsync({
         nombre: String(form.get('nombre')),
         activar: form.get('activar') === 'on',
-        etapas: [
-          {
-            descripcion: String(form.get('etapaDescripcion')),
-            codigoQrSolucion: String(form.get('etapaQr')),
-            pistas: [],
-          },
-        ],
+        etapas: etapasValidas.map((e) => ({
+          descripcion: e.descripcion.trim(),
+          codigoQrSolucion: e.codigoQrSolucion.trim(),
+          pistas: [],
+        })),
       })
       setShowCreate(false)
-      event.currentTarget.reset()
+      setCreateEtapas([emptyEtapa()])
       showSuccess('Misión creada correctamente.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
@@ -90,12 +99,18 @@ export function MisionesPage() {
     }
   }
 
-  const handleDesactivar = async (mision: MisionDto) => {
-    if (!window.confirm(`¿Desactivar la misión "${mision.nombre}"?`)) return
+  const handleEliminar = async (mision: MisionDto) => {
+    const msg =
+      mision.totalEtapas > 0
+        ? `¿Eliminar la misión "${mision.nombre}" y sus ${mision.totalEtapas} etapa(s)? Esta acción no se puede deshacer.`
+        : `¿Eliminar la misión "${mision.nombre}"? Esta acción no se puede deshacer.`
+    if (!window.confirm(msg)) return
     setFormError(null)
     try {
-      await desactivar.mutateAsync(mision.id)
-      showSuccess(`Misión "${mision.nombre}" desactivada.`)
+      await eliminar.mutateAsync(mision.id)
+      if (detailTarget?.id === mision.id) setDetailTarget(null)
+      if (editTarget?.id === mision.id) setEditTarget(null)
+      showSuccess(`Misión "${mision.nombre}" eliminada.`)
     } catch (err) {
       setFormError(getApiErrorMessage(err))
     }
@@ -110,7 +125,7 @@ export function MisionesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Misiones"
-        description="Catálogo de búsqueda del tesoro. Las misiones activas las usa el operador en sesiones."
+        description="Una misión agrupa varias etapas (checkpoints con QR). El operador elige una misión activa al abrir una sesión en vivo."
         action={
           <button
             type="button"
@@ -118,6 +133,8 @@ export function MisionesPage() {
             onClick={() => {
               setShowCreate(true)
               setEditTarget(null)
+              setDetailTarget(null)
+              setCreateEtapas([emptyEtapa()])
               setFormError(null)
             }}
             className={btnPrimary}
@@ -163,18 +180,15 @@ export function MisionesPage() {
       {showCreate && (
         <form onSubmit={handleCreate} className={`${cardClass} space-y-3`}>
           <h3 className="font-medium text-slate-900">Crear misión</h3>
+          <p className="text-xs text-slate-600">
+            La misión es la plantilla del recorrido. Las etapas son los puntos con QR que los
+            equipos completan en orden durante la sesión.
+          </p>
           <input name="nombre" required placeholder="Nombre de la misión" className={inputClass} />
-          <input
-            name="etapaDescripcion"
-            required
-            placeholder="Descripción etapa 1"
-            className={inputClass}
-          />
-          <input
-            name="etapaQr"
-            required
-            placeholder="Código QR solución etapa 1"
-            className={inputClass}
+          <EtapasEditor
+            etapas={createEtapas}
+            onChange={setCreateEtapas}
+            disabled={isSaving}
           />
           <label className="flex items-center gap-2 text-sm text-slate-700">
             <input name="activar" type="checkbox" className="rounded border-slate-300" />
@@ -187,13 +201,20 @@ export function MisionesPage() {
             <button
               type="button"
               disabled={isSaving}
-              onClick={() => setShowCreate(false)}
+              onClick={() => {
+                setShowCreate(false)
+                setCreateEtapas([emptyEtapa()])
+              }}
               className={btnSecondary}
             >
               Cancelar
             </button>
           </div>
         </form>
+      )}
+
+      {detailTarget && (
+        <MisionEtapasPanel mision={detailTarget} onClose={() => setDetailTarget(null)} />
       )}
 
       {editTarget && (
@@ -278,7 +299,21 @@ export function MisionesPage() {
                         type="button"
                         disabled={isSaving}
                         onClick={() => {
+                          setDetailTarget(mision)
+                          setEditTarget(null)
+                          setShowCreate(false)
+                          setFormError(null)
+                        }}
+                        className={btnLink}
+                      >
+                        Ver etapas
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSaving}
+                        onClick={() => {
                           setEditTarget(mision)
+                          setDetailTarget(null)
                           setShowCreate(false)
                           setFormError(null)
                         }}
@@ -286,16 +321,14 @@ export function MisionesPage() {
                       >
                         Editar
                       </button>
-                      {mision.estado === 'Activa' && (
-                        <button
-                          type="button"
-                          disabled={isSaving}
-                          onClick={() => void handleDesactivar(mision)}
-                          className={btnDangerLink}
-                        >
-                          Desactivar
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        disabled={isSaving}
+                        onClick={() => void handleEliminar(mision)}
+                        className={btnDangerLink}
+                      >
+                        Eliminar
+                      </button>
                     </div>
                   </td>
                 </tr>
