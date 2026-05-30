@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { OperadorLayout } from '@/components/layout/OperadorLayout'
+import { TriviaLayout } from '@/components/layout/TriviaLayout'
 import { CategoriasPage } from '@/pages/admin/CategoriasPage'
 import { MisionesPage } from '@/pages/admin/MisionesPage'
 import { PreguntasPage } from '@/pages/admin/PreguntasPage'
@@ -28,8 +29,13 @@ export function AppRouter() {
       >
         <Route index element={<Navigate to="misiones" replace />} />
         <Route path="misiones" element={<MisionesPage />} />
-        <Route path="categorias" element={<CategoriasPage />} />
-        <Route path="preguntas" element={<PreguntasPage />} />
+        <Route path="trivia" element={<TriviaLayout />}>
+          <Route index element={<Navigate to="categorias" replace />} />
+          <Route path="categorias" element={<CategoriasPage />} />
+          <Route path="preguntas" element={<PreguntasPage />} />
+        </Route>
+        <Route path="categorias" element={<Navigate to="/admin/trivia/categorias" replace />} />
+        <Route path="preguntas" element={<Navigate to="/admin/trivia/preguntas" replace />} />
       </Route>
 
       <Route

@@ -42,6 +42,12 @@ export function getApiErrorMessage(error: unknown): string {
     if (error.response?.status === 403) {
       return 'No tienes permiso para esta acción (403).'
     }
+    if (error.response?.status === 500) {
+      return (
+        (data?.mensaje ?? 'Error interno del servidor.') +
+        ' Si acabas de actualizar el backend, reinicia la API (aplica migraciones al arrancar en Development).'
+      )
+    }
   }
   if (error instanceof Error) return error.message
   return 'Error inesperado'
