@@ -204,7 +204,7 @@ Fase E — Entrega
   E1-6   Guion de demo (login Keycloak + misiones + banco trivia + 403 por rol)
 ```
 
-**Siguiente paso sugerido:** **E1-2** (frontend CRUD Misiones + Trivia) → **E1-K4** (login OIDC).
+**Siguiente paso sugerido:** **E1-K4** (login OIDC Keycloak) → **E1-5** (README arranque local).
 
 ### 6.2 Tabla de ítems
 
@@ -221,7 +221,7 @@ Fase E — Entrega
 | E1-K2 | API valida token Keycloak (`Authority`/JWKS) + mapeo `realm_access.roles` | código | E1-K1 | **B** | ✅ |
 | E1-K3 | Eliminar JWT propio (`AuthController`, `JwtTokenIssuer`, `Usuario`, BCrypt) + migración drop `usuarios` | código | E1-K2 | **B** | ✅ |
 | E1-4 | Cerrar brecha de cobertura con tests faltantes (TDD) — total **96%** — [doc](iter-e1-01-cobertura-baseline.md) | código | E1-10, E1-K3 | **C** | ✅ |
-| E1-2 | Frontend: CRUD **Misiones** + CRUD **Trivia** (categorías/preguntas) | código | E1-10 | **D** | ⬜ |
+| E1-2 | Frontend: CRUD **Misiones** + CRUD **Trivia** (categorías/preguntas) — [doc](iter-e1-02-frontend-crud.md) | código | E1-10 | **D** | ✅ |
 | E1-K4 | Frontend login **OIDC** contra Keycloak (`react-oidc-context`) | código | E1-K2, E1-2 | **D** | ⬜ |
 | E1-5 | README arranque local (backend + db + Keycloak + front) | doc | E1-2 | **E** | ⬜ |
 | E1-6 | Guion de demo para el profesor (Keycloak + misiones + banco trivia) | doc | E1-2 | **E** | ⬜ |

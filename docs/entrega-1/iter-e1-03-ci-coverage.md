@@ -73,5 +73,6 @@ esté en verde y descargar el artefacto `coverage-report`.
 
 | Ítem | Acción |
 |------|--------|
-| **E1-2** | Frontend CRUD (Vitest + gate 80% cuando exista `umbral-web`) |
+| **E1-K4** | Login OIDC Keycloak en `umbral-web` |
+| Entrega 2 | Vitest + gate cobertura frontend 80% (`umbral-web` ya existe) |
 | **E1-5** | README con badge/link a Actions |

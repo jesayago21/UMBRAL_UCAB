@@ -83,11 +83,31 @@ NameClaimType = "preferred_username",
 
 ```powershell
 docker compose up -d keycloak
-# discovery del realm
-curl http://localhost:8080/realms/umbral/.well-known/openid-configuration
-# token del usuario demo (Direct Access Grant)
-# grant_type=password client_id=umbral-web username=operador password=Umbral123!
 ```
+
+**Discovery del realm** (en PowerShell usar `curl.exe` o `Invoke-RestMethod`; `curl` solo es alias de `Invoke-WebRequest`):
+
+```powershell
+curl.exe http://localhost:8080/realms/umbral/.well-known/openid-configuration
+```
+
+**Token Bearer** (usuario `admin` para el catálogo; `operador` para probar rol Operador):
+
+```powershell
+# Opción A — curl real en Windows (recomendado)
+curl.exe -s -X POST "http://localhost:8080/realms/umbral/protocol/openid-connect/token" `
+  -H "Content-Type: application/x-www-form-urlencoded" `
+  -d "grant_type=password&client_id=umbral-web&username=admin&password=Umbral123!"
+
+# Opción B — solo el access_token en consola
+$r = Invoke-RestMethod -Method Post `
+  -Uri "http://localhost:8080/realms/umbral/protocol/openid-connect/token" `
+  -ContentType "application/x-www-form-urlencoded" `
+  -Body "grant_type=password&client_id=umbral-web&username=admin&password=Umbral123!"
+$r.access_token
+```
+
+Copia el valor de **`access_token`** (empieza con `eyJ...`) y pégalo en `http://localhost:5173/login`.
 
 Resultado del token decodificado:
 

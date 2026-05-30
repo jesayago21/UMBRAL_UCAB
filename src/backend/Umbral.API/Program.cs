@@ -5,6 +5,15 @@ using Umbral.Infrastructure.DependencyInjection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendDev", policy =>
+        policy.WithOrigins(
+                builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
+                ?? ["http://localhost:5173"])
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddUmbralApi(builder.Configuration, builder.Environment);
@@ -12,6 +21,8 @@ builder.Services.AddUmbralApi(builder.Configuration, builder.Environment);
 var app = builder.Build();
 
 app.UseUmbralExceptionHandling();
+
+app.UseCors("FrontendDev");
 
 app.UseAuthentication();
 app.UseAuthorization();
