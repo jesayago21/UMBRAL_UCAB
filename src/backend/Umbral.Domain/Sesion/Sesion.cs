@@ -1,4 +1,5 @@
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Sesion.Events;
 using Umbral.Domain.Sesion.Validacion;
 using Umbral.Domain.Shared;
@@ -14,7 +15,7 @@ namespace Umbral.Domain.Sesion;
 ///
 /// Factory methods:
 ///   CrearBusquedaTesoro(snapshot, operadorId) → emite SesionCreada
-///   CrearTrivia(preguntas, operadorId)         → emite SesionCreada (iter futura)
+///   CrearTrivia(preguntas, operadorId)         → emite SesionCreada
 /// </summary>
 public sealed class Sesion : AggregateRoot
 {
@@ -22,10 +23,12 @@ public sealed class Sesion : AggregateRoot
     public TipoSesion TipoSesion { get; private set; }
     public UsuarioId OperadorId { get; private set; } = default!;
     public EstadoSesion Estado { get; private set; }
+    public CodigoAcceso CodigoAcceso { get; private set; } = default!;
     public DateTime IniciadaEn { get; private set; }
     public DateTime? FinalizadaEn { get; private set; }
 
     public ContextoBusquedaTesoro? ContextoBT { get; private set; }
+    public ContextoTrivia? ContextoTrivia { get; private set; }
 
     private readonly List<EquipoSesion> _equipos = [];
     private readonly List<EventoSesion> _historialEventos = [];
@@ -48,14 +51,36 @@ public sealed class Sesion : AggregateRoot
 
         var sesion = new Sesion
         {
-            SesionId   = SesionId.Nuevo(),
-            TipoSesion = TipoSesion.BusquedaTesoro,
-            OperadorId = operadorId,
-            Estado     = EstadoSesion.Programada,
-            ContextoBT = ContextoBusquedaTesoro.Crear(snapshot)
+            SesionId     = SesionId.Nuevo(),
+            TipoSesion   = TipoSesion.BusquedaTesoro,
+            OperadorId   = operadorId,
+            Estado       = EstadoSesion.Programada,
+            CodigoAcceso = CodigoAcceso.Generar(),
+            ContextoBT   = ContextoBusquedaTesoro.Crear(snapshot),
         };
         sesion.RaiseDomainEvent(
             new SesionCreada(sesion.SesionId, TipoSesion.BusquedaTesoro, operadorId));
+        return sesion;
+    }
+
+    public static Sesion CrearTrivia(
+        IReadOnlyList<PreguntaId> preguntasOrdenadas,
+        UsuarioId operadorId)
+    {
+        ArgumentNullException.ThrowIfNull(preguntasOrdenadas);
+        ArgumentNullException.ThrowIfNull(operadorId);
+
+        var sesion = new Sesion
+        {
+            SesionId       = SesionId.Nuevo(),
+            TipoSesion     = TipoSesion.Trivia,
+            OperadorId     = operadorId,
+            Estado         = EstadoSesion.Programada,
+            CodigoAcceso   = CodigoAcceso.Generar(),
+            ContextoTrivia = ContextoTrivia.Crear(preguntasOrdenadas)
+        };
+        sesion.RaiseDomainEvent(
+            new SesionCreada(sesion.SesionId, TipoSesion.Trivia, operadorId));
         return sesion;
     }
 
@@ -76,15 +101,27 @@ public sealed class Sesion : AggregateRoot
     }
 
     /// <summary>
-    /// Registra un equipo en la sesión (HU-13).
-    /// Criterios iter-02: RB-13-01…03. Globales: RB-02 (nombre único), RB-03 (no en sesión terminal).
-    /// RB-13-03: genera <see cref="CodigoAcceso"/> único por equipo.
+    /// Un jugador autenticado se une a la sesión con el código de acceso de la sesión (RB-02).
+    /// Solo en Programada o EnPreparacion; abre inscripción si aún está programada.
     /// </summary>
-    public EquipoSesion RegistrarEquipo(string nombre)
+    public EquipoSesion UnirseEquipo(UsuarioId jugadorId, string nombre, string codigoAccesoIngresado)
     {
         if (Estado is EstadoSesion.Finalizada or EstadoSesion.Cancelada)
             throw new DomainException(
-                "No se pueden registrar equipos en una sesión cerrada.");
+                "No se pueden unir equipos a una sesión cerrada.");
+
+        if (Estado is EstadoSesion.Activa or EstadoSesion.Pausada)
+            throw new DomainException(
+                "La sesión ya está en juego. Solo puedes unirte antes de que el operador la inicie.");
+
+        if (!CodigoAcceso.CoincideCon(codigoAccesoIngresado))
+            throw new DomainException("El código de acceso de la sesión no es válido.");
+
+        if (Estado == EstadoSesion.Programada)
+            AbrirParaRegistro();
+
+        if (_equipos.Any(e => e.JugadorId == jugadorId))
+            throw new DomainException("Ya estás inscrito en esta sesión.");
 
         var nombreEquipo = NombreEquipo.Crear(nombre);
 
@@ -93,9 +130,9 @@ public sealed class Sesion : AggregateRoot
             throw new DomainException(
                 $"Ya existe un equipo con el nombre '{nombreEquipo.Valor}' en esta sesión.");
 
-        var equipo = EquipoSesion.Crear(SesionId, nombreEquipo.Valor);
+        var equipo = EquipoSesion.Crear(SesionId, jugadorId, nombreEquipo.Valor);
         _equipos.Add(equipo);
-        RegistrarEvento("EquipoRegistrado", nombreEquipo.Valor);
+        RegistrarEvento("EquipoUnido", nombreEquipo.Valor);
         return equipo;
     }
 

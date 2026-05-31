@@ -6,23 +6,24 @@ public sealed class EquipoSesion : Entity
 {
     public EquipoId EquipoId { get; private set; } = default!;
     public SesionId SesionId { get; private set; } = default!;
+    public UsuarioId JugadorId { get; private set; } = default!;
     public NombreEquipo Nombre { get; private set; } = default!;
-    public CodigoAcceso CodigoAcceso { get; private set; } = default!;
     public Puntaje PuntajeTotal { get; private set; } = default!;
 
     private EquipoSesion() { }
 
-    internal static EquipoSesion Crear(SesionId sesionId, string nombre)
+    internal static EquipoSesion Crear(SesionId sesionId, UsuarioId jugadorId, string nombre)
     {
         ArgumentNullException.ThrowIfNull(sesionId);
+        ArgumentNullException.ThrowIfNull(jugadorId);
 
         return new EquipoSesion
         {
-            EquipoId      = EquipoId.Nuevo(),
-            SesionId      = sesionId,
-            Nombre        = NombreEquipo.Crear(nombre),
-            CodigoAcceso  = CodigoAcceso.Generar(),
-            PuntajeTotal  = Puntaje.Zero()
+            EquipoId     = EquipoId.Nuevo(),
+            SesionId     = sesionId,
+            JugadorId    = jugadorId,
+            Nombre       = NombreEquipo.Crear(nombre),
+            PuntajeTotal = Puntaje.Zero(),
         };
     }
 

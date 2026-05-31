@@ -31,6 +31,12 @@ public sealed class SesionConfiguration : IEntityTypeConfiguration<Sesion>
             .HasMaxLength(50)
             .IsRequired();
 
+        builder.Property(x => x.CodigoAcceso)
+            .HasColumnName("codigo_acceso")
+            .HasConversion(x => x.Valor, value => CodigoAcceso.Crear(value))
+            .HasMaxLength(32)
+            .IsRequired();
+
         builder.Property(x => x.IniciadaEn)
             .HasColumnName("iniciada_en")
             .IsRequired();
@@ -43,6 +49,12 @@ public sealed class SesionConfiguration : IEntityTypeConfiguration<Sesion>
             ContextoBusquedaTesoroConfiguration.Configure);
 
         builder.Navigation(x => x.ContextoBT).IsRequired(false);
+
+        builder.OwnsOne(
+            x => x.ContextoTrivia,
+            ContextoTriviaConfiguration.Configure);
+
+        builder.Navigation(x => x.ContextoTrivia).IsRequired(false);
 
         builder.Ignore(x => x.Equipos);
         builder.Ignore(x => x.HistorialEventos);

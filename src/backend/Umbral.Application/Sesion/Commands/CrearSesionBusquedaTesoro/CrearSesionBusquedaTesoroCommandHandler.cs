@@ -10,7 +10,7 @@ using SesionAR = Umbral.Domain.Sesion.Sesion;
 namespace Umbral.Application.Sesion.Commands.CrearSesionBusquedaTesoro;
 
 internal sealed class CrearSesionBusquedaTesoroCommandHandler
-    : IRequestHandler<CrearSesionBusquedaTesoroCommand, Result<Guid>>
+    : IRequestHandler<CrearSesionBusquedaTesoroCommand, Result<CrearSesionBusquedaTesoroResult>>
 {
     private readonly ISesionRepository _sesionRepository;
     private readonly IMisionRepository _misionRepository;
@@ -26,7 +26,7 @@ internal sealed class CrearSesionBusquedaTesoroCommandHandler
         _eventPublisher   = eventPublisher;
     }
 
-    public async Task<Result<Guid>> Handle(
+    public async Task<Result<CrearSesionBusquedaTesoroResult>> Handle(
         CrearSesionBusquedaTesoroCommand command,
         CancellationToken cancellationToken)
     {
@@ -50,6 +50,9 @@ internal sealed class CrearSesionBusquedaTesoroCommandHandler
             cancellationToken);
         sesion.ClearDomainEvents();
 
-        return Result<Guid>.Ok(sesion.SesionId.Valor);
+        return Result<CrearSesionBusquedaTesoroResult>.Ok(
+            new CrearSesionBusquedaTesoroResult(
+                sesion.SesionId.Valor,
+                sesion.CodigoAcceso.Valor));
     }
 }

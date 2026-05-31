@@ -1,5 +1,6 @@
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
 using Umbral.Domain.Sesion;
+using Umbral.Domain.Tests.Sesion;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Domain.Tests.Sesion.Builders;
@@ -74,29 +75,31 @@ public sealed class SesionBuilder
         switch (_estado)
         {
             case EstadoSesion.Programada:
+                foreach (var nombre in _equipos)
+                    SesionTestHelpers.UnirEquipo(sesion, nombre);
                 break;
 
             case EstadoSesion.EnPreparacion:
                 sesion.AbrirParaRegistro();
                 foreach (var nombre in _equipos)
-                    sesion.RegistrarEquipo(nombre);
+                    SesionTestHelpers.UnirEquipo(sesion, nombre);
                 break;
 
             case EstadoSesion.Activa:
                 sesion.AbrirParaRegistro();
                 foreach (var nombre in _equipos)
-                    sesion.RegistrarEquipo(nombre);
+                    SesionTestHelpers.UnirEquipo(sesion, nombre);
                 if (!sesion.Equipos.Any())
-                    sesion.RegistrarEquipo("EquipoDefault");
+                    SesionTestHelpers.UnirEquipo(sesion, "Alpha");
                 sesion.Iniciar();
                 break;
 
             case EstadoSesion.Pausada:
                 sesion.AbrirParaRegistro();
                 if (_equipos.Count == 0)
-                    sesion.RegistrarEquipo("EquipoDefault");
+                    SesionTestHelpers.UnirEquipo(sesion, "Alpha");
                 foreach (var nombre in _equipos)
-                    sesion.RegistrarEquipo(nombre);
+                    SesionTestHelpers.UnirEquipo(sesion, nombre);
                 sesion.Iniciar();
                 sesion.Pausar();
                 break;
@@ -104,9 +107,9 @@ public sealed class SesionBuilder
             case EstadoSesion.Finalizada:
                 sesion.AbrirParaRegistro();
                 if (_equipos.Count == 0)
-                    sesion.RegistrarEquipo("EquipoDefault");
+                    SesionTestHelpers.UnirEquipo(sesion, "Alpha");
                 foreach (var nombre in _equipos)
-                    sesion.RegistrarEquipo(nombre);
+                    SesionTestHelpers.UnirEquipo(sesion, nombre);
                 sesion.Iniciar();
                 sesion.Finalizar();
                 break;

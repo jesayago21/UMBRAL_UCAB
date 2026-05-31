@@ -15,8 +15,11 @@ public sealed class CodigoAcceso : ValueObject
     {
         if (string.IsNullOrWhiteSpace(valor))
             throw new DomainException("El código de acceso no puede estar vacío.");
-        return new CodigoAcceso(valor);
+        return new CodigoAcceso(valor.Trim().ToUpperInvariant());
     }
+
+    public bool CoincideCon(string ingresado) =>
+        string.Equals(Valor, ingresado.Trim(), StringComparison.OrdinalIgnoreCase);
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

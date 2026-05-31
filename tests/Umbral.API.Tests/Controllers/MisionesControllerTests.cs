@@ -127,12 +127,16 @@ public sealed class MisionesControllerTests
         var crearSesion = await _client.PostAsJsonAsync(
             "/api/v1/sesiones/busqueda-tesoro",
             new CrearSesionBusquedaTesoroRequest(id));
-        var sesionId = (await crearSesion.Content.ReadFromJsonAsync<CrearSesionResponse>())!.Id;
+        var sesion = (await crearSesion.Content.ReadFromJsonAsync<CrearSesionResponse>())!;
 
+        SetRole("EquipoParticipante");
+        _client.DefaultRequestHeaders.Remove(TestAuthHandler.UserIdHeaderName);
+        _client.DefaultRequestHeaders.Add(TestAuthHandler.UserIdHeaderName, Guid.NewGuid().ToString());
         await _client.PostAsJsonAsync(
-            $"/api/v1/sesiones/{sesionId}/equipos",
-            new RegistrarEquipoRequest("Equipo HU03"));
-        await _client.PostAsync($"/api/v1/sesiones/{sesionId}/iniciar", null);
+            $"/api/v1/sesiones/{sesion.Id}/unirse",
+            new UnirseSesionRequest(sesion.CodigoAcceso, "Alpha"));
+        SetRole("Administrador");
+        await _client.PostAsync($"/api/v1/sesiones/{sesion.Id}/iniciar", null);
 
         var response = await _client.PutAsJsonAsync(
             $"/api/v1/misiones/{id}",
@@ -142,6 +146,30 @@ public sealed class MisionesControllerTests
 
         var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
         error!.Tipo.Should().Be("DomainError");
+    }
+
+    [Fact]
+    public async Task GET_misiones_activas_CuandoOperador_Retorna200()
+    {
+        SetRole("Administrador");
+        var nombre = $"Mision activa operador {Guid.NewGuid():N}";
+        await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest(nombre, activar: true));
+
+        SetRole("Operador");
+        var response = await _client.GetAsync("/api/v1/misiones/activas");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<List<MisionActivaResponse>>();
+        body.Should().NotBeNull();
+        body!.Should().Contain(x => x.Nombre == nombre);
+    }
+
+    [Fact]
+    public async Task GET_misiones_activas_CuandoEquipo_Retorna403()
+    {
+        SetRole("EquipoParticipante");
+        var response = await _client.GetAsync("/api/v1/misiones/activas");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     private void SetRole(string role)

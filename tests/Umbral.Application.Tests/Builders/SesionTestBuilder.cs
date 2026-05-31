@@ -1,5 +1,6 @@
 using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
 using Umbral.Domain.Sesion;
+using Umbral.Domain.Shared;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Application.Tests.Builders;
@@ -20,7 +21,7 @@ internal static class SesionTestBuilder
     public static SesionAR Finalizada()
     {
         var sesion = EnPreparacionSinEquipos();
-        sesion.RegistrarEquipo("EquipoDefault");
+        UnirEquipo(sesion, "Alpha");
         sesion.Iniciar();
         sesion.Finalizar();
         sesion.ClearDomainEvents();
@@ -30,12 +31,12 @@ internal static class SesionTestBuilder
     public static SesionAR ConEquipo(string nombre)
     {
         var sesion = EnPreparacionSinEquipos();
-        sesion.RegistrarEquipo(nombre);
+        UnirEquipo(sesion, nombre);
         sesion.ClearDomainEvents();
         return sesion;
     }
 
-    public static SesionAR Activa(string nombreEquipo = "EquipoDefault")
+    public static SesionAR Activa(string nombreEquipo = "Alpha")
     {
         var sesion = ConEquipo(nombreEquipo);
         sesion.Iniciar();
@@ -43,7 +44,7 @@ internal static class SesionTestBuilder
         return sesion;
     }
 
-    public static SesionAR Pausada(string nombreEquipo = "EquipoDefault")
+    public static SesionAR Pausada(string nombreEquipo = "Alpha")
     {
         var sesion = Activa(nombreEquipo);
         sesion.Pausar();
@@ -55,7 +56,7 @@ internal static class SesionTestBuilder
     {
         var sesion = EnPreparacionSinEquipos();
         foreach (var nombre in nombresEquipos)
-            sesion.RegistrarEquipo(nombre);
+            UnirEquipo(sesion, nombre);
 
         sesion.Iniciar();
         sesion.ClearDomainEvents();
@@ -73,10 +74,16 @@ internal static class SesionTestBuilder
         sesion.ClearDomainEvents();
         sesion.AbrirParaRegistro();
         foreach (var nombre in nombresEquipos)
-            sesion.RegistrarEquipo(nombre);
+            UnirEquipo(sesion, nombre);
 
         sesion.Iniciar();
         sesion.ClearDomainEvents();
         return sesion;
+    }
+
+    private static void UnirEquipo(SesionAR sesion, string nombre, UsuarioId? jugador = null)
+    {
+        var j = jugador ?? UsuarioId.Nuevo();
+        sesion.UnirseEquipo(j, nombre, sesion.CodigoAcceso.Valor);
     }
 }

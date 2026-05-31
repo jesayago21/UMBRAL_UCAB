@@ -5,15 +5,15 @@ using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
 
-namespace Umbral.Application.Sesion.Commands.RegistrarEquipo;
+namespace Umbral.Application.Sesion.Commands.AbrirInscripcionSesion;
 
-internal sealed class RegistrarEquipoCommandHandler
-    : IRequestHandler<RegistrarEquipoCommand, Result<RegistrarEquipoResult>>
+internal sealed class AbrirInscripcionSesionCommandHandler
+    : IRequestHandler<AbrirInscripcionSesionCommand, Result<Unit>>
 {
     private readonly ISesionRepository _sesionRepository;
     private readonly IEventPublisher _eventPublisher;
 
-    public RegistrarEquipoCommandHandler(
+    public AbrirInscripcionSesionCommandHandler(
         ISesionRepository sesionRepository,
         IEventPublisher eventPublisher)
     {
@@ -21,8 +21,8 @@ internal sealed class RegistrarEquipoCommandHandler
         _eventPublisher   = eventPublisher;
     }
 
-    public async Task<Result<RegistrarEquipoResult>> Handle(
-        RegistrarEquipoCommand command,
+    public async Task<Result<Unit>> Handle(
+        AbrirInscripcionSesionCommand command,
         CancellationToken cancellationToken)
     {
         var sesion = await _sesionRepository.FindByIdAsync(
@@ -30,10 +30,7 @@ internal sealed class RegistrarEquipoCommandHandler
                          cancellationToken)
                      ?? throw new NotFoundException(nameof(SesionAR), command.SesionId);
 
-        if (sesion.Estado == EstadoSesion.Programada)
-            sesion.AbrirParaRegistro();
-
-        var equipo = sesion.RegistrarEquipo(command.NombreEquipo);
+        sesion.AbrirParaRegistro();
 
         await _sesionRepository.SaveAsync(sesion, cancellationToken);
         await _eventPublisher.PublishBatchAsync(
@@ -41,9 +38,6 @@ internal sealed class RegistrarEquipoCommandHandler
             cancellationToken);
         sesion.ClearDomainEvents();
 
-        return Result<RegistrarEquipoResult>.Ok(
-            new RegistrarEquipoResult(
-                equipo.EquipoId.Valor,
-                equipo.CodigoAcceso.Valor));
+        return Result<Unit>.Ok(Unit.Value);
     }
 }

@@ -67,7 +67,8 @@ public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().NotBeEmpty();
+        result.Value.Id.Should().NotBeEmpty();
+        result.Value.CodigoAcceso.Should().NotBeNullOrWhiteSpace();
 
         await _sesionRepo.Received(1).SaveAsync(
             Arg.Any<SesionAR>(),
@@ -85,6 +86,7 @@ public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
         sesionGuardada!.DomainEvents.Should().BeEmpty();
         sesionGuardada.OperadorId.Valor.Should().Be(operadorId);
         sesionGuardada.Estado.Should().Be(EstadoSesion.Programada);
+        sesionGuardada.CodigoAcceso.Valor.Should().Be(result.Value.CodigoAcceso);
     }
 
     [Fact]

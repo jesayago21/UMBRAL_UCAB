@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using Umbral.API.Contracts.Misiones;
 using Umbral.API.Extensions;
 using Umbral.Application.Misiones.Commands.ActualizarMision;
+using Umbral.Application.Misiones.Commands.AgregarPistaEtapa;
 using Umbral.Application.Misiones.Commands.CrearMision;
 using Umbral.Application.Misiones.Commands.EliminarMision;
 using Umbral.Application.Misiones.Models;
 using Umbral.Application.Misiones.Queries.GetMisionById;
 using Umbral.Application.Misiones.Queries.ListMisiones;
+using Umbral.Application.Misiones.Queries.ListMisionesActivas;
 
 namespace Umbral.API.Controllers;
 
@@ -68,6 +70,15 @@ public sealed class MisionesController : ControllerBase
         return Ok(items.Select(MapToResponse).ToList());
     }
 
+    [HttpGet("activas")]
+    [Authorize(Roles = "Operador,Administrador")]
+    [ProducesResponseType(typeof(IReadOnlyList<MisionActivaResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarActivas(CancellationToken cancellationToken)
+    {
+        var items = await _mediator.Send(new ListMisionesActivasQuery(), cancellationToken);
+        return Ok(items.Select(x => new MisionActivaResponse(x.Id, x.Nombre)).ToList());
+    }
+
     [HttpGet("{id:guid}")]
     [Authorize(Roles = "Administrador")]
     [ProducesResponseType(typeof(MisionResponse), StatusCodes.Status200OK)]
@@ -75,6 +86,29 @@ public sealed class MisionesController : ControllerBase
     {
         var mision = await _mediator.Send(new GetMisionByIdQuery(id), cancellationToken);
         return Ok(MapToResponse(mision));
+    }
+
+    [HttpPost("{misionId:guid}/etapas/{etapaId:guid}/pistas")]
+    [Authorize(Roles = "Administrador")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    public async Task<IActionResult> AgregarPista(
+        Guid misionId,
+        Guid etapaId,
+        [FromBody] AgregarPistaEtapaRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new AgregarPistaEtapaCommand(
+                misionId,
+                etapaId,
+                request.Contenido,
+                request.TipoLiberacion,
+                request.SegundosLiberacion),
+            cancellationToken);
+
+        return result.ToActionResult(
+            HttpContext,
+            id => new CreatedResult($"/api/v1/misiones/{misionId}", new { id }));
     }
 
     [HttpPut("{id:guid}")]

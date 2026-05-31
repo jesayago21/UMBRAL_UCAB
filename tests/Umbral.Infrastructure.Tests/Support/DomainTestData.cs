@@ -18,12 +18,12 @@ internal static class DomainTestData
         return MisionSnapshot.Desde(mision);
     }
 
-    public static Sesion SesionBusquedaTesoroActiva(string equipo = "Equipo Alpha")
+    public static Sesion SesionBusquedaTesoroActiva(string equipo = "Alpha")
     {
         var sesion = Sesion.CrearBusquedaTesoro(MisionSnapshotActiva(), UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
         sesion.AbrirParaRegistro();
-        sesion.RegistrarEquipo(equipo);
+        sesion.UnirseEquipo(UsuarioId.Nuevo(), equipo, sesion.CodigoAcceso.Valor);
         sesion.Iniciar();
         sesion.ClearDomainEvents();
         return sesion;

@@ -79,7 +79,7 @@ public sealed class SesionCicloVidaTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .ConEquipo("Equipo Alpha").Build();
+            .ConEquipo("Alpha").Build();
 
         // Act
         sesion.Iniciar();
@@ -314,7 +314,7 @@ public sealed class SesionCicloVidaTests
         sesion.AbrirParaRegistro();
         sesion.Estado.Should().Be(EstadoSesion.EnPreparacion);
 
-        sesion.RegistrarEquipo("Alpha");
+        SesionTestHelpers.UnirEquipo(sesion, "Alpha");
         sesion.Iniciar();
         sesion.Estado.Should().Be(EstadoSesion.Activa);
 

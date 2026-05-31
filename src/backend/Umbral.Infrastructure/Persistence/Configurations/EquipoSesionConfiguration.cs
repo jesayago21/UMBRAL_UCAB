@@ -19,16 +19,14 @@ public sealed class EquipoSesionConfiguration : IEntityTypeConfiguration<EquipoS
             .HasColumnName("sesion_id")
             .IsRequired();
 
+        builder.Property(x => x.JugadorId)
+            .HasColumnName("jugador_id")
+            .IsRequired();
+
         builder.Property(x => x.Nombre)
             .HasColumnName("nombre")
             .HasConversion(x => x.Valor, value => NombreEquipo.Crear(value))
             .HasMaxLength(120)
-            .IsRequired();
-
-        builder.Property(x => x.CodigoAcceso)
-            .HasColumnName("codigo_acceso")
-            .HasConversion(x => x.Valor, value => CodigoAcceso.Crear(value))
-            .HasMaxLength(32)
             .IsRequired();
 
         builder.Property(x => x.PuntajeTotal)
@@ -42,6 +40,9 @@ public sealed class EquipoSesionConfiguration : IEntityTypeConfiguration<EquipoS
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(x => new { x.SesionId, x.Nombre })
+            .IsUnique();
+
+        builder.HasIndex(x => new { x.SesionId, x.JugadorId })
             .IsUnique();
     }
 }

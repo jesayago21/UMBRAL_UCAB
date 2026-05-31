@@ -15,6 +15,7 @@ public sealed class SesionRepository : ISesionRepository
         return await _db.Sesiones
             .AsNoTracking()
             .Include(s => s.ContextoBT)
+            .Include(s => s.ContextoTrivia)
             .Include("_equipos")
             .Include("_historialEventos")
             .Include("_evidencias")
@@ -26,6 +27,40 @@ public sealed class SesionRepository : ISesionRepository
         return await _db.Sesiones
             .AsNoTracking()
             .Where(x => x.Estado == EstadoSesion.Activa)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<Sesion>> FindOperativasByOperadorAsync(
+        UsuarioId operadorId,
+        CancellationToken ct = default)
+    {
+        return await _db.Sesiones
+            .AsNoTracking()
+            .Include(s => s.ContextoBT)
+            .Include(s => s.ContextoTrivia)
+            .Include("_equipos")
+            .Where(x =>
+                x.OperadorId == operadorId &&
+                x.Estado != EstadoSesion.Finalizada &&
+                x.Estado != EstadoSesion.Cancelada)
+            .OrderByDescending(x => x.IniciadaEn)
+            .ThenByDescending(x => x.SesionId)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<Sesion>> FindDisponiblesParaEquipoAsync(
+        TipoSesion tipo,
+        CancellationToken ct = default)
+    {
+        return await _db.Sesiones
+            .AsNoTracking()
+            .Include(s => s.ContextoBT)
+            .Include(s => s.ContextoTrivia)
+            .Include("_equipos")
+            .Where(x =>
+                x.TipoSesion == tipo &&
+                x.Estado == EstadoSesion.EnPreparacion)
+            .OrderByDescending(x => x.SesionId)
             .ToListAsync(ct);
     }
 
@@ -50,6 +85,7 @@ public sealed class SesionRepository : ISesionRepository
                 ct);
 
         await SyncContextoBtAsync(sesion, ct);
+        await SyncContextoTriviaAsync(sesion, ct);
         await InsertNewChildrenAsync(sesion, ct);
         await SyncEquiposPuntajeAsync(sesion, ct);
         await _db.SaveChangesAsync(ct);
@@ -72,6 +108,26 @@ public sealed class SesionRepository : ISesionRepository
                  etapa_actual_index = EXCLUDED.etapa_actual_index,
                  ganador_etapa_actual_id = EXCLUDED.ganador_etapa_actual_id,
                  mision_snapshot_json = EXCLUDED.mision_snapshot_json
+             """,
+            ct);
+    }
+
+    private async Task SyncContextoTriviaAsync(Sesion sesion, CancellationToken ct)
+    {
+        if (sesion.ContextoTrivia is null)
+            return;
+
+        var tv   = sesion.ContextoTrivia;
+        var json = PreguntasOrdenadasPersistence.ToJson(tv.PreguntasOrdenadas);
+
+        await _db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+             INSERT INTO contextos_trivia ("SesionId", pregunta_actual_index, timer_cerrado_en, preguntas_ordenadas_json)
+             VALUES ({sesion.SesionId.Valor}, {tv.PreguntaActualIndex}, {tv.TimerCerradoEn}, {json}::jsonb)
+             ON CONFLICT ("SesionId") DO UPDATE SET
+                 pregunta_actual_index = EXCLUDED.pregunta_actual_index,
+                 timer_cerrado_en = EXCLUDED.timer_cerrado_en,
+                 preguntas_ordenadas_json = EXCLUDED.preguntas_ordenadas_json
              """,
             ct);
     }

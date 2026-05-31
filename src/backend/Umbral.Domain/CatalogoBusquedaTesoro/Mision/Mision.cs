@@ -72,6 +72,18 @@ public sealed class Mision : AggregateRoot
         Nombre = nombre.Trim();
     }
 
+    public void AgregarPistaAEtapa(
+        EtapaId etapaId,
+        string contenido,
+        TipoLiberacion tipoLiberacion,
+        int? segundosLiberacion = null)
+    {
+        var etapa = _etapas.FirstOrDefault(e => e.EtapaId == etapaId)
+            ?? throw new DomainException("La etapa indicada no pertenece a esta misión.");
+
+        etapa.AgregarPista(contenido, tipoLiberacion, segundosLiberacion);
+    }
+
     /// <summary>
     /// Indica si la misión puede usarse como base de una sesión BusquedaTesoro.
     /// </summary>

@@ -7,10 +7,10 @@ using Umbral.Infrastructure.Tests.Support;
 namespace Umbral.Infrastructure.Tests.Repositories;
 
 [Collection(nameof(PostgresCollection))]
-public sealed class SesionRegistrarEquipoPersistenceTests(PostgresFixture fixture)
+public sealed class SesionUnirseEquipoPersistenceTests(PostgresFixture fixture)
 {
     [Fact]
-    public async Task CrearSesionYRegistrarEquipo_EnDosPasos_PersisteEquipo()
+    public async Task CrearSesionYUnirseEquipo_EnDosPasos_PersisteEquipo()
     {
         var sesion = Sesion.CrearBusquedaTesoro(
             DomainTestData.MisionSnapshotActiva(),
@@ -28,7 +28,10 @@ public sealed class SesionRegistrarEquipoPersistenceTests(PostgresFixture fixtur
         var loaded = await sut2.FindByIdAsync(sesion.SesionId);
 
         loaded.Should().NotBeNull();
-        loaded!.RegistrarEquipo("Equipo dos pasos");
+        loaded!.UnirseEquipo(
+            UsuarioId.Nuevo(),
+            "Beta",
+            loaded.CodigoAcceso.Valor);
         await sut2.SaveAsync(loaded);
 
         await using var verifyDb = fixture.CreateDbContext();
@@ -37,6 +40,6 @@ public sealed class SesionRegistrarEquipoPersistenceTests(PostgresFixture fixtur
             .Where(e => e.SesionId == sesion.SesionId)
             .ToListAsync();
 
-        reloaded.Should().ContainSingle(e => e.Nombre.Valor == "Equipo dos pasos");
+        reloaded.Should().ContainSingle(e => e.Nombre.Valor == "Beta");
     }
 }

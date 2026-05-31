@@ -194,7 +194,7 @@ public sealed class SesionGanadorTransicionTests
         sesion.ClearDomainEvents();
         sesion.AbrirParaRegistro();
         foreach (var nombre in equipos)
-            sesion.RegistrarEquipo(nombre);
+            SesionTestHelpers.UnirEquipo(sesion, nombre);
         sesion.Iniciar();
         sesion.ClearDomainEvents();
         return sesion;

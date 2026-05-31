@@ -33,8 +33,8 @@ public sealed class RankingServiceTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
-            .Activa().ConEquipo("Zeta").ConEquipo("Alpha").Build();
-        sesion.Equipos.First(e => e.Nombre.Valor == "Zeta").SumarPuntaje(50);
+            .Activa().ConEquipo("Gamma").ConEquipo("Alpha").Build();
+        sesion.Equipos.First(e => e.Nombre.Valor == "Gamma").SumarPuntaje(50);
         sesion.Equipos.First(e => e.Nombre.Valor == "Alpha").SumarPuntaje(50);
 
         // Act
@@ -42,6 +42,6 @@ public sealed class RankingServiceTests
 
         // Assert
         ranking[0].NombreEquipo.Should().Be("Alpha");
-        ranking[1].NombreEquipo.Should().Be("Zeta");
+        ranking[1].NombreEquipo.Should().Be("Gamma");
     }
 }

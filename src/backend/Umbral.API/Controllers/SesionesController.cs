@@ -5,16 +5,22 @@ using Microsoft.AspNetCore.Mvc;
 using Umbral.API.Auth;
 using Umbral.API.Contracts.Sesiones;
 using Umbral.API.Extensions;
+using Umbral.Application.Sesion.Commands.AbrirInscripcionSesion;
 using Umbral.Application.Sesion.Commands.AplicarPenalizacion;
 using Umbral.Application.Sesion.Commands.CancelarSesion;
 using Umbral.Application.Sesion.Commands.CrearSesionBusquedaTesoro;
+using Umbral.Application.Sesion.Commands.CrearSesionTrivia;
 using Umbral.Application.Sesion.Commands.FinalizarSesion;
 using Umbral.Application.Sesion.Commands.IniciarSesion;
 using Umbral.Application.Sesion.Commands.PausarSesion;
 using Umbral.Application.Sesion.Commands.ReanudarSesion;
-using Umbral.Application.Sesion.Commands.RegistrarEquipo;
 using Umbral.Application.Sesion.Commands.SubmitEvidencia;
+using Umbral.Application.Sesion.Commands.UnirseSesion;
 using Umbral.Application.Sesion.Queries.GetRankingSesion;
+using Umbral.Application.Sesion.Queries.GetSesionOperador;
+using Umbral.Application.Sesion.Queries.ListSesionesDisponiblesEquipo;
+using Umbral.Application.Sesion.Queries.ListSesionesOperador;
+using Umbral.Domain.Sesion;
 
 namespace Umbral.API.Controllers;
 
@@ -27,6 +33,53 @@ public sealed class SesionesController : ControllerBase
 
     public SesionesController(IMediator mediator) => _mediator = mediator;
 
+    [HttpGet]
+    [Authorize(Roles = "Operador,Administrador")]
+    [ProducesResponseType(typeof(IReadOnlyList<SesionResumenResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarOperativas(CancellationToken cancellationToken)
+    {
+        var items = await _mediator.Send(
+            new ListSesionesOperadorQuery(ObtenerUsuarioId()),
+            cancellationToken);
+
+        return Ok(items.Select(MapResumen).ToList());
+    }
+
+    [HttpGet("disponibles/busqueda-tesoro")]
+    [Authorize(Roles = "EquipoParticipante")]
+    [ProducesResponseType(typeof(IReadOnlyList<SesionDisponibleEquipoResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarDisponiblesBusquedaTesoro(CancellationToken cancellationToken)
+    {
+        var items = await _mediator.Send(
+            new ListSesionesDisponiblesEquipoQuery(TipoSesion.BusquedaTesoro),
+            cancellationToken);
+
+        return Ok(items.Select(x => new SesionDisponibleEquipoResponse(
+            x.Id, x.Titulo, x.Estado, x.EquiposInscritos)).ToList());
+    }
+
+    [HttpGet("disponibles/trivia")]
+    [Authorize(Roles = "EquipoParticipante")]
+    [ProducesResponseType(typeof(IReadOnlyList<SesionDisponibleEquipoResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarDisponiblesTrivia(CancellationToken cancellationToken)
+    {
+        var items = await _mediator.Send(
+            new ListSesionesDisponiblesEquipoQuery(TipoSesion.Trivia),
+            cancellationToken);
+
+        return Ok(items.Select(x => new SesionDisponibleEquipoResponse(
+            x.Id, x.Titulo, x.Estado, x.EquiposInscritos)).ToList());
+    }
+
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Operador,Administrador")]
+    [ProducesResponseType(typeof(SesionDetalleResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerPorId(Guid id, CancellationToken cancellationToken)
+    {
+        var sesion = await _mediator.Send(new GetSesionOperadorQuery(id), cancellationToken);
+        return Ok(MapDetalle(sesion));
+    }
+
     [HttpPost("busqueda-tesoro")]
     [Authorize(Roles = "Operador,Administrador")]
     [ProducesResponseType(typeof(CrearSesionResponse), StatusCodes.Status201Created)]
@@ -37,33 +90,70 @@ public sealed class SesionesController : ControllerBase
         var result = await _mediator.Send(
             new CrearSesionBusquedaTesoroCommand(
                 request.MisionId,
-                ObtenerOperadorId()),
+                ObtenerUsuarioId()),
             cancellationToken);
 
         return result.ToActionResult(
             HttpContext,
-            id => new CreatedResult(
-                $"/api/v1/sesiones/{id}",
-                new CrearSesionResponse(id)));
+            created => new CreatedResult(
+                $"/api/v1/sesiones/{created.Id}",
+                new CrearSesionResponse(created.Id, created.CodigoAcceso)));
     }
 
-    [HttpPost("{id:guid}/equipos")]
+    [HttpPost("trivia")]
     [Authorize(Roles = "Operador,Administrador")]
-    [ProducesResponseType(typeof(RegistrarEquipoResponse), StatusCodes.Status201Created)]
-    public async Task<IActionResult> RegistrarEquipo(
-        Guid id,
-        [FromBody] RegistrarEquipoRequest request,
+    [ProducesResponseType(typeof(CrearSesionResponse), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CrearTrivia(
+        [FromBody] CrearSesionTriviaRequest request,
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new RegistrarEquipoCommand(id, request.NombreEquipo),
+            new CrearSesionTriviaCommand(
+                request.CategoriaIds,
+                ObtenerUsuarioId()),
             cancellationToken);
 
         return result.ToActionResult(
             HttpContext,
-            equipo => new CreatedResult(
-                $"/api/v1/sesiones/{id}/equipos/{equipo.EquipoId}",
-                new RegistrarEquipoResponse(equipo.EquipoId, equipo.CodigoAcceso)));
+            created => new CreatedResult(
+                $"/api/v1/sesiones/{created.Id}",
+                new CrearSesionResponse(created.Id, created.CodigoAcceso)));
+    }
+
+    [HttpPost("{id:guid}/abrir-inscripcion")]
+    [Authorize(Roles = "Operador,Administrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AbrirInscripcion(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new AbrirInscripcionSesionCommand(id), cancellationToken);
+        return result.ToNoContentResult(HttpContext);
+    }
+
+    [HttpPost("{id:guid}/unirse")]
+    [Authorize(Roles = "EquipoParticipante")]
+    [ProducesResponseType(typeof(UnirseSesionResponse), StatusCodes.Status201Created)]
+    public async Task<IActionResult> Unirse(
+        Guid id,
+        [FromBody] UnirseSesionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var nombre = string.IsNullOrWhiteSpace(request.NombreEquipo)
+            ? ObtenerNombreJugador()
+            : request.NombreEquipo.Trim();
+
+        var result = await _mediator.Send(
+            new UnirseSesionCommand(
+                id,
+                request.CodigoAcceso,
+                ObtenerUsuarioId(),
+                nombre),
+            cancellationToken);
+
+        return result.ToActionResult(
+            HttpContext,
+            joined => new CreatedResult(
+                $"/api/v1/sesiones/{id}/equipos/{joined.EquipoId}",
+                new UnirseSesionResponse(joined.EquipoId)));
     }
 
     [HttpPost("{id:guid}/iniciar")]
@@ -107,7 +197,7 @@ public sealed class SesionesController : ControllerBase
                 request.EquipoId,
                 request.Puntos,
                 request.Motivo,
-                ObtenerOperadorId()),
+                ObtenerUsuarioId()),
             cancellationToken);
 
         return result.ToActionResult(HttpContext, _ => new NoContentResult());
@@ -175,11 +265,47 @@ public sealed class SesionesController : ControllerBase
         return Ok(response);
     }
 
-    private Guid ObtenerOperadorId()
+    private static SesionResumenResponse MapResumen(Application.Sesion.Models.SesionResumenDto dto) =>
+        new(
+            dto.Id,
+            dto.TipoSesion,
+            dto.MisionId,
+            dto.MisionNombre,
+            dto.Estado,
+            dto.EquiposCount,
+            dto.IniciadaEn,
+            dto.FinalizadaEn,
+            dto.EtapaActualOrden,
+            dto.TotalEtapas,
+            dto.EtapaActualDescripcion);
+
+    private static SesionDetalleResponse MapDetalle(Application.Sesion.Models.SesionDetalleDto dto) =>
+        new(
+            dto.Id,
+            dto.TipoSesion,
+            dto.MisionId,
+            dto.MisionNombre,
+            dto.Estado,
+            dto.CodigoAcceso,
+            dto.IniciadaEn,
+            dto.FinalizadaEn,
+            dto.EtapaActualOrden,
+            dto.TotalEtapas,
+            dto.EtapaActualDescripcion,
+            dto.Equipos
+                .Select(e => new EquipoSesionResponse(e.EquipoId, e.JugadorId, e.Nombre))
+                .ToList());
+
+    private Guid ObtenerUsuarioId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Guid.TryParse(value, out var operadorId)
-            ? operadorId
+        return Guid.TryParse(value, out var id)
+            ? id
             : TestAuthHandler.DefaultOperadorId;
     }
+
+    private string ObtenerNombreJugador() =>
+        User.FindFirstValue("preferred_username")
+        ?? User.FindFirstValue(ClaimTypes.Name)
+        ?? "Equipo";
 }
