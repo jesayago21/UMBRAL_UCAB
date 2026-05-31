@@ -18,6 +18,17 @@ public sealed record EquipoSesionDto(
     Guid JugadorId,
     string Nombre);
 
+public sealed record PistaSesionDto(
+    string Contenido,
+    string TipoLiberacion,
+    int? SegundosLiberacion);
+
+public sealed record EtapaSesionDto(
+    int Orden,
+    string Descripcion,
+    bool EsActual,
+    IReadOnlyList<PistaSesionDto> Pistas);
+
 public sealed record SesionDetalleDto(
     Guid Id,
     string TipoSesion,
@@ -30,4 +41,5 @@ public sealed record SesionDetalleDto(
     int EtapaActualOrden,
     int TotalEtapas,
     string? EtapaActualDescripcion,
-    IReadOnlyList<EquipoSesionDto> Equipos);
+    IReadOnlyList<EquipoSesionDto> Equipos,
+    IReadOnlyList<EtapaSesionDto>? Etapas);

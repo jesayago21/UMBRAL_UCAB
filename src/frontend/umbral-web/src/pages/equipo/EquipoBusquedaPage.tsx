@@ -11,6 +11,7 @@ import { SESIONES_DISPONIBLES_BT_KEY, useSesionesDisponiblesBusqueda } from '@/h
 import {
   clearEquipoSesionInscrita,
   getEquipoSesionInscrita,
+  rutaPartidaEquipo,
   saveEquipoSesionInscrita,
 } from '@/lib/equipoSesionStorage'
 import { getApiErrorMessage } from '@/services/apiClient'
@@ -21,6 +22,8 @@ export function EquipoBusquedaPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const inscripcion = getEquipoSesionInscrita()
+  const inscripcionBt =
+    inscripcion && inscripcion.tipoSesion !== 'Trivia' ? inscripcion : null
   const { data, isLoading, isError, error, refetch } = useSesionesDisponiblesBusqueda()
   const { successMessage, showSuccess, clearSuccess } = useSuccessMessage()
   const [joiningId, setJoiningId] = useState<string | null>(null)
@@ -60,6 +63,7 @@ export function EquipoBusquedaPage() {
         titulo,
         equipoId: res.equipoId,
         joinedAt: new Date().toISOString(),
+        tipoSesion: 'BusquedaTesoro',
       })
       showSuccess('Te uniste a la sesión. Entra a tu partida cuando estés listo.')
       setCodigo('')
@@ -88,14 +92,14 @@ export function EquipoBusquedaPage() {
       )}
       {formError && <ErrorState message={formError} />}
 
-      {inscripcion && (
+      {inscripcionBt && (
         <section className={`${cardClass} space-y-3`}>
           <h3 className="text-sm font-semibold text-slate-900">Tu inscripción actual</h3>
           <p className="text-sm text-slate-600">
-            Estás inscrito en <strong>{inscripcion.titulo}</strong>.
+            Estás inscrito en <strong>{inscripcionBt.titulo}</strong>.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Link to={`/equipo/busqueda/${inscripcion.sesionId}`} className={btnPrimary}>
+            <Link to={rutaPartidaEquipo(inscripcionBt)} className={btnPrimary}>
               Ir a mi partida
             </Link>
             <button type="button" onClick={handleSalirSesion} className={btnSecondary}>
@@ -109,7 +113,7 @@ export function EquipoBusquedaPage() {
         </section>
       )}
 
-      {!inscripcion && (
+      {!inscripcionBt && (
         <section className={`${cardClass} space-y-3`}>
           <label className="block text-sm font-medium text-slate-700">
             Código de acceso
@@ -132,14 +136,14 @@ export function EquipoBusquedaPage() {
         <ErrorState message={getApiErrorMessage(error)} onRetry={() => void refetch()} />
       )}
 
-      {data && data.length === 0 && !isLoading && !inscripcion && (
+      {data && data.length === 0 && !isLoading && !inscripcionBt && (
         <EmptyState
           title="No hay sesiones abiertas"
           description="Cuando el operador abra inscripción en una sesión, aparecerá aquí."
         />
       )}
 
-      {data && data.length > 0 && !inscripcion && (
+      {data && data.length > 0 && !inscripcionBt && (
         <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
           {data.map((s) => (
             <li

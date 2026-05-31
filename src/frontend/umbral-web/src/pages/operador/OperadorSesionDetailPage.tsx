@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
+import { SesionEtapasPistasPanel } from '@/components/operador/SesionEtapasPistasPanel'
 import { EquiposInscritosPanel } from '@/components/operador/EquiposInscritosPanel'
 import { SesionCodigoAccesoPanel } from '@/components/operador/SesionCodigoAccesoPanel'
 import { SesionTimerPanel } from '@/components/operador/SesionTimerPanel'
@@ -199,6 +200,10 @@ export function OperadorSesionDetailPage() {
           (detalle?.tipoSesion ?? sesion.tipoSesion) === 'Trivia' ? 'pregunta' : 'etapa'
         }
       />
+
+      {detalle?.etapas && detalle.etapas.length > 0 && (
+        <SesionEtapasPistasPanel etapas={detalle.etapas} />
+      )}
 
       <EquiposInscritosPanel equipos={sesion.equipos} />
 

@@ -21,6 +21,11 @@ internal static class ContextoTriviaConfiguration
         tv.Property(c => c.TimerCerradoEn)
             .HasColumnName("timer_cerrado_en");
 
+        tv.Property(c => c.CategoriasTitulo)
+            .HasColumnName("categorias_titulo")
+            .HasMaxLength(500)
+            .IsRequired();
+
         tv.Property(c => c.PreguntasOrdenadas)
             .HasColumnName("preguntas_ordenadas_json")
             .HasColumnType("jsonb")

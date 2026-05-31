@@ -12,6 +12,7 @@ import { EquipoBusquedaPage } from '@/pages/equipo/EquipoBusquedaPage'
 import { EquipoSesionJuegoPage } from '@/pages/equipo/EquipoSesionJuegoPage'
 import { EquipoHomePage } from '@/pages/equipo/EquipoHomePage'
 import { EquipoTriviaPage } from '@/pages/equipo/EquipoTriviaPage'
+import { EquipoTriviaSesionPage } from '@/pages/equipo/EquipoTriviaSesionPage'
 import { OperadorSesionDetailPage } from '@/pages/operador/OperadorSesionDetailPage'
 import { OperadorSesionesPage } from '@/pages/operador/OperadorSesionesPage'
 import { HomeRedirect, RequireRoles } from '@/router/guards'
@@ -74,6 +75,7 @@ export function AppRouter() {
         <Route path="busqueda" element={<EquipoBusquedaPage />} />
         <Route path="busqueda/:sesionId" element={<EquipoSesionJuegoPage />} />
         <Route path="trivia" element={<EquipoTriviaPage />} />
+        <Route path="trivia/:sesionId" element={<EquipoTriviaSesionPage />} />
       </Route>
 
       <Route path="/" element={<HomeRedirect />} />

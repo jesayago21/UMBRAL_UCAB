@@ -20,12 +20,13 @@ public sealed class SesionCrearTriviaTests
             PreguntaId.Nuevo()
         };
 
-        var sesion = SesionAR.CrearTrivia(preguntas, operadorId);
+        var sesion = SesionAR.CrearTrivia(preguntas, operadorId, "Historia, Ciencia");
 
         sesion.Estado.Should().Be(EstadoSesion.Programada);
         sesion.TipoSesion.Should().Be(TipoSesion.Trivia);
         sesion.ContextoTrivia.Should().NotBeNull();
         sesion.ContextoTrivia!.TotalPreguntas.Should().Be(2);
+        sesion.ContextoTrivia.CategoriasTitulo.Should().Be("Historia, Ciencia");
         sesion.ContextoBT.Should().BeNull();
         sesion.CodigoAcceso.Valor.Should().NotBeNullOrWhiteSpace();
     }
@@ -36,7 +37,7 @@ public sealed class SesionCrearTriviaTests
         var operadorId = UsuarioId.Nuevo();
         var preguntas = new List<PreguntaId> { PreguntaId.Nuevo() };
 
-        var sesion = SesionAR.CrearTrivia(preguntas, operadorId);
+        var sesion = SesionAR.CrearTrivia(preguntas, operadorId, "Historia, Ciencia");
 
         var evento = sesion.DomainEvents.Should().ContainSingle()
             .Which.Should().BeOfType<SesionCreada>().Subject;
@@ -50,7 +51,7 @@ public sealed class SesionCrearTriviaTests
     {
         var operadorId = UsuarioId.Nuevo();
 
-        var act = () => SesionAR.CrearTrivia([], operadorId);
+        var act = () => SesionAR.CrearTrivia([], operadorId, "Vacía");
 
         act.Should().Throw<DomainException>();
     }

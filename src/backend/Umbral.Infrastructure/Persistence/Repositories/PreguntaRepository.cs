@@ -16,6 +16,24 @@ public sealed class PreguntaRepository : IPreguntaRepository
             .FirstOrDefaultAsync(x => x.PreguntaId == id, ct);
     }
 
+    public async Task<IReadOnlyList<Pregunta>> FindByIdsAsync(
+        IReadOnlyList<PreguntaId> ids,
+        CancellationToken ct = default)
+    {
+        if (ids.Count == 0)
+            return Array.Empty<Pregunta>();
+
+        var preguntas = new List<Pregunta>(ids.Count);
+        foreach (var id in ids)
+        {
+            var pregunta = await FindByIdAsync(id, ct);
+            if (pregunta is not null)
+                preguntas.Add(pregunta);
+        }
+
+        return preguntas;
+    }
+
     public async Task<IReadOnlyList<Pregunta>> FindAllAsync(CancellationToken ct = default)
     {
         return await _db.Preguntas

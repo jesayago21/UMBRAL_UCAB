@@ -65,7 +65,8 @@ public sealed class Sesion : AggregateRoot
 
     public static Sesion CrearTrivia(
         IReadOnlyList<PreguntaId> preguntasOrdenadas,
-        UsuarioId operadorId)
+        UsuarioId operadorId,
+        string categoriasTitulo)
     {
         ArgumentNullException.ThrowIfNull(preguntasOrdenadas);
         ArgumentNullException.ThrowIfNull(operadorId);
@@ -77,7 +78,7 @@ public sealed class Sesion : AggregateRoot
             OperadorId     = operadorId,
             Estado         = EstadoSesion.Programada,
             CodigoAcceso   = CodigoAcceso.Generar(),
-            ContextoTrivia = ContextoTrivia.Crear(preguntasOrdenadas)
+            ContextoTrivia = ContextoTrivia.Crear(preguntasOrdenadas, categoriasTitulo)
         };
         sesion.RaiseDomainEvent(
             new SesionCreada(sesion.SesionId, TipoSesion.Trivia, operadorId));

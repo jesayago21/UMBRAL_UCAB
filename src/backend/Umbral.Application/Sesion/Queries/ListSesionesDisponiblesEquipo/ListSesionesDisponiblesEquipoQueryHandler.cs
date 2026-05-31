@@ -24,7 +24,7 @@ internal sealed class ListSesionesDisponiblesEquipoQueryHandler
             var titulo = s.TipoSesion switch
             {
                 TipoSesion.Trivia when s.ContextoTrivia is not null =>
-                    $"Trivia ({s.ContextoTrivia.TotalPreguntas} preguntas)",
+                    s.ContextoTrivia.CategoriasTitulo,
                 _ => s.ContextoBT?.MisionSnapshot.Nombre ?? "Sesión"
             };
             return new SesionDisponibleEquipoDto(

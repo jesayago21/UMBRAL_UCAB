@@ -66,6 +66,54 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
+    public async Task GET_trivia_preguntas_CuandoEquipoInscrito_RetornaPreguntasSinRespuestaCorrecta()
+    {
+        var (categoriaId, _) = await ApiTestData.SeedCategoriaConPreguntaAsync(_services);
+        var crear = await _client.PostAsJsonAsync(
+            "/api/v1/sesiones/trivia",
+            new CrearSesionTriviaRequest([categoriaId]));
+        crear.EnsureSuccessStatusCode();
+        var sesion = (await crear.Content.ReadFromJsonAsync<CrearSesionResponse>())!;
+
+        await _client.PostAsync(
+            $"/api/v1/sesiones/{sesion.Id}/abrir-inscripcion",
+            null);
+
+        var jugadorId = Guid.NewGuid();
+        await UnirseEquipoAsync(sesion.Id, sesion.CodigoAcceso, "Alpha", jugadorId);
+        SetParticipanteAuth(jugadorId);
+
+        var response = await _client.GetAsync(
+            $"/api/v1/sesiones/{sesion.Id}/trivia/preguntas");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var preguntas = await response.Content.ReadFromJsonAsync<List<PreguntaTriviaEquipoResponse>>();
+        preguntas.Should().NotBeNull();
+        preguntas!.Should().NotBeEmpty();
+        preguntas.Should().OnlyContain(p => p.Opciones.Count >= 3);
+        preguntas[0].Orden.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GET_trivia_preguntas_CuandoNoInscrito_Retorna401()
+    {
+        var (categoriaId, _) = await ApiTestData.SeedCategoriaConPreguntaAsync(_services);
+        var crear = await _client.PostAsJsonAsync(
+            "/api/v1/sesiones/trivia",
+            new CrearSesionTriviaRequest([categoriaId]));
+        crear.EnsureSuccessStatusCode();
+        var sesion = (await crear.Content.ReadFromJsonAsync<CrearSesionResponse>())!;
+
+        SetParticipanteAuth(Guid.NewGuid());
+
+        var response = await _client.GetAsync(
+            $"/api/v1/sesiones/{sesion.Id}/trivia/preguntas");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task POST_busqueda_tesoro_CuandoMisionIdVacio_Retorna400()
     {
         var response = await _client.PostAsJsonAsync(

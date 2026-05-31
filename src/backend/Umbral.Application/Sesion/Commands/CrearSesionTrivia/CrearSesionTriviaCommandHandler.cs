@@ -36,7 +36,8 @@ internal sealed class CrearSesionTriviaCommandHandler
     {
         var idsUnicos = command.CategoriaIds.Distinct().ToList();
         var preguntasOrdenadas = new List<PreguntaId>();
-        var vistos             = new HashSet<Guid>();
+        var nombresCategorias    = new List<string>();
+        var vistos               = new HashSet<Guid>();
 
         foreach (var categoriaId in idsUnicos)
         {
@@ -44,6 +45,8 @@ internal sealed class CrearSesionTriviaCommandHandler
                                 new CategoriaId(categoriaId),
                                 cancellationToken)
                             ?? throw new NotFoundException(nameof(Categoria), categoriaId);
+
+            nombresCategorias.Add(categoria.Nombre);
 
             var preguntas = await _preguntaRepository.FindByCategoriaAsync(
                 categoria.CategoriaId,
@@ -64,7 +67,8 @@ internal sealed class CrearSesionTriviaCommandHandler
 
         var sesion = SesionAR.CrearTrivia(
             preguntasOrdenadas,
-            new UsuarioId(command.OperadorId));
+            new UsuarioId(command.OperadorId),
+            string.Join(", ", nombresCategorias));
 
         await _sesionRepository.SaveAsync(sesion, cancellationToken);
         await _eventPublisher.PublishBatchAsync(

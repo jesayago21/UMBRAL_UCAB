@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { SesionRankingPanel } from '@/components/shared/SesionRankingPanel'
 import type { EquipoSesionInscrita } from '@/lib/equipoSesionStorage'
+import { rutaListadoEquipo } from '@/lib/equipoSesionStorage'
 import { btnSecondary, cardClass, inputClass } from '@/styles/ui'
 
 interface EquipoGameplayShellProps {
@@ -86,7 +87,7 @@ export function EquipoGameplayShell({ inscripcion, onSalir }: EquipoGameplayShel
       />
 
       <p className="text-center text-xs text-slate-500">
-        <Link to="/equipo/busqueda" className="text-indigo-600 hover:underline">
+        <Link to={rutaListadoEquipo(inscripcion.tipoSesion)} className="text-indigo-600 hover:underline">
           Volver al listado de sesiones
         </Link>
       </p>

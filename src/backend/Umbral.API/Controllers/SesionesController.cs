@@ -16,6 +16,7 @@ using Umbral.Application.Sesion.Commands.PausarSesion;
 using Umbral.Application.Sesion.Commands.ReanudarSesion;
 using Umbral.Application.Sesion.Commands.SubmitEvidencia;
 using Umbral.Application.Sesion.Commands.UnirseSesion;
+using Umbral.Application.Sesion.Queries.GetPreguntasTriviaSesionEquipo;
 using Umbral.Application.Sesion.Queries.GetRankingSesion;
 using Umbral.Application.Sesion.Queries.GetSesionOperador;
 using Umbral.Application.Sesion.Queries.ListSesionesDisponiblesEquipo;
@@ -248,6 +249,27 @@ public sealed class SesionesController : ControllerBase
         return result.ToActionResult(HttpContext, _ => new NoContentResult());
     }
 
+    [HttpGet("{id:guid}/trivia/preguntas")]
+    [Authorize(Roles = "EquipoParticipante")]
+    [ProducesResponseType(typeof(IReadOnlyList<PreguntaTriviaEquipoResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerPreguntasTriviaEquipo(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var preguntas = await _mediator.Send(
+            new GetPreguntasTriviaSesionEquipoQuery(id, ObtenerUsuarioId()),
+            cancellationToken);
+
+        return Ok(preguntas
+            .Select(p => new PreguntaTriviaEquipoResponse(
+                p.Orden,
+                p.Id,
+                p.Enunciado,
+                p.Dificultad,
+                p.Opciones))
+            .ToList());
+    }
+
     [HttpGet("{id:guid}/ranking")]
     [ProducesResponseType(typeof(IReadOnlyList<PosicionRankingResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ObtenerRanking(Guid id, CancellationToken cancellationToken)
@@ -294,6 +316,18 @@ public sealed class SesionesController : ControllerBase
             dto.EtapaActualDescripcion,
             dto.Equipos
                 .Select(e => new EquipoSesionResponse(e.EquipoId, e.JugadorId, e.Nombre))
+                .ToList(),
+            dto.Etapas?
+                .Select(e => new EtapaSesionResponse(
+                    e.Orden,
+                    e.Descripcion,
+                    e.EsActual,
+                    e.Pistas
+                        .Select(p => new PistaSesionResponse(
+                            p.Contenido,
+                            p.TipoLiberacion,
+                            p.SegundosLiberacion))
+                        .ToList()))
                 .ToList());
 
     private Guid ObtenerUsuarioId()

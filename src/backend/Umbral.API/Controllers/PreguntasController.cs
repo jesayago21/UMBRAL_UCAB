@@ -45,7 +45,7 @@ public sealed class PreguntasController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador,Operador")]
     [ProducesResponseType(typeof(IReadOnlyList<PreguntaResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Listar(
         [FromQuery] Guid? categoriaId,

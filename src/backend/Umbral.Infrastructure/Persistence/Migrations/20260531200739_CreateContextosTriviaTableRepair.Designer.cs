@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Umbral.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Umbral.Infrastructure.Persistence;
 namespace Umbral.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(UmbralDbContext))]
-    partial class UmbralDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260531200739_CreateContextosTriviaTableRepair")]
+    partial class CreateContextosTriviaTableRepair
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -417,12 +420,6 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                         {
                             b1.Property<Guid>("SesionId")
                                 .HasColumnType("uuid");
-
-                            b1.Property<string>("CategoriasTitulo")
-                                .IsRequired()
-                                .HasMaxLength(500)
-                                .HasColumnType("character varying(500)")
-                                .HasColumnName("categorias_titulo");
 
                             b1.Property<int>("PreguntaActualIndex")
                                 .HasColumnType("integer")

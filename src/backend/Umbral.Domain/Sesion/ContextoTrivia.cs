@@ -13,11 +13,14 @@ public sealed class ContextoTrivia : Entity
 
     public int PreguntaActualIndex { get; private set; }
     public DateTime? TimerCerradoEn { get; private set; }
+    public string CategoriasTitulo { get; private set; } = string.Empty;
     public IReadOnlyList<PreguntaId> PreguntasOrdenadas { get; private set; } = [];
 
     private ContextoTrivia() { }
 
-    internal static ContextoTrivia Crear(IReadOnlyList<PreguntaId> preguntasOrdenadas)
+    internal static ContextoTrivia Crear(
+        IReadOnlyList<PreguntaId> preguntasOrdenadas,
+        string categoriasTitulo)
     {
         ArgumentNullException.ThrowIfNull(preguntasOrdenadas);
 
@@ -25,10 +28,15 @@ public sealed class ContextoTrivia : Entity
             throw new DomainException(
                 "Una sesión de trivia necesita al menos una pregunta.");
 
+        if (string.IsNullOrWhiteSpace(categoriasTitulo))
+            throw new DomainException(
+                "El título de la sesión de trivia no puede estar vacío.");
+
         return new ContextoTrivia
         {
-            PreguntasOrdenadas = preguntasOrdenadas.ToList(),
-            PreguntaActualIndex = 0
+            PreguntasOrdenadas  = preguntasOrdenadas.ToList(),
+            PreguntaActualIndex = 0,
+            CategoriasTitulo    = categoriasTitulo.Trim()
         };
     }
 
@@ -36,12 +44,16 @@ public sealed class ContextoTrivia : Entity
     internal static ContextoTrivia Rehydrate(
         IReadOnlyList<PreguntaId> preguntasOrdenadas,
         int preguntaActualIndex,
-        DateTime? timerCerradoEn) =>
+        DateTime? timerCerradoEn,
+        string categoriasTitulo) =>
         new()
         {
             PreguntasOrdenadas  = preguntasOrdenadas.ToList(),
             PreguntaActualIndex = preguntaActualIndex,
-            TimerCerradoEn      = timerCerradoEn
+            TimerCerradoEn      = timerCerradoEn,
+            CategoriasTitulo    = string.IsNullOrWhiteSpace(categoriasTitulo)
+                ? "Trivia"
+                : categoriasTitulo.Trim()
         };
 
     public int TotalPreguntas => PreguntasOrdenadas.Count;

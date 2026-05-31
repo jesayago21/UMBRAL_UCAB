@@ -22,9 +22,23 @@ export interface SesionResumenDto {
   etapaActualDescripcion: string | null
 }
 
+export interface PistaSesionDto {
+  contenido: string
+  tipoLiberacion: string
+  segundosLiberacion: number | null
+}
+
+export interface EtapaSesionDto {
+  orden: number
+  descripcion: string
+  esActual: boolean
+  pistas: PistaSesionDto[]
+}
+
 export interface SesionDetalleDto extends SesionResumenDto {
   codigoAcceso: string
   equipos: EquipoSesionDto[]
+  etapas: EtapaSesionDto[] | null
 }
 
 export interface SesionDisponibleEquipoDto {
@@ -94,4 +108,12 @@ export interface PosicionRankingDto {
 export interface MisionActivaDto {
   id: string
   nombre: string
+}
+
+export interface PreguntaTriviaEquipoDto {
+  orden: number
+  id: string
+  enunciado: string
+  dificultad: string
+  opciones: string[]
 }

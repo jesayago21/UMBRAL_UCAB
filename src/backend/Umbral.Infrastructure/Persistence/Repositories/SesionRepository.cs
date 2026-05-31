@@ -122,11 +122,12 @@ public sealed class SesionRepository : ISesionRepository
 
         await _db.Database.ExecuteSqlInterpolatedAsync(
             $"""
-             INSERT INTO contextos_trivia ("SesionId", pregunta_actual_index, timer_cerrado_en, preguntas_ordenadas_json)
-             VALUES ({sesion.SesionId.Valor}, {tv.PreguntaActualIndex}, {tv.TimerCerradoEn}, {json}::jsonb)
+             INSERT INTO contextos_trivia ("SesionId", pregunta_actual_index, timer_cerrado_en, categorias_titulo, preguntas_ordenadas_json)
+             VALUES ({sesion.SesionId.Valor}, {tv.PreguntaActualIndex}, {tv.TimerCerradoEn}, {tv.CategoriasTitulo}, {json}::jsonb)
              ON CONFLICT ("SesionId") DO UPDATE SET
                  pregunta_actual_index = EXCLUDED.pregunta_actual_index,
                  timer_cerrado_en = EXCLUDED.timer_cerrado_en,
+                 categorias_titulo = EXCLUDED.categorias_titulo,
                  preguntas_ordenadas_json = EXCLUDED.preguntas_ordenadas_json
              """,
             ct);

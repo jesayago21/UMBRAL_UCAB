@@ -41,7 +41,7 @@ public sealed class CategoriasController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador,Operador")]
     [ProducesResponseType(typeof(IReadOnlyList<CategoriaResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Listar(
         [FromQuery] string? nombre,

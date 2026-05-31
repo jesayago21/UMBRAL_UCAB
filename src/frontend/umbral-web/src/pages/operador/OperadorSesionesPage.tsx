@@ -118,7 +118,7 @@ export function OperadorSesionesPage() {
       .join(', ')
     try {
       const created = await crearTrivia.mutateAsync({ categoriaIds })
-      afterCreate(created, 'Trivia', '', `Trivia (${nombres ?? 'categorías'})`)
+      afterCreate(created, 'Trivia', '', nombres ?? 'Trivia')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
     }

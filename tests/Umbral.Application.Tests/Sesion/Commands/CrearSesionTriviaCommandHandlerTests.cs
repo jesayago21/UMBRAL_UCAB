@@ -74,6 +74,7 @@ public sealed class CrearSesionTriviaCommandHandlerTests
         sesionGuardada.Should().NotBeNull();
         sesionGuardada!.TipoSesion.Should().Be(TipoSesion.Trivia);
         sesionGuardada.ContextoTrivia!.TotalPreguntas.Should().Be(1);
+        sesionGuardada.ContextoTrivia.CategoriasTitulo.Should().Be(categoria.Nombre);
 
         eventosPublicados.Should().NotBeNull();
         eventosPublicados!.Should().ContainSingle().Which.Should().BeOfType<SesionCreada>();

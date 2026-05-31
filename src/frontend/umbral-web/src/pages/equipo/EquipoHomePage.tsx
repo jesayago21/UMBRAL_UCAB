@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PageHeader } from '@/components/admin/PageHeader'
-import { getEquipoSesionInscrita } from '@/lib/equipoSesionStorage'
+import { getEquipoSesionInscrita, rutaPartidaEquipo } from '@/lib/equipoSesionStorage'
 import { btnPrimary, cardClass } from '@/styles/ui'
 
 export function EquipoHomePage() {
@@ -18,7 +18,7 @@ export function EquipoHomePage() {
           <p className="text-sm font-medium text-emerald-900">Sesión activa (inscrito)</p>
           <p className="mt-1 text-slate-800">{inscripcion.titulo}</p>
           <Link
-            to={`/equipo/busqueda/${inscripcion.sesionId}`}
+            to={rutaPartidaEquipo(inscripcion)}
             className={`${btnPrimary} mt-3 inline-block`}
           >
             Continuar partida

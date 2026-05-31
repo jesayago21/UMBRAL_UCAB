@@ -7,6 +7,7 @@ import type {
   CrearSesionTriviaRequest,
   CrearSesionTriviaResponse,
   PosicionRankingDto,
+  PreguntaTriviaEquipoDto,
   SesionDetalleDto,
   SesionDisponibleEquipoDto,
   SesionResumenDto,
@@ -100,5 +101,14 @@ export async function cancelarSesion(
 
 export async function obtenerRankingSesion(sesionId: string): Promise<PosicionRankingDto[]> {
   const { data } = await apiClient.get<PosicionRankingDto[]>(`/sesiones/${sesionId}/ranking`)
+  return data
+}
+
+export async function listPreguntasTriviaSesionEquipo(
+  sesionId: string,
+): Promise<PreguntaTriviaEquipoDto[]> {
+  const { data } = await apiClient.get<PreguntaTriviaEquipoDto[]>(
+    `/sesiones/${sesionId}/trivia/preguntas`,
+  )
   return data
 }

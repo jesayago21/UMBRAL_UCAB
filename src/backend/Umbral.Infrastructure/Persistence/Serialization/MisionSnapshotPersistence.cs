@@ -23,6 +23,14 @@ internal static class MisionSnapshotPersistence
         public int Orden { get; init; }
         public string Descripcion { get; init; } = string.Empty;
         public string CodigoQRSolucion { get; init; } = string.Empty;
+        public List<PistaSnapshotDto>? Pistas { get; init; }
+    }
+
+    internal sealed class PistaSnapshotDto
+    {
+        public string Contenido { get; init; } = string.Empty;
+        public string TipoLiberacion { get; init; } = string.Empty;
+        public int? SegundosLiberacion { get; init; }
     }
 
     public static string ToJson(MisionSnapshot snapshot)
@@ -37,7 +45,15 @@ internal static class MisionSnapshotPersistence
                     EtapaId          = e.EtapaId.Valor,
                     Orden            = e.Orden,
                     Descripcion      = e.Descripcion,
-                    CodigoQRSolucion = e.CodigoQRSolucion
+                    CodigoQRSolucion = e.CodigoQRSolucion,
+                    Pistas           = e.Pistas
+                        .Select(p => new PistaSnapshotDto
+                        {
+                            Contenido          = p.Contenido,
+                            TipoLiberacion     = p.TipoLiberacion.ToString(),
+                            SegundosLiberacion = p.SegundosLiberacion
+                        })
+                        .ToList()
                 })
                 .ToList()
         };
@@ -51,11 +67,23 @@ internal static class MisionSnapshotPersistence
                   ?? throw new InvalidOperationException("JSON de MisionSnapshot inválido.");
 
         var etapas = dto.Etapas
-            .Select(e => EtapaSnapshot.Rehydrate(
-                new EtapaId(e.EtapaId),
-                e.Orden,
-                e.Descripcion,
-                e.CodigoQRSolucion))
+            .Select(e =>
+            {
+                var pistas = (e.Pistas ?? [])
+                    .Select(p => PistaSnapshot.Rehydrate(
+                        p.Contenido,
+                        Enum.Parse<TipoLiberacion>(p.TipoLiberacion),
+                        p.SegundosLiberacion))
+                    .ToList()
+                    .AsReadOnly();
+
+                return EtapaSnapshot.Rehydrate(
+                    new EtapaId(e.EtapaId),
+                    e.Orden,
+                    e.Descripcion,
+                    e.CodigoQRSolucion,
+                    pistas);
+            })
             .ToList()
             .AsReadOnly();
 

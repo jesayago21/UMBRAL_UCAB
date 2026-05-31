@@ -10,6 +10,7 @@ import {
   listSesionesDisponiblesBusqueda,
   listSesionesDisponiblesTrivia,
   listSesionesOperativas,
+  listPreguntasTriviaSesionEquipo,
   obtenerRankingSesion,
   obtenerSesionDetalle,
   pausarSesion,
@@ -29,6 +30,7 @@ export const SESIONES_DISPONIBLES_BT_KEY = ['sesiones', 'disponibles', 'bt'] as 
 export const SESIONES_DISPONIBLES_TRIVIA_KEY = ['sesiones', 'disponibles', 'trivia'] as const
 export const SESION_DETALLE_KEY = ['sesiones', 'detalle'] as const
 export const RANKING_KEY = ['sesiones', 'ranking'] as const
+export const TRIVIA_PREGUNTAS_EQUIPO_KEY = ['sesiones', 'trivia', 'preguntas'] as const
 
 export function useSesionesOperativas() {
   return useQuery({
@@ -139,6 +141,14 @@ export function useRankingSesion(sesionId: string, enabled = true) {
   return useQuery({
     queryKey: [...RANKING_KEY, sesionId],
     queryFn: () => obtenerRankingSesion(sesionId),
+    enabled: enabled && Boolean(sesionId),
+  })
+}
+
+export function usePreguntasTriviaSesionEquipo(sesionId: string, enabled = true) {
+  return useQuery({
+    queryKey: [...TRIVIA_PREGUNTAS_EQUIPO_KEY, sesionId],
+    queryFn: () => listPreguntasTriviaSesionEquipo(sesionId),
     enabled: enabled && Boolean(sesionId),
   })
 }

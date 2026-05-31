@@ -20,6 +20,17 @@ public sealed record EquipoSesionResponse(
     Guid JugadorId,
     string Nombre);
 
+public sealed record PistaSesionResponse(
+    string Contenido,
+    string TipoLiberacion,
+    int? SegundosLiberacion);
+
+public sealed record EtapaSesionResponse(
+    int Orden,
+    string Descripcion,
+    bool EsActual,
+    IReadOnlyList<PistaSesionResponse> Pistas);
+
 public sealed record SesionDetalleResponse(
     Guid Id,
     string TipoSesion,
@@ -32,7 +43,8 @@ public sealed record SesionDetalleResponse(
     int EtapaActualOrden,
     int TotalEtapas,
     string? EtapaActualDescripcion,
-    IReadOnlyList<EquipoSesionResponse> Equipos);
+    IReadOnlyList<EquipoSesionResponse> Equipos,
+    IReadOnlyList<EtapaSesionResponse>? Etapas);
 
 public sealed record SesionDisponibleEquipoResponse(
     Guid Id,
@@ -43,3 +55,10 @@ public sealed record SesionDisponibleEquipoResponse(
 public sealed record UnirseSesionRequest(string CodigoAcceso, string? NombreEquipo);
 
 public sealed record UnirseSesionResponse(Guid EquipoId);
+
+public sealed record PreguntaTriviaEquipoResponse(
+    int Orden,
+    Guid Id,
+    string Enunciado,
+    string Dificultad,
+    IReadOnlyList<string> Opciones);

@@ -246,4 +246,21 @@ public sealed class MisionTests
         snapshot.Etapas.Should().HaveCount(etapasAntes,
             "el snapshot debe ser inmutable al momento de su creacion");
     }
+
+    [Fact]
+    public void MisionSnapshot_Desde_IncluyePistasDeCadaEtapa()
+    {
+        var mision = Mision.Crear("Con pistas");
+        mision.AgregarEtapa("Etapa 1", "QR-001");
+        var etapaId = mision.Etapas.First().EtapaId;
+        mision.AgregarPistaAEtapa(etapaId, "Pista por tiempo", TipoLiberacion.PorTiempo, 90);
+        mision.Activar();
+
+        var snapshot = MisionSnapshot.Desde(mision);
+
+        snapshot.Etapas.Should().ContainSingle();
+        snapshot.Etapas[0].Pistas.Should().ContainSingle();
+        snapshot.Etapas[0].Pistas[0].Contenido.Should().Be("Pista por tiempo");
+        snapshot.Etapas[0].Pistas[0].SegundosLiberacion.Should().Be(90);
+    }
 }

@@ -1,12 +1,12 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/admin/PageHeader'
-import { EquipoGameplayShell } from '@/components/equipo/EquipoGameplayShell'
+import { EquipoTriviaGameplayShell } from '@/components/equipo/EquipoTriviaGameplayShell'
 import {
   clearEquipoSesionInscrita,
   getEquipoSesionInscrita,
 } from '@/lib/equipoSesionStorage'
 
-export function EquipoSesionJuegoPage() {
+export function EquipoTriviaSesionPage() {
   const { sesionId } = useParams<{ sesionId: string }>()
   const navigate = useNavigate()
   const inscripcion = getEquipoSesionInscrita()
@@ -14,23 +14,23 @@ export function EquipoSesionJuegoPage() {
   if (
     !inscripcion ||
     inscripcion.sesionId !== sesionId ||
-    (inscripcion.tipoSesion && inscripcion.tipoSesion !== 'BusquedaTesoro')
+    (inscripcion.tipoSesion && inscripcion.tipoSesion !== 'Trivia')
   ) {
-    return <Navigate to="/equipo/busqueda" replace />
+    return <Navigate to="/equipo/trivia" replace />
   }
 
   const handleSalir = () => {
     clearEquipoSesionInscrita()
-    navigate('/equipo/busqueda')
+    navigate('/equipo/trivia')
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Partida en curso"
-        description="Vista de juego (plantilla E1). La interacción real llega en E2."
+        title="Partida trivia"
+        description="Vista previa de preguntas (E1). Responder en vivo llega en E2."
       />
-      <EquipoGameplayShell inscripcion={inscripcion} onSalir={handleSalir} />
+      <EquipoTriviaGameplayShell inscripcion={inscripcion} onSalir={handleSalir} />
     </div>
   )
 }
