@@ -7,6 +7,12 @@ import { MisionesPage } from '@/pages/admin/MisionesPage'
 import { PreguntasPage } from '@/pages/admin/PreguntasPage'
 import { CallbackPage } from '@/pages/auth/CallbackPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
+import { EquipoLayout } from '@/components/layout/EquipoLayout'
+import { EquipoBusquedaPage } from '@/pages/equipo/EquipoBusquedaPage'
+import { EquipoSesionJuegoPage } from '@/pages/equipo/EquipoSesionJuegoPage'
+import { EquipoHomePage } from '@/pages/equipo/EquipoHomePage'
+import { EquipoTriviaPage } from '@/pages/equipo/EquipoTriviaPage'
+import { OperadorSesionDetailPage } from '@/pages/operador/OperadorSesionDetailPage'
 import { OperadorSesionesPage } from '@/pages/operador/OperadorSesionesPage'
 import { HomeRedirect, RequireRoles } from '@/router/guards'
 
@@ -50,6 +56,24 @@ export function AppRouter() {
         }
       >
         <Route path="sesiones" element={<OperadorSesionesPage />} />
+        <Route path="sesiones/:id" element={<OperadorSesionDetailPage />} />
+      </Route>
+
+      <Route
+        path="/equipo"
+        element={
+          <RequireRoles
+            roles={['EquipoParticipante']}
+            deniedMessage="Esta zona es solo para jugadores (rol Equipo). Cierra sesión e inicia con la cuenta equipo."
+          >
+            <EquipoLayout />
+          </RequireRoles>
+        }
+      >
+        <Route index element={<EquipoHomePage />} />
+        <Route path="busqueda" element={<EquipoBusquedaPage />} />
+        <Route path="busqueda/:sesionId" element={<EquipoSesionJuegoPage />} />
+        <Route path="trivia" element={<EquipoTriviaPage />} />
       </Route>
 
       <Route path="/" element={<HomeRedirect />} />

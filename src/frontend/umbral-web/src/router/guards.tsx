@@ -52,8 +52,7 @@ export function HomeRedirect() {
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (rol === 'Administrador') return <Navigate to="/admin/misiones" replace />
   if (rol === 'Operador') return <Navigate to="/operador/sesiones" replace />
+  if (rol === 'EquipoParticipante') return <Navigate to="/equipo" replace />
 
-  return (
-    <AccessDenied message="El rol EquipoParticipante usa la app mobile. Cierra sesión para entrar con admin u operador." />
-  )
+  return <AccessDenied message="Rol no reconocido. Cierra sesión e intenta de nuevo." />
 }

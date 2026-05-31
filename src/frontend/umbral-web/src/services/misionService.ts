@@ -2,6 +2,7 @@ import { apiClient } from '@/services/apiClient'
 import type { CreatedIdResponse } from '@/types/api.types'
 import type {
   ActualizarMisionRequest,
+  AgregarPistaEtapaRequest,
   CrearMisionRequest,
   ListMisionesParams,
   MisionDto,
@@ -34,4 +35,12 @@ export async function actualizarMision(
 
 export async function eliminarMision(id: string): Promise<void> {
   await apiClient.delete(`/misiones/${id}`)
+}
+
+export async function agregarPistaEtapa(
+  misionId: string,
+  etapaId: string,
+  body: AgregarPistaEtapaRequest,
+): Promise<void> {
+  await apiClient.post(`/misiones/${misionId}/etapas/${etapaId}/pistas`, body)
 }

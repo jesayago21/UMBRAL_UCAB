@@ -67,7 +67,14 @@ export function MisionesPage() {
         etapas: etapasValidas.map((e) => ({
           descripcion: e.descripcion.trim(),
           codigoQrSolucion: e.codigoQrSolucion.trim(),
-          pistas: [],
+          pistas: e.pistas
+            .filter((p) => p.contenido.trim())
+            .map((p) => ({
+              contenido: p.contenido.trim(),
+              tipoLiberacion: p.tipoLiberacion,
+              segundosLiberacion:
+                p.tipoLiberacion === 'PorTiempo' ? p.segundosLiberacion ?? 60 : null,
+            })),
         })),
       })
       setShowCreate(false)

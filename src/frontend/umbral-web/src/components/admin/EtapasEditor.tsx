@@ -1,4 +1,5 @@
 import { btnLink, btnSecondary, inputClass } from '@/styles/ui'
+import { PistasEditor } from '@/components/admin/PistasEditor'
 import type { CrearEtapaRequest } from '@/types/mision.types'
 
 export const emptyEtapa = (): CrearEtapaRequest => ({
@@ -75,6 +76,11 @@ export function EtapasEditor({ etapas, onChange, disabled }: EtapasEditorProps) 
             placeholder="Código QR solución (ej. QR-HALL-001)"
             className={inputClass}
             aria-label={`QR solución etapa ${index + 1}`}
+          />
+          <PistasEditor
+            pistas={etapa.pistas}
+            onChange={(pistas) => updateEtapa(index, { pistas })}
+            disabled={disabled}
           />
         </div>
       ))}

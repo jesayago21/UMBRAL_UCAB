@@ -49,6 +49,12 @@ export interface ActualizarMisionRequest {
   activar?: boolean | null
 }
 
+export interface AgregarPistaEtapaRequest {
+  contenido: string
+  tipoLiberacion: string
+  segundosLiberacion?: number | null
+}
+
 export interface ListMisionesParams {
   nombre?: string
   estado?: string
