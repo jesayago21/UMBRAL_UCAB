@@ -1,41 +1,40 @@
-# Iteración E1-M1 — Mobile login OIDC (opcional)
+# Iteración E1-M1 — Panel equipo (web) con login OIDC
 
-**Fase:** Entrega 1 — Fase D (opcional, solo si hay tiempo tras E1-2b)
-**Depende de:** E1-K4 (misma configuración Keycloak)
-**Prioridad:** Baja — no bloquea el DoD de Entrega 1
+**Fase:** Entrega 1 — Fase D
+**Depende de:** E1-2b (sesiones operador + código por sesión)
 
-> **Objetivo:** demostrar que el rol **EquipoParticipante** (o cualquier usuario)
-> puede autenticarse en **React Native / Expo** contra el mismo realm `umbral`.
-> **Sin** gameplay, QR ni llamadas a sesión.
-
----
-
-## Alcance SÍ
-
-| Ítem | Detalle |
-|------|---------|
-| Proyecto | `src/frontend/umbral-mobile` (Expo + TS) |
-| Pantalla | Login → redirect Keycloak → guardar token (AsyncStorage) |
-| Post-login | Pantalla “Sesión” placeholder: “Login OK — gameplay en E2” |
-| Keycloak | Reutilizar client `umbral-web` o añadir `umbral-mobile` con redirect `exp://` / deep link documentado |
+> **Objetivo:** jugador con rol **EquipoParticipante** inicia sesión en web (Keycloak),
+> elige Búsqueda del tesoro o Trivia, ve sesiones abiertas a inscripción y se une con el
+> **código de la sesión** (uno por sesión, no por equipo).
 
 ---
 
-## Fuera de alcance
+## Flujo
 
-- Escáner QR, `submitEvidencia`, trivia, SignalR.
-- Publicación en stores.
-- Cobertura Jest en E1.
+| Rol | Acción |
+|-----|--------|
+| Operador | Crea sesión → recibe código → **Abrir inscripción** → comparte código |
+| Equipo | Login → `/equipo/busqueda` o `/equipo/trivia` → elige sesión → ingresa código → unirse |
+
+---
+
+## API
+
+- `GET /api/v1/sesiones/disponibles/busqueda-tesoro` — EquipoParticipante
+- `GET /api/v1/sesiones/disponibles/trivia` — EquipoParticipante (vacío hasta sesiones trivia)
+- `POST /api/v1/sesiones/{id}/unirse` — body `{ codigoAcceso }`
+- `POST /api/v1/sesiones/{id}/abrir-inscripcion` — Operador
+
+---
+
+## Fuera de alcance E1
+
+- Gameplay QR, trivia jugable, SignalR (E2)
+- App mobile nativa (mismo flujo reutilizable)
 
 ---
 
 ## Criterio “hecho”
 
-- Usuario `equipo` / `Umbral123!` completa login y ve confirmación con su `preferred_username`.
-- Token válido para API (smoke opcional `GET` health o endpoint protegido de equipo).
-
----
-
-## Si no hay tiempo
-
-Entrega 1 se cierra sin E1-M1; mobile completo queda en Entrega 2 según `PLAN.md §4.2`.
+- Login `equipo` / `Umbral123!` → panel BT con listado y unirse con código válido
+- Operador ve equipos inscritos sin registrar manualmente Alpha/Beta

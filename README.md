@@ -32,8 +32,8 @@ El archivo `.env` ya trae valores seguros para desarrollo local. No lo modifique
 ## 2. Levantar la infraestructura con Docker
 
 ```bash
-# Iniciar PostgreSQL y RabbitMQ en segundo plano
-docker compose up postgres rabbitmq -d
+# Iniciar PostgreSQL, RabbitMQ y Keycloak
+docker compose up postgres rabbitmq keycloak -d
 
 # Verificar que ambos servicios están healthy
 docker compose ps
@@ -48,9 +48,11 @@ docker compose logs -f rabbitmq
 | Servicio       | Puerto local | URL                              |
 |----------------|-------------|----------------------------------|
 | PostgreSQL     | 5433        | `localhost:5433`                 |
+| Keycloak       | 8080        | http://localhost:8080            |
 | RabbitMQ AMQP  | 5672        | `amqp://localhost:5672`          |
 | RabbitMQ UI    | 15672       | http://localhost:15672           |
 | API Backend    | 5000        | http://localhost:5000            |
+| Frontend web   | 5173        | http://localhost:5173            |
 
 **Credenciales de desarrollo** (PostgreSQL y RabbitMQ): `umbral_user` / `umbral_pass`  
 **Base de datos**: `umbral_db`
@@ -68,13 +70,21 @@ dotnet build Umbral.sln
 
 ## 4. Ejecutar la API en local
 
-Con la infraestructura Docker corriendo:
+Con la infraestructura Docker corriendo (**PostgreSQL + Keycloak**):
 
 ```bash
+docker compose up postgres keycloak -d
+
 dotnet run --project src/backend/Umbral.API
 ```
 
-Verificar que responde:
+En **Development** la API aplica migraciones EF al arrancar. Si falla por esquema desactualizado:
+
+```bash
+dotnet ef database update --project src/backend/Umbral.Infrastructure --startup-project src/backend/Umbral.API
+```
+
+Verificar:
 
 ```bash
 curl http://localhost:5000/health
@@ -83,19 +93,115 @@ curl http://localhost:5000/health
 
 ---
 
-## 5. Estructura del proyecto
+## 5. Frontend web (`umbral-web`)
+
+```bash
+cd src/frontend/umbral-web
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Abrir **http://localhost:5173/login**.
+
+| Variable | Uso |
+|----------|-----|
+| `VITE_API_URL` | API REST (default `http://localhost:5000`) |
+| `VITE_KEYCLOAK_*` | Realm `umbral`, client `umbral-web` |
+| `VITE_EQUIPO_WEB_ENABLED` | `true` = jugador en `/equipo` (E1). `false` cuando exista mobile |
+
+### Usuarios demo (Keycloak)
+
+| Usuario | Contraseña | Rol | Ruta inicial |
+|---------|------------|-----|----------------|
+| `admin` | `Umbral123!` | Administrador | `/admin/misiones` |
+| `operador` | `Umbral123!` | Operador | `/operador/sesiones` |
+| `equipo` | `Umbral123!` | EquipoParticipante | `/equipo` (si `VITE_EQUIPO_WEB_ENABLED=true`) |
+
+---
+
+## 6. Guion de demo (Entrega 1)
+
+Duración orientativa: **12–15 min**. Requiere Postgres + Keycloak + API + `npm run dev`.
+
+### 6.1 Administrador — catálogo
+
+1. Login **`admin`** / `Umbral123!` → redirige a misiones.
+2. Crear o revisar una **misión activa** (nombre, etapas si aplica).
+3. Ir a **Trivia** → crear **categoría** y **pregunta** con opciones.
+4. Cerrar sesión.
+
+### 6.2 Operador — sesión búsqueda del tesoro
+
+1. Login **`operador`** / `Umbral123!` → `/operador/sesiones`.
+2. **Crear sesión** eligiendo la misión activa → anotar el **código de sesión** (único, no por equipo).
+3. Entrar al **detalle** de la sesión:
+   - **Abrir inscripción** (estado `EnPreparacion`).
+   - Compartir el código con los jugadores.
+   - Ver **equipos inscritos** (solo lectura; se unen solos).
+   - Con ≥1 equipo: **Iniciar** → temporizador y controles (pausar / reanudar / finalizar).
+   - **Refrescar ranking** (poll manual, sin SignalR).
+4. *(Opcional)* Intentar `/admin/misiones` → pantalla **403** (rol incorrecto).
+
+### 6.3 Equipo — unirse a sesión (web temporal)
+
+> Cuando exista `umbral-mobile`, poner `VITE_EQUIPO_WEB_ENABLED=false` y repetir el flujo en la app.
+
+1. Login **`equipo`** / `Umbral123!` → `/equipo`.
+2. **Búsqueda del tesoro** → listado de sesiones abiertas a inscripción.
+3. Ingresar el **código de la sesión** del operador → **Unirse**.
+4. El operador ve el equipo en el detalle de la sesión.
+5. **Trivia** en `/equipo/trivia`: placeholder (sin sesiones trivia creadas aún).
+
+### 6.4 Qué decir que queda para E2
+
+- Ranking en **tiempo real** (SignalR).
+- **Gameplay** BT: escanear QR, enviar evidencias desde mobile.
+- **Trivia jugable** y sesiones trivia desde operador.
+- App **React Native** (`umbral-mobile`) como cliente definitivo del equipo.
+
+---
+
+## 7. Pendiente de implementar (después de probar el front)
+
+Lista para cerrar E1 / abrir E2, en orden sugerido:
+
+| # | Ítem | Notas |
+|---|------|--------|
+| 1 | **Afinar E1-2b** | Penalización en UI operador (API ya existe); pulir mensajes/estados vacíos |
+| 2 | **Sesiones trivia** | Operador: crear/orquestar sesión trivia; equipo: listado en `/equipo/trivia` |
+| 3 | **Misiones completas** | CRUD etapas y pistas en admin (si aún incompleto) |
+| 4 | **`umbral-mobile`** | Expo + OIDC + mismas APIs de unirse/listar |
+| 5 | **Deshabilitar equipo en web** | `VITE_EQUIPO_WEB_ENABLED=false` al tener mobile |
+| 6 | **SignalR** | Ranking y eventos de sesión en vivo |
+| 7 | **Gameplay BT** | Evidencia QR, lobby post-unión, pantallas de juego |
+| 8 | **E2E Playwright** | Flujos admin + operador + 403 |
+| 9 | **README E1-5 / guion E1-6** | Este README cubre arranque y demo; revisar tras feedback de pruebas |
+| 10 | **CI gate cobertura** | E1-3 si falta automatizar ≥90% |
+
+---
+
+## 8. Tests
+
+```bash
+dotnet test Umbral.sln
+```
+
+**389 tests** (Domain, Application, Infrastructure, API). Los de infraestructura usan Testcontainers/Postgres; API usa `TestAuthHandler` sin Keycloak.
+
+---
+
+## 9. Estructura del proyecto
 
 ```
 UMBRAL_UCAB/
 ├── Umbral.sln                        ← Solución .NET
-├── docker-compose.yml                ← Infra local (PostgreSQL + RabbitMQ)
+├── docker-compose.yml                ← Infra local (PostgreSQL + RabbitMQ + Keycloak)
 ├── .env.example                      ← Plantilla de variables de entorno
 ├── src/
-│   └── backend/
-│       ├── Umbral.Domain/            ← Núcleo de negocio (sin dependencias externas)
-│       ├── Umbral.Application/       ← Casos de uso (→ Domain)
-│       ├── Umbral.Infrastructure/    ← Adaptadores de salida (→ Application + Domain)
-│       └── Umbral.API/               ← Punto de entrada HTTP (→ Application + Infrastructure)
+│   ├── backend/                      ← API .NET 8
+│   └── frontend/
+│       └── umbral-web/               ← React (admin, operador, equipo E1)
 ├── tests/                            ← Proyectos de prueba (Fase 2+)
 └── docs/
     └── domain-model.md
@@ -112,7 +218,7 @@ Umbral.Domain → (ninguno)
 
 ---
 
-## 6. Gestión del stack Docker
+## 10. Gestión del stack Docker
 
 ```bash
 # Detener servicios (conserva los volúmenes/datos)
