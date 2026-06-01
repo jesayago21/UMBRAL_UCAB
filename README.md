@@ -3,6 +3,7 @@
 Sistema de gestión de sesiones de Búsqueda del Tesoro y Trivia.  
 Arquitectura: **Monolito hexagonal** (Ports & Adapters) en .NET 8.
 
+**Resumen consolidado (fases/iteraciones/HU/RF/RNF):** [`docs/RESUMEN-COMPACTO-E1-E2.md`](docs/RESUMEN-COMPACTO-E1-E2.md)  
 **Trazabilidad (RB / RF / HU):** [`docs/TRAZABILIDAD.md`](docs/TRAZABILIDAD.md) · **Fase 1 dominio:** [`docs/fase-1/TRACKER.md`](docs/fase-1/TRACKER.md)
 
 ---
@@ -232,7 +233,7 @@ reportgenerator `
 
 > Si falta `reportgenerator`: `dotnet tool install -g dotnet-reportgenerator-globaltool`
 
-Más detalle: [`docs/entrega-1/iter-e1-01-cobertura-baseline.md`](docs/entrega-1/iter-e1-01-cobertura-baseline.md) · CI: [`iter-e1-03-ci-coverage.md`](docs/entrega-1/iter-e1-03-ci-coverage.md)
+Más detalle: [`docs/archive/entrega-1/iter-e1-01-cobertura-baseline.md`](docs/archive/entrega-1/iter-e1-01-cobertura-baseline.md) · CI: [`iter-e1-03-ci-coverage.md`](docs/archive/entrega-1/iter-e1-03-ci-coverage.md)
 
 ---
 

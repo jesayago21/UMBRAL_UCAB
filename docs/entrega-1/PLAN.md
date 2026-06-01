@@ -1,5 +1,9 @@
 # Entrega 1 — Plan de control y alcance
 
+> **Lectura recomendada primero:** `docs/RESUMEN-COMPACTO-E1-E2.md` (estado actual consolidado por fases, HU/RF/RNF y alcance E1/E2).  
+> Este `PLAN.md` se mantiene como bitácora detallada e histórica de decisiones.
+> **Archivo histórico:** las iteraciones `iter-e1-*` fueron movidas a `docs/archive/entrega-1/`.
+
 > **Estado:** plan vigente (alcance reducido aprobado)
 > **Última actualización:** 2026-05-30
 > **Decisión base:** Entrega 1 demuestra **comunicación frontend ↔ backend ↔ persistencia** con **cobertura backend ≥ 90%**: catálogo admin (misiones + trivia), **login OIDC**, **pantalla operador mínima** (sesión BT sin SignalR) y, si hay tiempo, **login mobile** (solo auth). Gameplay completo, SignalR, RabbitMQ demo y E2E → **Entrega 2**.

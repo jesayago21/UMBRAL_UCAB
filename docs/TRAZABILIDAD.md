@@ -1,5 +1,8 @@
 # UMBRAL — Trazabilidad canónica (ERS ↔ `.cursor` ↔ Fase 1)
 
+> **Resumen operativo recomendado:** `docs/RESUMEN-COMPACTO-E1-E2.md`.  
+> Este documento queda como referencia normativa de códigos HU/RB/RNF.
+
 **Fuente normativa del proyecto:** `.cursor/specs/umbral-product-spec.md` (producto + RB/RF/RNF) y este documento para códigos unificados.
 
 **Documento académico base:** `docs/ERS_Proyecto_UMBRAL_UCAB.md` (historias HU-01…HU-40; sección §8–§7 alineadas con esta tabla).
