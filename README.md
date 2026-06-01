@@ -189,6 +189,51 @@ dotnet test Umbral.sln
 
 **389 tests** (Domain, Application, Infrastructure, API). Los de infraestructura usan Testcontainers/Postgres; API usa `TestAuthHandler` sin Keycloak.
 
+### Cobertura de código (backend)
+
+Requisito **RNF-09**: cobertura de líneas ≥ **90%**. Requiere **Docker en marcha** (mismos contenedores que los tests de infra/API).
+
+**Windows (recomendado):**
+
+```powershell
+# Medir, generar reporte HTML y abrirlo en el navegador
+.\scripts\run-coverage.ps1 -Open
+
+# Verificar el gate ≥ 90% (exit 1 si no cumple; mismo criterio que CI)
+.\scripts\run-coverage.ps1 -Threshold 90
+```
+
+**Linux / macOS / CI:**
+
+```bash
+bash scripts/run-coverage.sh --threshold 90
+```
+
+**Salida:**
+
+| Artefacto | Descripción |
+|-----------|-------------|
+| `coverage/report/index.html` | Reporte HTML por ensamblado (no se commitea; se regenera) |
+| `coverage/report/Summary.txt` | Resumen en texto; busca la línea `Line coverage: XX%` |
+
+**Comandos manuales** (sin script):
+
+```powershell
+dotnet test Umbral.sln -c Release `
+  --collect:"XPlat Code Coverage" `
+  --settings coverlet.runsettings `
+  --results-directory coverage
+
+reportgenerator `
+  -reports:"coverage/**/coverage.cobertura.xml" `
+  -targetdir:"coverage/report" `
+  -reporttypes:"Html;TextSummary"
+```
+
+> Si falta `reportgenerator`: `dotnet tool install -g dotnet-reportgenerator-globaltool`
+
+Más detalle: [`docs/entrega-1/iter-e1-01-cobertura-baseline.md`](docs/entrega-1/iter-e1-01-cobertura-baseline.md) · CI: [`iter-e1-03-ci-coverage.md`](docs/entrega-1/iter-e1-03-ci-coverage.md)
+
 ---
 
 ## 9. Estructura del proyecto

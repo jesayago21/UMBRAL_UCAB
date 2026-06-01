@@ -90,9 +90,10 @@ public sealed class SesionesControllerTests
 
         var preguntas = await response.Content.ReadFromJsonAsync<List<PreguntaTriviaEquipoResponse>>();
         preguntas.Should().NotBeNull();
-        preguntas!.Should().NotBeEmpty();
-        preguntas.Should().OnlyContain(p => p.Opciones.Count >= 3);
-        preguntas[0].Orden.Should().Be(1);
+        var list = preguntas!;
+        list.Should().NotBeEmpty();
+        list.Should().OnlyContain(p => p.Opciones.Count >= 3);
+        list[0].Orden.Should().Be(1);
     }
 
     [Fact]
