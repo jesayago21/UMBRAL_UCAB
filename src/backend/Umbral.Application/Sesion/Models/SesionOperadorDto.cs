@@ -2,6 +2,7 @@ namespace Umbral.Application.Sesion.Models;
 
 public sealed record SesionResumenDto(
     Guid Id,
+    string Nombre,
     string TipoSesion,
     Guid MisionId,
     string MisionNombre,
@@ -34,6 +35,7 @@ public sealed record EtapaSesionDto(
 
 public sealed record SesionDetalleDto(
     Guid Id,
+    string Nombre,
     string TipoSesion,
     Guid MisionId,
     string MisionNombre,

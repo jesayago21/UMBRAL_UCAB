@@ -14,6 +14,8 @@ public sealed class UsuarioAdministrable : AggregateRoot
     public string Nombre { get; private set; } = default!;
     public string Apellido { get; private set; } = default!;
     public EstadoUsuario Estado { get; private set; }
+    /// <summary>Última contraseña fijada por un administrador (reparto operativo). No se lee de Keycloak.</summary>
+    public string? PasswordAsignada { get; private set; }
 
     private readonly List<RolSistema> _roles = [];
     public IReadOnlyList<RolSistema> Roles => _roles.AsReadOnly();
@@ -85,14 +87,41 @@ public sealed class UsuarioAdministrable : AggregateRoot
         RaiseDomainEvent(new UsuarioEstadoCambiado(Id, Estado));
     }
 
+    public void RegistrarPasswordAsignada(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+            throw new DomainException("La contraseña asignada no puede estar vacía.");
+
+        PasswordAsignada = password;
+    }
+
+    public void ActualizarPerfil(string nombre, string apellido)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+            throw new DomainException("El nombre no puede estar vacío.");
+
+        if (string.IsNullOrWhiteSpace(apellido))
+            throw new DomainException("El apellido no puede estar vacío.");
+
+        Nombre   = nombre.Trim();
+        Apellido = apellido.Trim();
+    }
+
+    public bool TieneRolAdministrador() => _roles.Contains(RolSistema.Administrador);
+
+    public void AsegurarPuedeEliminarse()
+    {
+        if (TieneRolAdministrador())
+        {
+            throw new DomainException(
+                "No se puede eliminar un usuario con rol Administrador. Solo Operador o Participante.");
+        }
+    }
+
     private static void ValidarRolesAsignables(IReadOnlyList<RolSistema> roles)
     {
-        if (roles.Contains(RolSistema.Participante))
-            throw new DomainException(
-                "El rol Participante no se asigna desde administración (RB-35).");
-
-        if (roles.Count == 0)
-            throw new DomainException("Debe asignarse al menos un rol Administrador u Operador.");
+        if (roles.Count != 1)
+            throw new DomainException("Debe asignarse exactamente un rol.");
     }
 
     protected override bool IdEquals(Entity other) =>

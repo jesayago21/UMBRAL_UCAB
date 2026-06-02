@@ -163,8 +163,8 @@ export function OperadorSesionDetailPage() {
       </div>
 
       <PageHeader
-        title={sesion.misionNombre}
-        description={`Sesión ${sesionId}`}
+        title={sesion.nombre ?? sesion.misionNombre}
+        description={`Misión: ${sesion.misionNombre}`}
         action={
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_CLASS[sesion.estado]}`}
@@ -197,7 +197,10 @@ export function OperadorSesionDetailPage() {
         totalEtapas={sesion.totalEtapas ?? 0}
         etapaDescripcion={sesion.etapaDescripcion ?? null}
         unidadProgreso={
-          (detalle?.tipoSesion ?? sesion.tipoSesion) === 'Trivia' ? 'pregunta' : 'etapa'
+          detalle?.etapaActivaTipo === 'Trivia' ||
+          (detalle?.tipoSesion ?? sesion.tipoSesion) === 'Trivia'
+            ? 'pregunta'
+            : 'etapa'
         }
       />
 

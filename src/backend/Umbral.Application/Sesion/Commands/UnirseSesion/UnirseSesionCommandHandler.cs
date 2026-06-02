@@ -26,13 +26,26 @@ internal sealed class UnirseSesionCommandHandler
         UnirseSesionCommand command,
         CancellationToken cancellationToken)
     {
+        var jugadorId = new UsuarioId(command.JugadorId);
+
+        var inscripcionExistente = await _sesionRepository.FindInscripcionAbiertaPorJugadorAsync(
+            jugadorId,
+            cancellationToken);
+
+        if (inscripcionExistente is not null
+            && inscripcionExistente.SesionId.Valor != command.SesionId)
+        {
+            throw new DomainException(
+                "Ya participas en otra sesión abierta. Abandónala antes de unirte a otra.");
+        }
+
         var sesion = await _sesionRepository.FindByIdAsync(
                          new SesionId(command.SesionId),
                          cancellationToken)
                      ?? throw new NotFoundException(nameof(SesionAR), command.SesionId);
 
         var participante = sesion.UnirseParticipante(
-            new UsuarioId(command.JugadorId),
+            jugadorId,
             command.NombreParticipante,
             command.CodigoAcceso);
 

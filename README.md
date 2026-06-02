@@ -159,6 +159,14 @@ Abrir **http://localhost:5173/login**.
 | `operador` | `Umbral123!` | Operador | `/operador/sesiones` |
 | `participante` | `Umbral123!` | Participante | `/participante` (si `VITE_PARTICIPANTE_WEB_ENABLED=true`) |
 
+Si Keycloak dice **usuario desconocido** o tras login aparece *rol no válido*, el realm se creó antes de añadir `participante` o el rol `Participante`. Con Keycloak en marcha:
+
+```powershell
+.\scripts\keycloak-ensure-demo-users.ps1
+```
+
+Para reimportar el realm desde cero (borra usuarios del contenedor): `docker compose rm -sf keycloak` y luego `docker compose up keycloak -d`.
+
 ---
 
 ## 6. Guion de demo (Entrega 1)
@@ -192,7 +200,7 @@ Duración orientativa: **12–15 min**. Requiere Postgres + Keycloak + API + `np
 2. **Búsqueda del tesoro** → listado de sesiones abiertas a inscripción.
 3. Ingresar el **código de la sesión** del operador → **Unirse**.
 4. El operador ve el participante en el detalle de la sesión.
-5. **Trivia** en `/participante/trivia`: placeholder (sin sesiones trivia creadas aún).
+5. Tras unirse, la partida se abre en `/participante/sesiones/{id}` (misiones con etapas BT y/o Trivia).
 
 ### 6.4 Qué decir que queda para E2
 
@@ -210,7 +218,7 @@ Lista para cerrar E1 / abrir E2, en orden sugerido:
 | # | Ítem | Notas |
 |---|------|--------|
 | 1 | **Afinar E1-2b** | Penalización en UI operador (API ya existe); pulir mensajes/estados vacíos |
-| 2 | **Sesiones trivia** | Operador: crear/orquestar sesión trivia; participante: listado en `/participante/trivia` |
+| 2 | **Sesiones trivia** | Operador: misión con etapa trivia; participante: mismo listado en `/participante` |
 | 3 | **Misiones completas** | CRUD etapas y pistas en admin (si aún incompleto) |
 | 4 | **`umbral-mobile`** | Expo + OIDC + mismas APIs de unirse/listar |
 | 5 | **Deshabilitar participante en web** | `VITE_PARTICIPANTE_WEB_ENABLED=false` al tener mobile |

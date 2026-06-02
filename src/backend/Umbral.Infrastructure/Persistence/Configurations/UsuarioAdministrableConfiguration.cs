@@ -56,6 +56,10 @@ public sealed class UsuarioAdministrableConfiguration : IEntityTypeConfiguration
             .HasMaxLength(30)
             .IsRequired();
 
+        builder.Property(x => x.PasswordAsignada)
+            .HasColumnName("password_asignada")
+            .HasMaxLength(128);
+
         builder.Property<List<RolSistema>>("_roles")
             .HasColumnName("roles_json")
             .HasConversion(

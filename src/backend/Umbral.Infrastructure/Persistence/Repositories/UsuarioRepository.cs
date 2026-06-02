@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Umbral.Domain.IdentidadYAccesos;
+using Umbral.Domain.IdentidadYAccesos.Enums;
 using Umbral.Domain.IdentidadYAccesos.Ports;
 using Umbral.Domain.IdentidadYAccesos.ValueObjects;
 
@@ -15,6 +16,13 @@ public sealed class UsuarioRepository : IUsuarioRepository
         UsuarioAdministrableId id,
         CancellationToken ct = default) =>
         await _db.UsuariosAdministrables.FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public async Task<UsuarioAdministrable?> ObtenerPorUsernameAsync(
+        string username,
+        CancellationToken ct = default) =>
+        await _db.UsuariosAdministrables.FirstOrDefaultAsync(
+            x => x.Username.ToLower() == username.Trim().ToLowerInvariant(),
+            ct);
 
     public async Task<UsuarioAdministrable?> ObtenerPorEmailAsync(
         EmailAddress email,
@@ -35,9 +43,19 @@ public sealed class UsuarioRepository : IUsuarioRepository
 
     public async Task GuardarAsync(UsuarioAdministrable usuario, CancellationToken ct = default)
     {
-        if (_db.Entry(usuario).State == EntityState.Detached)
+        var entry = _db.Entry(usuario);
+        if (entry.State == EntityState.Detached)
             await _db.UsuariosAdministrables.AddAsync(usuario, ct);
+        else
+            // EF no detecta cambios in-place en _roles (lista + conversión a string).
+            entry.Property<List<RolSistema>>("_roles").IsModified = true;
 
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task EliminarAsync(UsuarioAdministrable usuario, CancellationToken ct = default)
+    {
+        _db.UsuariosAdministrables.Remove(usuario);
         await _db.SaveChangesAsync(ct);
     }
 

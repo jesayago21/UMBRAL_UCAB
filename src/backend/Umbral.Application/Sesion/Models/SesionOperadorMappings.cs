@@ -13,6 +13,7 @@ internal static class SesionOperadorMappings
 
         return new SesionResumenDto(
             sesion.SesionId.Valor,
+            sesion.Nombre,
             sesion.TipoSesion.ToString(),
             misionId,
             misionNombre,
@@ -38,6 +39,7 @@ internal static class SesionOperadorMappings
 
         return new SesionDetalleDto(
             resumen.Id,
+            resumen.Nombre,
             resumen.TipoSesion,
             resumen.MisionId,
             resumen.MisionNombre,

@@ -57,10 +57,12 @@ export function SesionesOperativasList({ sesiones, isLoading }: SesionesOperativ
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition hover:bg-slate-50"
               >
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-slate-900">{s.misionNombre}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="truncate font-medium text-slate-900">{s.nombre}</p>
+                  <p className="truncate text-xs text-slate-500">
+                    Misión: {s.misionNombre}
+                    {' · '}
                     <span className="font-medium text-slate-600">
-                      {s.tipoSesion === 'Trivia' ? 'Trivia' : 'Búsqueda'}
+                      {s.tipoSesion === 'Trivia' ? 'Trivia' : s.tipoSesion === 'Mision' ? 'Misión' : 'Búsqueda'}
                     </span>
                     {' · '}
                     {s.participantesCount} participante{s.participantesCount === 1 ? '' : 's'}

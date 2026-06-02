@@ -15,6 +15,11 @@ public sealed class SesionConfiguration : IEntityTypeConfiguration<Sesion>
         builder.Property(x => x.SesionId)
             .HasColumnName("id");
 
+        builder.Property(x => x.Nombre)
+            .HasColumnName("nombre")
+            .HasMaxLength(120)
+            .IsRequired();
+
         builder.Property(x => x.TipoSesion)
             .HasColumnName("tipo_sesion")
             .HasConversion<string>()

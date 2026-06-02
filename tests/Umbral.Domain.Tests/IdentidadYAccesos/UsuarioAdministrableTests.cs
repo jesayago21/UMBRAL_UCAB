@@ -14,7 +14,7 @@ public sealed class UsuarioAdministrableTests
     private static EmailAddress Email => EmailAddress.Create("admin@umbral.test");
 
     [Fact]
-    public void Crear_ConRolesAdministradorYOperador_EstadoActivoYEventoUsuarioCreado()
+    public void Crear_ConRolOperador_EstadoActivoYEventoUsuarioCreado()
     {
         var usuario = UsuarioAdministrable.Crear(
             KcId,
@@ -22,21 +22,30 @@ public sealed class UsuarioAdministrableTests
             "admin_test",
             "Admin",
             "Test",
-            [RolSistema.Administrador, RolSistema.Operador]);
+            [RolSistema.Operador]);
 
         usuario.Estado.Should().Be(EstadoUsuario.Activo);
-        usuario.Roles.Should().BeEquivalentTo([RolSistema.Administrador, RolSistema.Operador]);
+        usuario.Roles.Should().ContainSingle().Which.Should().Be(RolSistema.Operador);
         usuario.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<UsuarioCreadoEnDominio>();
     }
 
     [Fact]
-    public void Crear_ConRolParticipante_LanzaDomainException()
+    public void Crear_ConVariosRoles_LanzaDomainException()
     {
         var act = () => UsuarioAdministrable.Crear(
-            KcId, Email, "part", "P", "T", [RolSistema.Participante]);
+            KcId, Email, "mix", "M", "T", [RolSistema.Administrador, RolSistema.Operador]);
 
         act.Should().Throw<DomainException>()
-            .WithMessage("*RB-35*");
+            .WithMessage("*exactamente un rol*");
+    }
+
+    [Fact]
+    public void Crear_ConRolParticipante_AceptaParticipante()
+    {
+        var usuario = UsuarioAdministrable.Crear(
+            KcId, Email, "part", "P", "T", [RolSistema.Participante]);
+
+        usuario.Roles.Should().ContainSingle().Which.Should().Be(RolSistema.Participante);
     }
 
     [Fact]
@@ -49,29 +58,27 @@ public sealed class UsuarioAdministrableTests
     }
 
     [Fact]
-    public void AsignarRoles_ReemplazaRolesYEmiteRolesUsuarioModificados()
+    public void AsignarRoles_ReemplazaRolYEmiteRolesUsuarioModificados()
     {
         var usuario = UsuarioAdministrable.Crear(
             KcId, Email, "op", "Op", "T", [RolSistema.Operador]);
         usuario.ClearDomainEvents();
 
-        usuario.AsignarRoles([RolSistema.Administrador, RolSistema.Administrador]);
+        usuario.AsignarRoles([RolSistema.Administrador]);
 
         usuario.Roles.Should().ContainSingle().Which.Should().Be(RolSistema.Administrador);
         usuario.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<RolesUsuarioModificados>();
     }
 
     [Fact]
-    public void RevocarRol_EmiteRolesUsuarioModificados()
+    public void AsegurarPuedeEliminarse_ConAdministrador_LanzaDomainException()
     {
         var usuario = UsuarioAdministrable.Crear(
-            KcId, Email, "mix", "Mix", "T", [RolSistema.Administrador, RolSistema.Operador]);
-        usuario.ClearDomainEvents();
+            KcId, Email, "adm", "Adm", "T", [RolSistema.Administrador]);
 
-        usuario.RevocarRol(RolSistema.Operador);
+        var act = () => usuario.AsegurarPuedeEliminarse();
 
-        usuario.Roles.Should().ContainSingle().Which.Should().Be(RolSistema.Administrador);
-        usuario.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<RolesUsuarioModificados>();
+        act.Should().Throw<DomainException>();
     }
 
     [Fact]

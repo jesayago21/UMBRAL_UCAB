@@ -34,11 +34,11 @@ apiClient.interceptors.response.use(
 export function getApiErrorMessage(error: unknown): string {
   if (axios.isAxiosError<ApiErrorResponse>(error)) {
     const data = error.response?.data
-    if (data?.mensaje) return data.mensaje
     if (data?.errores) {
       const first = Object.values(data.errores)[0]?.[0]
       if (first) return first
     }
+    if (data?.mensaje) return data.mensaje
     if (error.response?.status === 403) {
       return 'No tienes permiso para esta acción (403).'
     }

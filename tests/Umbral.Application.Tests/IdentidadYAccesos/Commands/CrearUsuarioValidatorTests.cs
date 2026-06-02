@@ -51,7 +51,7 @@ public sealed class CrearUsuarioValidatorTests
     }
 
     [Fact]
-    public void Validate_RolesConParticipante_Error()
+    public void Validate_VariosRoles_Error()
     {
         var result = _sut.Validate(new CrearUsuarioCommand(
             "valido@umbral.test",
@@ -59,9 +59,9 @@ public sealed class CrearUsuarioValidatorTests
             "Nombre",
             "Apellido",
             "Password1",
-            ["Participante"]));
+            ["Administrador", "Operador"]));
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("RB-35"));
+        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("exactamente un rol"));
     }
 }

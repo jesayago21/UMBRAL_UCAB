@@ -16,8 +16,15 @@ public sealed record UsuarioResponse(
     string Nombre,
     string Apellido,
     string Estado,
-    IReadOnlyList<string> Roles);
+    IReadOnlyList<string> Roles,
+    string? PasswordAsignada);
 
 public sealed record AsignarRolesRequest(IReadOnlyList<string> Roles);
 
 public sealed record CambiarEstadoUsuarioRequest(string Accion);
+
+public sealed record ActualizarUsuarioRequest(
+    string Nombre,
+    string Apellido,
+    string Rol,
+    string? NuevaPassword);

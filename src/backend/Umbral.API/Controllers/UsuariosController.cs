@@ -5,7 +5,9 @@ using Umbral.API.Contracts.Usuarios;
 using Umbral.API.Extensions;
 using Umbral.Application.IdentidadYAccesos.Commands.AsignarRolesUsuario;
 using Umbral.Application.IdentidadYAccesos.Commands.CambiarEstadoUsuario;
+using Umbral.Application.IdentidadYAccesos.Commands.ActualizarUsuario;
 using Umbral.Application.IdentidadYAccesos.Commands.CrearUsuario;
+using Umbral.Application.IdentidadYAccesos.Commands.EliminarUsuario;
 using Umbral.Application.IdentidadYAccesos.Queries.GetUsuarioById;
 using Umbral.Application.IdentidadYAccesos.Queries.ListUsuarios;
 
@@ -48,7 +50,8 @@ public sealed class UsuariosController : ControllerBase
                     request.Nombre,
                     request.Apellido,
                     created.Estado,
-                    request.Roles)));
+                    request.Roles,
+                    request.PasswordTemporal)));
     }
 
     [HttpGet]
@@ -70,6 +73,32 @@ public sealed class UsuariosController : ControllerBase
         if (usuario is null)
             return NotFound();
         return Ok(Map(usuario));
+    }
+
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Actualizar(
+        Guid id,
+        [FromBody] ActualizarUsuarioRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new ActualizarUsuarioCommand(
+                id,
+                request.Nombre,
+                request.Apellido,
+                request.Rol,
+                request.NuevaPassword),
+            cancellationToken);
+        return result.ToNoContentResult(HttpContext);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new EliminarUsuarioCommand(id), cancellationToken);
+        return result.ToNoContentResult(HttpContext);
     }
 
     [HttpPut("{id:guid}/roles")]
@@ -107,5 +136,6 @@ public sealed class UsuariosController : ControllerBase
             dto.Nombre,
             dto.Apellido,
             dto.Estado,
-            dto.Roles);
+            dto.Roles,
+            dto.PasswordAsignada);
 }

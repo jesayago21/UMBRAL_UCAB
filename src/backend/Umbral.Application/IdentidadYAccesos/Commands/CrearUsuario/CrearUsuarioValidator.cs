@@ -13,8 +13,7 @@ internal sealed class CrearUsuarioValidator : AbstractValidator<CrearUsuarioComm
         RuleFor(x => x.PasswordTemporal).NotEmpty().MinimumLength(8);
         RuleFor(x => x.Roles).NotEmpty();
         RuleFor(x => x.Roles)
-            .Must(r => !r.Any(x =>
-                string.Equals(x, "Participante", StringComparison.OrdinalIgnoreCase)))
-            .WithMessage("El rol Participante no se asigna desde administración (RB-35).");
+            .Must(r => r.Count == 1)
+            .WithMessage("Debe indicar exactamente un rol.");
     }
 }

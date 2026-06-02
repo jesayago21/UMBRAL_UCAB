@@ -3,6 +3,7 @@ using Umbral.Application.DependencyInjection;
 using Umbral.Infrastructure.DependencyInjection;
 
 using Microsoft.EntityFrameworkCore;
+using Umbral.Infrastructure.Identidad;
 using Umbral.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +29,8 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<UmbralDbContext>();
     await db.Database.MigrateAsync();
+    var seeder = scope.ServiceProvider.GetRequiredService<UsuariosEspejoSeeder>();
+    await seeder.SeedAsync();
 }
 
 app.UseUmbralExceptionHandling();

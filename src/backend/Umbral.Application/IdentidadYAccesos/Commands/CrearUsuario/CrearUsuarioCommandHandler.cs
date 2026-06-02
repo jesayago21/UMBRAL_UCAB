@@ -60,6 +60,7 @@ internal sealed class CrearUsuarioCommandHandler
                 cmd.Nombre,
                 cmd.Apellido,
                 roles);
+            usuario.RegistrarPasswordAsignada(cmd.PasswordTemporal);
 
             await _usuarios.GuardarAsync(usuario, ct);
 

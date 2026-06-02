@@ -41,15 +41,18 @@ public static class ResultExtensions
 
     private static ApiErrorResponse ToBusinessError(
         HttpContext httpContext,
-        IReadOnlyList<string> errors) =>
-        new()
+        IReadOnlyList<string> errors)
+    {
+        var detalle = errors.Count > 0 ? errors[0] : "La operación no pudo completarse.";
+        return new()
         {
             Tipo    = "BusinessError",
-            Mensaje = "La operación no pudo completarse.",
+            Mensaje = detalle,
             Errores = new Dictionary<string, string[]>
             {
                 ["general"] = errors.ToArray()
             },
             TraceId = httpContext.TraceIdentifier
         };
+    }
 }

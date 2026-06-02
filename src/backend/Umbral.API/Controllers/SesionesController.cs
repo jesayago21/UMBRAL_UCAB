@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Umbral.API.Auth;
 using Umbral.API.Contracts.Sesiones;
 using Umbral.API.Extensions;
+using Umbral.Application.Sesion.Commands.AbandonarSesion;
 using Umbral.Application.Sesion.Commands.AbrirInscripcionSesion;
 using Umbral.Application.Sesion.Commands.AplicarPenalizacion;
 using Umbral.Application.Sesion.Commands.CancelarSesion;
@@ -17,6 +18,8 @@ using Umbral.Application.Sesion.Commands.PausarSesion;
 using Umbral.Application.Sesion.Commands.ReanudarSesion;
 using Umbral.Application.Sesion.Commands.SubmitEvidencia;
 using Umbral.Application.Sesion.Commands.UnirseSesion;
+using Umbral.Application.Sesion.Queries.GetMiInscripcionParticipante;
+using Umbral.Application.Sesion.Queries.GetSesionEtapasParticipante;
 using Umbral.Application.Sesion.Queries.GetPreguntasTriviaSesionParticipante;
 using Umbral.Application.Sesion.Queries.GetRankingSesion;
 using Umbral.Application.Sesion.Queries.GetSesionOperador;
@@ -43,6 +46,28 @@ public sealed class SesionesController : ControllerBase
             cancellationToken);
 
         return Ok(items.Select(MapResumen).ToList());
+    }
+
+    [HttpGet("mi-inscripcion")]
+    [Authorize(Roles = "Participante")]
+    [ProducesResponseType(typeof(MiInscripcionParticipanteResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> MiInscripcion(CancellationToken cancellationToken)
+    {
+        var inscripcion = await _mediator.Send(
+            new GetMiInscripcionParticipanteQuery(ObtenerUsuarioId()),
+            cancellationToken);
+
+        if (inscripcion is null)
+            return NoContent();
+
+        return Ok(new MiInscripcionParticipanteResponse(
+            inscripcion.SesionId,
+            inscripcion.Titulo,
+            inscripcion.ParticipanteId,
+            inscripcion.Estado,
+            inscripcion.TotalEtapas,
+            inscripcion.Etapas.Select(MapEtapa).ToList()));
     }
 
     [HttpGet("disponibles")]
@@ -89,7 +114,10 @@ public sealed class SesionesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new CrearSesionMisionCommand(request.MisionId, ObtenerUsuarioId()),
+            new CrearSesionMisionCommand(
+                request.MisionId,
+                ObtenerUsuarioId(),
+                request.NombreSesion),
             cancellationToken);
 
         return result.ToActionResult(
@@ -99,6 +127,7 @@ public sealed class SesionesController : ControllerBase
                 new CrearSesionMisionResponse(
                     created.SesionId,
                     created.CodigoAcceso,
+                    created.NombreSesion,
                     created.MisionNombre)));
     }
 
@@ -149,6 +178,18 @@ public sealed class SesionesController : ControllerBase
     public async Task<IActionResult> AbrirInscripcion(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new AbrirInscripcionSesionCommand(id), cancellationToken);
+        return result.ToNoContentResult(HttpContext);
+    }
+
+    [HttpPost("{id:guid}/abandonar")]
+    [Authorize(Roles = "Participante")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Abandonar(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new AbandonarSesionCommand(id, ObtenerUsuarioId()),
+            cancellationToken);
+
         return result.ToNoContentResult(HttpContext);
     }
 
@@ -271,6 +312,23 @@ public sealed class SesionesController : ControllerBase
         return result.ToActionResult(HttpContext, _ => new NoContentResult());
     }
 
+    [HttpGet("{id:guid}/etapas")]
+    [Authorize(Roles = "Participante")]
+    [ProducesResponseType(typeof(SesionEtapasParticipanteResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerEtapasParticipante(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var dto = await _mediator.Send(
+            new GetSesionEtapasParticipanteQuery(id, ObtenerUsuarioId()),
+            cancellationToken);
+
+        return Ok(new SesionEtapasParticipanteResponse(
+            dto.Estado,
+            dto.TotalEtapas,
+            dto.Etapas.Select(MapEtapa).ToList()));
+    }
+
     [HttpGet("{id:guid}/trivia/preguntas")]
     [Authorize(Roles = "Participante")]
     [ProducesResponseType(typeof(IReadOnlyList<PreguntaTriviaParticipanteResponse>), StatusCodes.Status200OK)]
@@ -312,6 +370,7 @@ public sealed class SesionesController : ControllerBase
     private static SesionResumenResponse MapResumen(Application.Sesion.Models.SesionResumenDto dto) =>
         new(
             dto.Id,
+            dto.Nombre,
             dto.TipoSesion,
             dto.MisionId,
             dto.MisionNombre,
@@ -327,6 +386,7 @@ public sealed class SesionesController : ControllerBase
     private static SesionDetalleResponse MapDetalle(Application.Sesion.Models.SesionDetalleDto dto) =>
         new(
             dto.Id,
+            dto.Nombre,
             dto.TipoSesion,
             dto.MisionId,
             dto.MisionNombre,
@@ -341,20 +401,21 @@ public sealed class SesionesController : ControllerBase
             dto.Participantes
                 .Select(e => new ParticipanteSesionResponse(e.ParticipanteId, e.JugadorId, e.Nombre))
                 .ToList(),
-            dto.Etapas?
-                .Select(e => new EtapaSesionResponse(
-                    e.Orden,
-                    e.TipoEtapa,
-                    e.Descripcion,
-                    e.EsActual,
-                    e.Pistas?
-                        .Select(p => new PistaSesionResponse(
-                            p.Contenido,
-                            p.TipoLiberacion,
-                            p.SegundosLiberacion))
-                        .ToList(),
-                    e.CategoriaIds))
-                .ToList());
+            dto.Etapas?.Select(MapEtapa).ToList());
+
+    private static EtapaSesionResponse MapEtapa(Application.Sesion.Models.EtapaSesionDto e) =>
+        new(
+            e.Orden,
+            e.TipoEtapa,
+            e.Descripcion,
+            e.EsActual,
+            e.Pistas?
+                .Select(p => new PistaSesionResponse(
+                    p.Contenido,
+                    p.TipoLiberacion,
+                    p.SegundosLiberacion))
+                .ToList(),
+            e.CategoriaIds);
 
     private Guid ObtenerUsuarioId()
     {

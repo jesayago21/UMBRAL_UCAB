@@ -11,6 +11,8 @@ namespace Umbral.Domain.Sesion;
 public sealed class Sesion : AggregateRoot
 {
     public SesionId SesionId { get; private set; } = default!;
+    /// <summary>Nombre visible de la instancia de sesión (p. ej. «Grupo A — mañana»).</summary>
+    public string Nombre { get; private set; } = default!;
     public TipoSesion TipoSesion { get; private set; }
     public MisionId? MisionId { get; private set; }
     public UsuarioId OperadorId { get; private set; } = default!;
@@ -37,14 +39,24 @@ public sealed class Sesion : AggregateRoot
 
     private Sesion() { }
 
-    public static Sesion CrearDesdeMision(MisionSnapshot snapshot, UsuarioId operadorId)
+    public static Sesion CrearDesdeMision(MisionSnapshot snapshot, UsuarioId operadorId) =>
+        CrearDesdeMision(snapshot, operadorId, snapshot.Nombre);
+
+    public static Sesion CrearDesdeMision(
+        MisionSnapshot snapshot,
+        UsuarioId operadorId,
+        string nombreSesion)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(operadorId);
 
+        if (string.IsNullOrWhiteSpace(nombreSesion))
+            throw new DomainException("El nombre de la sesión no puede estar vacío.");
+
         var sesion = new Sesion
         {
             SesionId       = SesionId.Nuevo(),
+            Nombre         = nombreSesion.Trim(),
             TipoSesion     = TipoSesion.Mision,
             MisionId       = snapshot.MisionId,
             OperadorId     = operadorId,
@@ -98,6 +110,21 @@ public sealed class Sesion : AggregateRoot
         _participantes.Add(participante);
         RegistrarEvento("ParticipanteUnido", nombreParticipante.Valor);
         return participante;
+    }
+
+    public ParticipanteId AbandonarParticipante(UsuarioId jugadorId)
+    {
+        if (Estado is EstadoSesion.Activa or EstadoSesion.Pausada)
+            throw new DomainException(
+                "No puedes abandonar mientras la sesión está en juego. " +
+                "Espera a que finalice o pide al operador que cancele la sesión.");
+
+        var participante = _participantes.FirstOrDefault(p => p.JugadorId == jugadorId)
+            ?? throw new DomainException("No estás inscrito en esta sesión.");
+
+        _participantes.Remove(participante);
+        RegistrarEvento("ParticipanteAbandono", participante.Nombre.Valor);
+        return participante.ParticipanteId;
     }
 
     public void Iniciar()

@@ -1,12 +1,18 @@
-import { Link } from 'react-router-dom'
+import {
+  ParticipanteEtapasPanel,
+  esEtapaBusquedaTesoro,
+} from '@/components/participante/ParticipanteEtapasPanel'
 import { SesionRankingPanel } from '@/components/shared/SesionRankingPanel'
 import type { ParticipanteSesionInscrita } from '@/lib/participanteSesionStorage'
-import { rutaListadoParticipante } from '@/lib/participanteSesionStorage'
+import type { MiInscripcionParticipanteDto } from '@/types/sesion.types'
 import { btnSecondary, cardClass, inputClass } from '@/styles/ui'
 
 interface ParticipanteGameplayShellProps {
   inscripcion: ParticipanteSesionInscrita
-  onSalir?: () => void
+  inscripcionServidor: MiInscripcionParticipanteDto
+  onAbandonar?: () => void
+  abandonando?: boolean
+  puedeAbandonar?: boolean
 }
 
 function E2Badge() {
@@ -17,8 +23,23 @@ function E2Badge() {
   )
 }
 
-/** Plantilla de juego BT — lógica real en Entrega 2. */
-export function ParticipanteGameplayShell({ inscripcion, onSalir }: ParticipanteGameplayShellProps) {
+/** Plantilla de juego — lógica interactiva en Entrega 2. */
+export function ParticipanteGameplayShell({
+  inscripcion,
+  inscripcionServidor,
+  onAbandonar,
+  abandonando = false,
+  puedeAbandonar = true,
+}: ParticipanteGameplayShellProps) {
+  const etapasOrdenadas = [...(inscripcionServidor.etapas ?? [])].sort((a, b) => a.orden - b.orden)
+  const preJuego =
+    inscripcionServidor.estado === 'EnPreparacion' ||
+    inscripcionServidor.estado === 'Programada'
+  const etapaReferencia = preJuego
+    ? etapasOrdenadas[0]
+    : etapasOrdenadas.find((e) => e.esActual) ?? etapasOrdenadas[0]
+  const muestraQr = etapaReferencia != null && esEtapaBusquedaTesoro(etapaReferencia)
+
   return (
     <div className="space-y-6">
       <section className={`${cardClass} border-emerald-200 bg-emerald-50/40`}>
@@ -33,51 +54,61 @@ export function ParticipanteGameplayShell({ inscripcion, onSalir }: Participante
               {new Date(inscripcion.joinedAt).toLocaleString()}
             </p>
           </div>
-          {onSalir && (
-            <button type="button" onClick={onSalir} className={btnSecondary}>
-              Salir de sesión
+          {onAbandonar && puedeAbandonar && (
+            <button
+              type="button"
+              onClick={onAbandonar}
+              className={btnSecondary}
+              disabled={abandonando}
+            >
+              Abandonar sesión
             </button>
           )}
         </div>
+        {!puedeAbandonar && (
+          <p className="mt-3 text-sm text-amber-800">
+            La sesión ya está en juego. No puedes abandonar hasta que finalice o el operador la
+            cancele.
+          </p>
+        )}
         <p className="mt-3 text-sm text-slate-600">
-          Espera a que el operador <strong>inicie</strong> la partida. Cuando la sesión esté activa,
-          aquí verás la etapa actual, pistas liberadas y el escáner QR.
+          {preJuego ? (
+            <>
+              Espera a que el operador <strong>inicie</strong> la partida. Abajo ves la primera
+              etapa del recorrido y qué incluye.
+            </>
+          ) : (
+            <>La sesión está en curso. Revisa la etapa actual y el ranking.</>
+          )}
         </p>
       </section>
 
-      <section className={`${cardClass} space-y-3 opacity-90`}>
-        <div className="flex items-center gap-2">
-          <h3 className="font-medium text-slate-900">Etapa y pistas</h3>
-          <E2Badge />
-        </div>
-        <p className="text-sm text-slate-500">
-          Placeholder: listado de pistas según RB-07 (por tiempo / por ganador de etapa).
-        </p>
-        <ul className="space-y-2 text-sm text-slate-400">
-          <li className="rounded border border-dashed border-slate-200 px-3 py-2">
-            Pista 1 — bloqueada hasta liberación
-          </li>
-          <li className="rounded border border-dashed border-slate-200 px-3 py-2">
-            Pista 2 — bloqueada
-          </li>
-        </ul>
-      </section>
+      <ParticipanteEtapasPanel
+        estadoSesion={inscripcionServidor.estado}
+        etapas={inscripcionServidor.etapas}
+      />
 
-      <section className={`${cardClass} space-y-3 opacity-90`}>
-        <div className="flex items-center gap-2">
-          <h3 className="font-medium text-slate-900">Registrar evidencia (QR)</h3>
-          <E2Badge />
-        </div>
-        <input
-          disabled
-          className={`${inputClass} max-w-md`}
-          placeholder="Código QR leído (E2)"
-          aria-label="Código QR"
-        />
-        <button type="button" disabled className={`${btnSecondary} max-w-xs`}>
-          Enviar evidencia (E2)
-        </button>
-      </section>
+      {muestraQr && (
+        <section className={`${cardClass} space-y-3 opacity-90`}>
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-slate-900">Registrar evidencia (QR)</h3>
+            <E2Badge />
+          </div>
+          <p className="text-sm text-slate-500">
+            Aplica a etapas de <strong>Búsqueda del tesoro</strong>. El escáner y el envío de códigos
+            QR estarán disponibles en la segunda entrega.
+          </p>
+          <input
+            disabled
+            className={`${inputClass} max-w-md`}
+            placeholder="Código QR leído (E2)"
+            aria-label="Código QR"
+          />
+          <button type="button" disabled className={`${btnSecondary} max-w-xs`}>
+            Enviar evidencia (E2)
+          </button>
+        </section>
+      )}
 
       <SesionRankingPanel
         sesionId={inscripcion.sesionId}
@@ -85,12 +116,6 @@ export function ParticipanteGameplayShell({ inscripcion, onSalir }: Participante
         participanteIdDestacado={inscripcion.participanteId}
         emptyParticipantesMessage="Tu participante aparecerá aquí cuando el operador inicie la sesión."
       />
-
-      <p className="text-center text-xs text-slate-500">
-        <Link to={rutaListadoParticipante(inscripcion.tipoSesion)} className="text-indigo-600 hover:underline">
-          Volver al listado de sesiones
-        </Link>
-      </p>
     </div>
   )
 }

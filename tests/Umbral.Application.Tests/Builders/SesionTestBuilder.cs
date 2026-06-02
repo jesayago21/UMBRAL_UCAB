@@ -36,6 +36,14 @@ internal static class SesionTestBuilder
         return sesion;
     }
 
+    public static SesionAR ConParticipante(string nombre, Guid jugadorId)
+    {
+        var sesion = EnPreparacionSinParticipantes();
+        UnirParticipante(sesion, nombre, new UsuarioId(jugadorId));
+        sesion.ClearDomainEvents();
+        return sesion;
+    }
+
     public static SesionAR Activa(string nombreParticipante = "Alpha")
     {
         var sesion = ConParticipante(nombreParticipante);

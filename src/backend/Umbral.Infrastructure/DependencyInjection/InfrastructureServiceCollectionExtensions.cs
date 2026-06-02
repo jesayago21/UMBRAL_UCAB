@@ -37,6 +37,7 @@ public static class InfrastructureServiceCollectionExtensions
             .Bind(configuration.GetSection(KeycloakAdminOptions.SectionName));
         services.AddHttpClient<KeycloakIdentityService>();
         services.AddScoped<IIdentityService>(sp => sp.GetRequiredService<KeycloakIdentityService>());
+        services.AddScoped<UsuariosEspejoSeeder>();
 
         return services;
     }

@@ -61,17 +61,39 @@ public sealed class CrearSesionMisionCommandHandlerTests
             });
 
         var result = await _sut.Handle(
-            new CrearSesionMisionCommand(mision.MisionId.Valor, operadorId),
+            new CrearSesionMisionCommand(mision.MisionId.Valor, operadorId, "Turno tarde"),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.SesionId.Should().NotBeEmpty();
         result.Value.CodigoAcceso.Should().NotBeNullOrWhiteSpace();
+        result.Value.NombreSesion.Should().Be("Turno tarde");
         result.Value.MisionNombre.Should().Be(mision.Nombre);
 
         sesionGuardada.Should().NotBeNull();
+        sesionGuardada!.Nombre.Should().Be("Turno tarde");
         sesionGuardada!.DomainEvents.Should().BeEmpty();
         eventosPublicados!.Should().ContainSingle().Which.Should().BeOfType<SesionCreada>();
+    }
+
+    [Fact]
+    public async Task Handle_CuandoNombreDuplicadoEnSesionesOperativas_RetornaFail()
+    {
+        var mision = MisionTestBuilder.Activa();
+        _misionRepo
+            .FindByIdAsync(Arg.Any<MisionId>(), Arg.Any<CancellationToken>())
+            .Returns(mision);
+        _sesionRepo
+            .ExisteNombreSesionOperativaAsync("Turno tarde", Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var result = await _sut.Handle(
+            new CrearSesionMisionCommand(mision.MisionId.Valor, Guid.NewGuid(), "Turno tarde"),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("ya está en uso"));
+        await _sesionRepo.DidNotReceive().SaveAsync(Arg.Any<SesionAR>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -82,7 +104,7 @@ public sealed class CrearSesionMisionCommandHandlerTests
             .Returns((Mision?)null);
 
         var act = () => _sut.Handle(
-            new CrearSesionMisionCommand(Guid.NewGuid(), Guid.NewGuid()),
+            new CrearSesionMisionCommand(Guid.NewGuid(), Guid.NewGuid(), "Sesión"),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();
@@ -97,7 +119,7 @@ public sealed class CrearSesionMisionCommandHandlerTests
             .Returns(MisionTestBuilder.Inactiva());
 
         var act = () => _sut.Handle(
-            new CrearSesionMisionCommand(Guid.NewGuid(), Guid.NewGuid()),
+            new CrearSesionMisionCommand(Guid.NewGuid(), Guid.NewGuid(), "Sesión"),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainException>();
@@ -128,7 +150,7 @@ public sealed class CrearSesionMisionCommandHandlerTests
             .Returns(Task.CompletedTask);
 
         var result = await _sut.Handle(
-            new CrearSesionMisionCommand(mision.MisionId.Valor, Guid.NewGuid()),
+            new CrearSesionMisionCommand(mision.MisionId.Valor, Guid.NewGuid(), "Sesión"),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();

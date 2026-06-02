@@ -20,7 +20,45 @@ public sealed class UnirseSesionCommandHandlerTests
 
     public UnirseSesionCommandHandlerTests()
     {
+        _sesionRepo
+            .FindInscripcionAbiertaPorJugadorAsync(Arg.Any<UsuarioId>(), Arg.Any<CancellationToken>())
+            .Returns((SesionAR?)null);
+
         _sut = new UnirseSesionCommandHandler(_sesionRepo, _publisher);
+    }
+
+    [Fact]
+    public async Task Handle_CuandoYaInscritoEnOtraSesion_LanzaDomainException()
+    {
+        var jugadorId = Guid.NewGuid();
+        var otraSesion = SesionTestBuilder.ConParticipante("Alpha", jugadorId);
+
+        var sesionDestino = SesionTestBuilder.EnPreparacionSinParticipantes();
+
+        _sesionRepo
+            .FindInscripcionAbiertaPorJugadorAsync(
+                Arg.Is<UsuarioId>(u => u.Valor == jugadorId),
+                Arg.Any<CancellationToken>())
+            .Returns(otraSesion);
+
+        _sesionRepo
+            .FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>())
+            .Returns(sesionDestino);
+
+        var command = new UnirseSesionCommand(
+            sesionDestino.SesionId.Valor,
+            sesionDestino.CodigoAcceso.Valor,
+            jugadorId,
+            "Beta");
+
+        var act = () => _sut.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*otra sesión abierta*");
+
+        await _sesionRepo.DidNotReceive().SaveAsync(
+            Arg.Any<SesionAR>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -28,6 +66,12 @@ public sealed class UnirseSesionCommandHandlerTests
     {
         var sesion = SesionTestBuilder.EnPreparacionSinParticipantes();
         var jugadorId = Guid.NewGuid();
+
+        _sesionRepo
+            .FindInscripcionAbiertaPorJugadorAsync(
+                Arg.Any<UsuarioId>(),
+                Arg.Any<CancellationToken>())
+            .Returns((SesionAR?)null);
 
         _sesionRepo
             .FindByIdAsync(

@@ -23,7 +23,9 @@ export function extractRoles(payload: Record<string, unknown>): string[] {
 export function resolveRol(roles: string[]): RolUsuario | null {
   if (roles.includes('Administrador')) return 'Administrador'
   if (roles.includes('Operador')) return 'Operador'
-  if (roles.includes('Participante')) return 'Participante'
+  if (roles.includes('Participante') || roles.includes('EquipoParticipante')) {
+    return 'Participante'
+  }
   return null
 }
 

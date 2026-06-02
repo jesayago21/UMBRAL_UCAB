@@ -94,10 +94,17 @@ public static class ApiServiceCollectionExtensions
                 foreach (var role in roles.EnumerateArray())
                 {
                     var value = role.GetString();
-                    if (!string.IsNullOrWhiteSpace(value)
-                        && !identity.HasClaim(ClaimTypes.Role, value))
-                    {
+                    if (string.IsNullOrWhiteSpace(value))
+                        continue;
+
+                    if (!identity.HasClaim(ClaimTypes.Role, value))
                         identity.AddClaim(new Claim(ClaimTypes.Role, value));
+
+                    // Realm legacy (rename Equipo → Participante): alias para [Authorize(Roles = "Participante")]
+                    if (string.Equals(value, "EquipoParticipante", StringComparison.Ordinal)
+                        && !identity.HasClaim(ClaimTypes.Role, "Participante"))
+                    {
+                        identity.AddClaim(new Claim(ClaimTypes.Role, "Participante"));
                     }
                 }
             }

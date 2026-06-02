@@ -70,6 +70,43 @@ public sealed class SesionRepository : ISesionRepository
             .ToListAsync(ct);
     }
 
+    public async Task<Sesion?> FindInscripcionAbiertaPorJugadorAsync(
+        UsuarioId jugadorId,
+        CancellationToken ct = default)
+    {
+        var sesionId = await (
+                from p in _db.ParticipantesSesion.AsNoTracking()
+                join s in _db.Sesiones.AsNoTracking() on p.SesionId equals s.SesionId
+                where p.JugadorId == jugadorId
+                      && s.Estado != EstadoSesion.Finalizada
+                      && s.Estado != EstadoSesion.Cancelada
+                orderby s.SesionId descending
+                select s.SesionId)
+            .FirstOrDefaultAsync(ct);
+
+        if (sesionId is null)
+            return null;
+
+        return await FindByIdAsync(sesionId, ct);
+    }
+
+    public Task<bool> ExisteNombreSesionOperativaAsync(string nombre, CancellationToken ct = default)
+    {
+        var normalized = nombre.Trim().ToLowerInvariant();
+        return _db.Sesiones.AnyAsync(
+            x => x.Nombre.ToLower() == normalized
+                 && x.Estado != EstadoSesion.Finalizada
+                 && x.Estado != EstadoSesion.Cancelada,
+            ct);
+    }
+
+    public async Task EliminarParticipanteAsync(ParticipanteId participanteId, CancellationToken ct = default)
+    {
+        await _db.ParticipantesSesion
+            .Where(e => e.ParticipanteId == participanteId)
+            .ExecuteDeleteAsync(ct);
+    }
+
     public async Task SaveAsync(Sesion sesion, CancellationToken ct = default)
     {
         var exists = await _db.Sesiones.AnyAsync(s => s.SesionId == sesion.SesionId, ct);

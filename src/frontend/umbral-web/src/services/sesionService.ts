@@ -1,6 +1,7 @@
 import { apiClient } from '@/services/apiClient'
 import type { MisionActivaDto } from '@/types/sesion.types'
 import type {
+  MiInscripcionParticipanteDto,
   CancelarSesionRequest,
   CrearSesionBusquedaTesoroRequest,
   CrearSesionBusquedaTesoroResponse,
@@ -30,6 +31,18 @@ export async function listSesionesDisponibles(): Promise<SesionDisponiblePartici
   return data
 }
 
+export async function getMiInscripcionParticipante(): Promise<MiInscripcionParticipanteDto | null> {
+  const { status, data } = await apiClient.get<MiInscripcionParticipanteDto>('/sesiones/mi-inscripcion', {
+    validateStatus: (s) => s === 200 || s === 204,
+  })
+  if (status === 204) return null
+  return data
+}
+
+export async function abandonarSesion(sesionId: string): Promise<void> {
+  await apiClient.post(`/sesiones/${sesionId}/abandonar`)
+}
+
 /** @deprecated Usar listSesionesDisponibles */
 export async function listSesionesDisponiblesBusqueda(): Promise<SesionDisponibleParticipanteDto[]> {
   return listSesionesDisponibles()
@@ -47,15 +60,21 @@ export async function obtenerSesionDetalle(sesionId: string): Promise<SesionDeta
   return data
 }
 
-export async function crearSesionMision(misionId: string): Promise<{
+export async function crearSesionMision(body: {
+  misionId: string
+  nombreSesion: string
+}): Promise<{
   id: string
   codigoAcceso: string
+  nombreSesion: string
   misionNombre: string
 }> {
-  const { data } = await apiClient.post<{ id: string; codigoAcceso: string; misionNombre: string }>(
-    '/sesiones',
-    { misionId },
-  )
+  const { data } = await apiClient.post<{
+    id: string
+    codigoAcceso: string
+    nombreSesion: string
+    misionNombre: string
+  }>('/sesiones', body)
   return data
 }
 

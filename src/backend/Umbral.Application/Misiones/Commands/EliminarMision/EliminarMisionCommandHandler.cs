@@ -2,7 +2,6 @@ using MediatR;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
 using Umbral.Domain.CatalogoMision.Mision;
-using Umbral.Domain.Shared;
 
 namespace Umbral.Application.Misiones.Commands.EliminarMision;
 
@@ -20,10 +19,6 @@ internal sealed class EliminarMisionCommandHandler : IRequestHandler<EliminarMis
         var misionId = new MisionId(command.MisionId);
         var mision = await _misionRepository.FindByIdAsync(misionId, cancellationToken)
             ?? throw new NotFoundException(nameof(Mision), command.MisionId);
-
-        if (await _misionRepository.HasSesionesAsociadasAsync(misionId, cancellationToken))
-            throw new DomainException(
-                "No se puede eliminar una misión usada en sesiones. Desactívala desde Editar si ya no debe usarse.");
 
         await _misionRepository.DeleteAsync(mision, cancellationToken);
         return Result<Guid>.Ok(mision.MisionId.Valor);

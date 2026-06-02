@@ -54,6 +54,29 @@ public sealed class UsuarioRepositoryTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task GuardarAsync_DespuesDeAsignarRoles_PersisteNuevoRol()
+    {
+        var usuario = UsuarioAdministrable.Crear(
+            KeycloakUserId.From(Guid.NewGuid()),
+            EmailAddress.Create($"roles_{Guid.NewGuid():N}@test.com"),
+            $"roles_{Guid.NewGuid():N}"[..20],
+            "Roles",
+            "Test",
+            [Domain.IdentidadYAccesos.Enums.RolSistema.Operador]);
+        usuario.ClearDomainEvents();
+
+        var sut = CreateRepository();
+        await sut.GuardarAsync(usuario);
+
+        usuario.AsignarRoles([Domain.IdentidadYAccesos.Enums.RolSistema.Participante]);
+        await sut.GuardarAsync(usuario);
+
+        var loaded = await sut.ObtenerPorIdAsync(usuario.Id);
+        loaded!.Roles.Should().ContainSingle()
+            .Which.Should().Be(Domain.IdentidadYAccesos.Enums.RolSistema.Participante);
+    }
+
+    [Fact]
     public async Task ListarAsync_RespetaSkipTake()
     {
         var sut = CreateRepository();

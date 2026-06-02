@@ -8,5 +8,6 @@ internal sealed class CrearSesionMisionValidator : AbstractValidator<CrearSesion
     {
         RuleFor(x => x.MisionId).NotEmpty();
         RuleFor(x => x.OperadorId).NotEmpty();
+        RuleFor(x => x.NombreSesion).NotEmpty().MaximumLength(120);
     }
 }

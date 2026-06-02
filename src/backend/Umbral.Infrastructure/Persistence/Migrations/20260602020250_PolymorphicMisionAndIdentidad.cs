@@ -102,6 +102,18 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                 table: "usuarios_administrables",
                 column: "username",
                 unique: true);
+
+            migrationBuilder.Sql(
+                """
+                UPDATE etapas
+                SET tipo_etapa = 'Trivia'
+                WHERE (tipo_etapa IS NULL OR tipo_etapa = '')
+                  AND categoria_ids_json IS NOT NULL;
+
+                UPDATE etapas
+                SET tipo_etapa = 'BusquedaTesoro'
+                WHERE tipo_etapa IS NULL OR tipo_etapa = '';
+                """);
         }
 
         /// <inheritdoc />

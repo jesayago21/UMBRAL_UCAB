@@ -39,12 +39,6 @@ export function ParticipanteLayout() {
             <NavLink to="/participante" className={linkClass} end>
               Inicio
             </NavLink>
-            <NavLink to="/participante/busqueda" className={linkClass}>
-              Búsqueda del tesoro
-            </NavLink>
-            <NavLink to="/participante/trivia" className={linkClass}>
-              Trivia
-            </NavLink>
             <button
               type="button"
               onClick={() => void logout()}

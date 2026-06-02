@@ -213,6 +213,11 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("nombre");
 
+                    b.Property<string>("PasswordAsignada")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("password_asignada");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -355,6 +360,12 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)")
                         .HasColumnName("codigo_acceso");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("nombre");
 
                     b.Property<string>("Estado")
                         .IsRequired()

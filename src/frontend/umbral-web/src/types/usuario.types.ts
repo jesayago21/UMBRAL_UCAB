@@ -7,6 +7,7 @@ export interface UsuarioDto {
   apellido: string
   estado: string
   roles: string[]
+  passwordAsignada: string | null
 }
 
 export interface CrearUsuarioRequest {
@@ -15,9 +16,19 @@ export interface CrearUsuarioRequest {
   nombre: string
   apellido: string
   passwordTemporal: string
-  roles: string[]
+  roles: [string]
 }
 
 export interface AsignarRolesRequest {
   roles: string[]
 }
+
+export interface ActualizarUsuarioRequest {
+  nombre: string
+  apellido: string
+  rol: string
+  nuevaPassword?: string | null
+}
+
+export const ROLES_USUARIO = ['Administrador', 'Operador', 'Participante'] as const
+export type RolUsuarioAdmin = (typeof ROLES_USUARIO)[number]

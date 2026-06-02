@@ -36,5 +36,11 @@ export function rutaPartidaParticipante(inscripcion: ParticipanteSesionInscrita)
 }
 
 export function rutaListadoParticipante(_tipoSesion?: TipoSesionApi): string {
-  return '/participante/sesiones'
+  return '/participante'
+}
+
+export function confirmarAbandonarSesion(): boolean {
+  return window.confirm(
+    '¿Abandonar esta sesión?\n\nSaldrás del recorrido actual. Podrás unirte a otra sesión después si el operador la tiene abierta.',
+  )
 }

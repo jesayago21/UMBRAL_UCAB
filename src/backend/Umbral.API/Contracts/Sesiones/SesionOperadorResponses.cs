@@ -4,6 +4,7 @@ public sealed record CrearSesionResponse(Guid Id, string CodigoAcceso);
 
 public sealed record SesionResumenResponse(
     Guid Id,
+    string Nombre,
     string TipoSesion,
     Guid MisionId,
     string MisionNombre,
@@ -36,6 +37,7 @@ public sealed record EtapaSesionResponse(
 
 public sealed record SesionDetalleResponse(
     Guid Id,
+    string Nombre,
     string TipoSesion,
     Guid MisionId,
     string MisionNombre,
@@ -59,6 +61,19 @@ public sealed record SesionDisponibleParticipanteResponse(
 public sealed record UnirseSesionRequest(string CodigoAcceso, string? NombreParticipante);
 
 public sealed record UnirseSesionResponse(Guid ParticipanteId);
+
+public sealed record MiInscripcionParticipanteResponse(
+    Guid SesionId,
+    string Titulo,
+    Guid ParticipanteId,
+    string Estado,
+    int TotalEtapas,
+    IReadOnlyList<EtapaSesionResponse> Etapas);
+
+public sealed record SesionEtapasParticipanteResponse(
+    string Estado,
+    int TotalEtapas,
+    IReadOnlyList<EtapaSesionResponse> Etapas);
 
 public sealed record PreguntaTriviaParticipanteResponse(
     int Orden,

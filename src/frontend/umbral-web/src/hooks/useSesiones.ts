@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  abandonarSesion,
   abrirInscripcionSesion,
   cancelarSesion,
   crearSesionBusquedaTesoro,
   crearSesionMision,
   crearSesionTrivia,
+  getMiInscripcionParticipante,
   listSesionesDisponibles,
   finalizarSesion,
   iniciarSesion,
@@ -28,6 +30,7 @@ import type {
 export const MISIONES_ACTIVAS_KEY = ['misiones', 'activas'] as const
 export const SESIONES_OPERATIVAS_KEY = ['sesiones', 'operativas'] as const
 export const SESIONES_DISPONIBLES_KEY = ['sesiones', 'disponibles'] as const
+export const MI_INSCRIPCION_PARTICIPANTE_KEY = ['sesiones', 'mi-inscripcion'] as const
 export const SESIONES_DISPONIBLES_BT_KEY = ['sesiones', 'disponibles', 'bt'] as const
 export const SESIONES_DISPONIBLES_TRIVIA_KEY = ['sesiones', 'disponibles', 'trivia'] as const
 export const SESION_DETALLE_KEY = ['sesiones', 'detalle'] as const
@@ -47,6 +50,27 @@ export function useSesionesDisponibles() {
     queryKey: SESIONES_DISPONIBLES_KEY,
     queryFn: listSesionesDisponibles,
     refetchInterval: 10_000,
+  })
+}
+
+export function useMiInscripcionParticipante() {
+  return useQuery({
+    queryKey: MI_INSCRIPCION_PARTICIPANTE_KEY,
+    queryFn: getMiInscripcionParticipante,
+    refetchInterval: 15_000,
+  })
+}
+
+export function useAbandonarSesion(sesionId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => abandonarSesion(sesionId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: MI_INSCRIPCION_PARTICIPANTE_KEY })
+      void queryClient.invalidateQueries({ queryKey: SESIONES_DISPONIBLES_KEY })
+      void queryClient.invalidateQueries({ queryKey: SESIONES_DISPONIBLES_BT_KEY })
+      void queryClient.invalidateQueries({ queryKey: SESIONES_DISPONIBLES_TRIVIA_KEY })
+    },
   })
 }
 
@@ -80,7 +104,7 @@ export function useMisionesActivas() {
 export function useCrearSesionMision() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (misionId: string) => crearSesionMision(misionId),
+    mutationFn: (body: { misionId: string; nombreSesion: string }) => crearSesionMision(body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SESIONES_OPERATIVAS_KEY })
     },
@@ -125,6 +149,8 @@ export function useUnirseSesion(sesionId: string) {
   return useMutation({
     mutationFn: (body: UnirseSesionRequest) => unirseSesion(sesionId, body),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: MI_INSCRIPCION_PARTICIPANTE_KEY })
+      void queryClient.invalidateQueries({ queryKey: SESIONES_DISPONIBLES_KEY })
       void queryClient.invalidateQueries({ queryKey: SESIONES_DISPONIBLES_BT_KEY })
       void queryClient.invalidateQueries({ queryKey: SESIONES_DISPONIBLES_TRIVIA_KEY })
     },

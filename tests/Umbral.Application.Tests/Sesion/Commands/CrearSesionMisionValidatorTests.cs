@@ -11,7 +11,7 @@ public sealed class CrearSesionMisionValidatorTests
     [Fact]
     public void Validate_ConDatosValidos_SinErrores()
     {
-        var result = _sut.Validate(new CrearSesionMisionCommand(Guid.NewGuid(), Guid.NewGuid()));
+        var result = _sut.Validate(new CrearSesionMisionCommand(Guid.NewGuid(), Guid.NewGuid(), "Grupo mañana"));
 
         result.IsValid.Should().BeTrue();
     }
@@ -19,7 +19,7 @@ public sealed class CrearSesionMisionValidatorTests
     [Fact]
     public void Validate_MisionIdVacio_Error()
     {
-        var result = _sut.Validate(new CrearSesionMisionCommand(Guid.Empty, Guid.NewGuid()));
+        var result = _sut.Validate(new CrearSesionMisionCommand(Guid.Empty, Guid.NewGuid(), "Grupo mañana"));
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == nameof(CrearSesionMisionCommand.MisionId));
@@ -28,7 +28,7 @@ public sealed class CrearSesionMisionValidatorTests
     [Fact]
     public void Validate_OperadorIdVacio_Error()
     {
-        var result = _sut.Validate(new CrearSesionMisionCommand(Guid.NewGuid(), Guid.Empty));
+        var result = _sut.Validate(new CrearSesionMisionCommand(Guid.NewGuid(), Guid.Empty, "Grupo mañana"));
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == nameof(CrearSesionMisionCommand.OperadorId));

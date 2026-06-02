@@ -659,7 +659,7 @@ public sealed class SesionesControllerTests
 
         var response = await _client.PostAsJsonAsync(
             "/api/v1/sesiones",
-            new CrearSesionMisionRequest(misionId));
+            new CrearSesionMisionRequest(misionId, "Sesión API test"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -675,7 +675,7 @@ public sealed class SesionesControllerTests
         var misionId = await ApiTestData.SeedMisionActivaAsync(_services);
         await _client.PostAsJsonAsync(
             "/api/v1/sesiones",
-            new CrearSesionMisionRequest(misionId));
+            new CrearSesionMisionRequest(misionId, "Sesión API test"));
 
         SetParticipanteAuth(Guid.NewGuid());
 

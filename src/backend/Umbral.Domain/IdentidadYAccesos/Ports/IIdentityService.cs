@@ -21,5 +21,18 @@ public interface IIdentityService
 
     Task CambiarEstadoAsync(KeycloakUserId userId, bool habilitado, CancellationToken ct = default);
 
+    Task ActualizarPerfilAsync(
+        KeycloakUserId userId,
+        string nombre,
+        string apellido,
+        CancellationToken ct = default);
+
+    Task RestablecerPasswordAsync(
+        KeycloakUserId userId,
+        string nuevaPassword,
+        CancellationToken ct = default);
+
     Task EliminarEnIdentityServerAsync(KeycloakUserId userId, CancellationToken ct = default);
+
+    Task<KeycloakUserId?> ObtenerIdPorUsernameAsync(string username, CancellationToken ct = default);
 }

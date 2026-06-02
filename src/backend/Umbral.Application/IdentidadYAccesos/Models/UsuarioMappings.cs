@@ -13,5 +13,6 @@ internal static class UsuarioMappings
             usuario.Nombre,
             usuario.Apellido,
             usuario.Estado.ToString(),
-            usuario.Roles.Select(r => r.ToString()).ToList());
+            usuario.Roles.Select(r => r.ToString()).ToList(),
+            usuario.PasswordAsignada);
 }

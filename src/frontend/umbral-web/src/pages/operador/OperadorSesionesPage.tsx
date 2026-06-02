@@ -8,11 +8,12 @@ import { useSuccessMessage } from '@/hooks/useSuccessMessage'
 import { useCrearSesionMision, useMisionesActivas, useSesionesOperativas } from '@/hooks/useSesiones'
 import { createInitialSesionState, saveOperadorSesionState } from '@/lib/operadorSessionStorage'
 import { getApiErrorMessage } from '@/services/apiClient'
-import { btnPrimary, cardClass, selectClass } from '@/styles/ui'
+import { btnPrimary, cardClass, inputClass, selectClass } from '@/styles/ui'
 
 export function OperadorSesionesPage() {
   const navigate = useNavigate()
   const [misionId, setMisionId] = useState('')
+  const [nombreSesion, setNombreSesion] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
   const { successMessage, showSuccess, clearSuccess } = useSuccessMessage()
 
@@ -23,7 +24,12 @@ export function OperadorSesionesPage() {
     error: sesionesErr,
     refetch: refetchSesiones,
   } = useSesionesOperativas()
-  const { data: misiones, isLoading: misionesLoading } = useMisionesActivas()
+  const {
+    data: misiones,
+    isLoading: misionesLoading,
+    isError: misionesError,
+    error: misionesErr,
+  } = useMisionesActivas()
   const crear = useCrearSesionMision()
 
   const handleCreate = async (event: React.FormEvent) => {
@@ -32,14 +38,20 @@ export function OperadorSesionesPage() {
       setFormError('Selecciona una misión activa.')
       return
     }
+    const nombre = nombreSesion.trim()
+    if (!nombre) {
+      setFormError('Indica un nombre para la sesión.')
+      return
+    }
     setFormError(null)
     const mision = misiones?.find((m) => m.id === misionId)
     try {
-      const created = await crear.mutateAsync(misionId)
+      const created = await crear.mutateAsync({ misionId, nombreSesion: nombre })
       const state = createInitialSesionState(
         created.id,
         'Mision',
         misionId,
+        created.nombreSesion ?? nombre,
         created.misionNombre ?? mision?.nombre ?? 'Misión',
         created.codigoAcceso,
       )
@@ -55,11 +67,17 @@ export function OperadorSesionesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Sesiones en vivo"
-        description="Crea una sesión desde una misión activa (etapas BT y/o Trivia en secuencia)."
+        description="Puedes usar el mismo nombre que la misión; solo debe ser único entre las sesiones en curso."
       />
 
       {successMessage && <SuccessAlert message={successMessage} onDismiss={clearSuccess} />}
       {formError && <ErrorState message={formError} />}
+
+      {misionesError && (
+        <ErrorState
+          message={`No se pudieron cargar las misiones activas: ${getApiErrorMessage(misionesErr)}`}
+        />
+      )}
 
       {sesionesError && (
         <ErrorState
@@ -75,7 +93,12 @@ export function OperadorSesionesPage() {
         <select
           required
           value={misionId}
-          onChange={(e) => setMisionId(e.target.value)}
+          onChange={(e) => {
+            const id = e.target.value
+            setMisionId(id)
+            const mision = misiones?.find((m) => m.id === id)
+            if (mision) setNombreSesion(mision.nombre)
+          }}
           className={selectClass}
           disabled={misionesLoading || crear.isPending}
         >
@@ -86,6 +109,15 @@ export function OperadorSesionesPage() {
             </option>
           ))}
         </select>
+        <input
+          required
+          value={nombreSesion}
+          onChange={(e) => setNombreSesion(e.target.value)}
+          placeholder="Nombre de la sesión (por defecto el de la misión)"
+          className={inputClass}
+          maxLength={120}
+          disabled={crear.isPending}
+        />
         <button type="submit" className={btnPrimary} disabled={crear.isPending || misionesLoading}>
           {crear.isPending ? 'Creando…' : 'Crear sesión'}
         </button>

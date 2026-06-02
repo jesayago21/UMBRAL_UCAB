@@ -6,6 +6,7 @@ export function detalleToOperadorState(detalle: SesionDetalleDto): OperadorSesio
     sesionId: detalle.id,
     tipoSesion: detalle.tipoSesion,
     misionId: detalle.misionId,
+    nombre: detalle.nombre,
     misionNombre: detalle.misionNombre,
     estado: mapEstadoSesionFromApi(detalle.estado),
     codigoAcceso: detalle.codigoAcceso,
@@ -42,6 +43,7 @@ export function createInitialSesionState(
   sesionId: string,
   tipoSesion: OperadorSesionState['tipoSesion'],
   misionId: string,
+  nombre: string,
   misionNombre: string,
   codigoAcceso: string,
 ): OperadorSesionState {
@@ -49,6 +51,7 @@ export function createInitialSesionState(
     sesionId,
     tipoSesion,
     misionId,
+    nombre,
     misionNombre,
     codigoAcceso,
     estado: 'programada',

@@ -21,13 +21,9 @@ internal sealed class ListSesionesDisponiblesParticipanteQueryHandler
 
         return sesiones.Select(s =>
         {
-            var titulo = s.ContextoMision?.MisionSnapshot.Nombre
-                         ?? s.ContextoBT?.MisionSnapshot.Nombre
-                         ?? s.ContextoTrivia?.CategoriasTitulo
-                         ?? "Sesión";
             return new SesionDisponibleParticipanteDto(
                 s.SesionId.Valor,
-                titulo,
+                s.Nombre,
                 s.Estado.ToString(),
                 s.Participantes.Count);
         }).ToList();

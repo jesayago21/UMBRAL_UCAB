@@ -10,5 +10,10 @@ public interface ISesionRepository
     Task<IReadOnlyList<Sesion>> FindDisponiblesParaParticipanteAsync(
         TipoSesion? tipo,
         CancellationToken ct = default);
+    Task<Sesion?> FindInscripcionAbiertaPorJugadorAsync(
+        UsuarioId jugadorId,
+        CancellationToken ct = default);
+    Task EliminarParticipanteAsync(ParticipanteId participanteId, CancellationToken ct = default);
+    Task<bool> ExisteNombreSesionOperativaAsync(string nombre, CancellationToken ct = default);
     Task SaveAsync(Sesion sesion, CancellationToken ct = default);
 }

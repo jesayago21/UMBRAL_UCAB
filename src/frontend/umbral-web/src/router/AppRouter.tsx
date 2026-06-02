@@ -11,7 +11,6 @@ import { LoginPage } from '@/pages/auth/LoginPage'
 import { ParticipanteLayout } from '@/components/layout/ParticipanteLayout'
 import { ParticipanteSesionesActivasPage } from '@/pages/participante/ParticipanteSesionesActivasPage'
 import { ParticipanteSesionJuegoPage } from '@/pages/participante/ParticipanteSesionJuegoPage'
-import { ParticipanteHomePage } from '@/pages/participante/ParticipanteHomePage'
 import { OperadorSesionDetailPage } from '@/pages/operador/OperadorSesionDetailPage'
 import { OperadorSesionesPage } from '@/pages/operador/OperadorSesionesPage'
 import { HomeRedirect, RequireRoles } from '@/router/guards'
@@ -71,12 +70,12 @@ export function AppRouter() {
           </RequireRoles>
         }
       >
-        <Route index element={<ParticipanteHomePage />} />
-        <Route path="sesiones" element={<ParticipanteSesionesActivasPage />} />
+        <Route index element={<ParticipanteSesionesActivasPage />} />
+        <Route path="sesiones" element={<Navigate to="/participante" replace />} />
         <Route path="sesiones/:sesionId" element={<ParticipanteSesionJuegoPage />} />
-        <Route path="busqueda" element={<ParticipanteSesionesActivasPage />} />
+        <Route path="busqueda" element={<Navigate to="/participante" replace />} />
         <Route path="busqueda/:sesionId" element={<ParticipanteSesionJuegoPage />} />
-        <Route path="trivia" element={<ParticipanteSesionesActivasPage />} />
+        <Route path="trivia" element={<Navigate to="/participante" replace />} />
         <Route path="trivia/:sesionId" element={<ParticipanteSesionJuegoPage />} />
       </Route>
 

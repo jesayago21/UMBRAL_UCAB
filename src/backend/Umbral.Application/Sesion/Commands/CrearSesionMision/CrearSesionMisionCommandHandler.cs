@@ -48,6 +48,13 @@ internal sealed class CrearSesionMisionCommandHandler
             throw new DomainException(
                 "La misión debe estar activa para crear una sesión (RB-01).");
 
+        var nombreSesion = command.NombreSesion.Trim();
+        if (await _sesionRepository.ExisteNombreSesionOperativaAsync(nombreSesion, cancellationToken))
+        {
+            return Result<CrearSesionMisionResult>.Fail(
+                $"No se pudo crear la sesión: el nombre «{nombreSesion}» ya está en uso por otra sesión en curso. Elige otro nombre o finaliza la sesión anterior.");
+        }
+
         var snapshot = await MisionSnapshotFactory.CrearAsync(
             mision,
             _preguntaRepository,
@@ -56,7 +63,8 @@ internal sealed class CrearSesionMisionCommandHandler
 
         var sesion = SesionAR.CrearDesdeMision(
             snapshot,
-            new UsuarioId(command.OperadorId));
+            new UsuarioId(command.OperadorId),
+            nombreSesion);
 
         await _sesionRepository.SaveAsync(sesion, cancellationToken);
         await _eventPublisher.PublishBatchAsync(sesion.DomainEvents, cancellationToken);
@@ -66,6 +74,7 @@ internal sealed class CrearSesionMisionCommandHandler
             new CrearSesionMisionResult(
                 sesion.SesionId.Valor,
                 sesion.CodigoAcceso.Valor,
+                sesion.Nombre,
                 mision.Nombre));
     }
 }

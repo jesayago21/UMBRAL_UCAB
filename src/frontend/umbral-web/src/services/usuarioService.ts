@@ -1,5 +1,10 @@
 import { apiClient } from '@/services/apiClient'
-import type { AsignarRolesRequest, CrearUsuarioRequest, UsuarioDto } from '@/types/usuario.types'
+import type {
+  ActualizarUsuarioRequest,
+  AsignarRolesRequest,
+  CrearUsuarioRequest,
+  UsuarioDto,
+} from '@/types/usuario.types'
 
 export async function listUsuarios(page = 1, pageSize = 50): Promise<UsuarioDto[]> {
   const { data } = await apiClient.get<UsuarioDto[]>('/usuarios', { params: { page, pageSize } })
@@ -17,4 +22,12 @@ export async function asignarRolesUsuario(id: string, body: AsignarRolesRequest)
 
 export async function cambiarEstadoUsuario(id: string, accion: 'Activar' | 'Bloquear'): Promise<void> {
   await apiClient.put(`/usuarios/${id}/estado`, { accion })
+}
+
+export async function actualizarUsuario(id: string, body: ActualizarUsuarioRequest): Promise<void> {
+  await apiClient.put(`/usuarios/${id}`, body)
+}
+
+export async function eliminarUsuario(id: string): Promise<void> {
+  await apiClient.delete(`/usuarios/${id}`)
 }

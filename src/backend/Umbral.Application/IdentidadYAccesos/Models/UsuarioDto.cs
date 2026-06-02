@@ -8,7 +8,8 @@ public sealed record UsuarioDto(
     string Nombre,
     string Apellido,
     string Estado,
-    IReadOnlyList<string> Roles);
+    IReadOnlyList<string> Roles,
+    string? PasswordAsignada);
 
 public sealed record CrearUsuarioResult(
     Guid UsuarioId,

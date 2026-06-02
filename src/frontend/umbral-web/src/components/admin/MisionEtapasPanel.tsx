@@ -166,11 +166,11 @@ export function MisionEtapasPanel({ mision: misionInicial, onClose }: MisionEtap
         Puedes añadir pistas a cada etapa. Al crear la sesión en vivo se copia este catálogo.
       </p>
 
-      {mision.etapas.length === 0 ? (
+      {(mision.etapas ?? []).length === 0 ? (
         <p className="text-sm text-slate-600">Esta misión no tiene etapas registradas.</p>
       ) : (
         <ol className="space-y-2">
-          {mision.etapas.map((etapa) => (
+          {(mision.etapas ?? []).map((etapa) => (
             <EtapaRow
               key={etapa.etapaId}
               misionId={mision.id}
