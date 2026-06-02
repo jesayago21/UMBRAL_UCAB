@@ -1,7 +1,17 @@
 # UMBRAL — Modelo de Dominio
 
-> **Trazabilidad:** reglas **RB-01…RB-37** y HUs en [`TRAZABILIDAD.md`](TRAZABILIDAD.md). Progreso dominio Fase 1: [`fase-1/TRACKER.md`](fase-1/TRACKER.md).  
-> **TO-BE (2026):** misión polimórfica (`CatalogoMision`), sesión unificada (`ContextoMision`), BC `IdentidadYAccesos`.
+> **Trazabilidad:** reglas **RB-01…RB-37** y HUs en [`TRAZABILIDAD.md`](TRAZABILIDAD.md). Matriz normativa E1/E2: [`ERS_UMBRAL_UCAB_Sayago.md`](ERS_UMBRAL_UCAB_Sayago.md) §4.1 y §6.1.  
+> **TO-BE (2026):** misión polimórfica (`CatalogoMision`), sesión unificada (`ContextoMision`), BC `IdentidadYAccesos`.  
+> **Cliente participante:** aplicación web (`umbral-web`); no hay app móvil nativa (fuera de alcance ERS §4).
+
+## Alcance del modelo respecto al código
+
+| Leyenda | Significado |
+|---------|-------------|
+| **Implementado** | Existe en `Umbral.Domain` y está cableado en Application/Infrastructure |
+| **Parcial** | Existe en dominio o BD pero falta API, UI o regla completa |
+| **E2** | Diseñado en este documento; pendiente de implementación (Entrega 2) |
+| **Legacy** | Mantenido solo por datos o endpoints antiguos; no es el flujo TO-BE |
 
 ```mermaid
 classDiagram
@@ -98,6 +108,7 @@ classDiagram
         +CategoriaId categoriaId
         +Dificultad dificultad
         +bool eliminada
+        +int segundosRespuesta
         +DesactivarLogicamente() void
     }
 
@@ -123,9 +134,12 @@ classDiagram
         <<AggregateRoot>>
         +UsuarioAdministrableId id
         +EmailAddress email
-        +string nombreCompleto
+        +string username
+        +string nombre
+        +string apellido
         +KeycloakUserId keycloakUserId
         +EstadoUsuario estado
+        +string passwordAsignada
         +List~RolSistema~ roles
         +Crear(...) UsuarioAdministrable$
         +AsignarRoles(roles) void
@@ -147,6 +161,7 @@ classDiagram
         <<Enumeration>>
         Administrador
         Operador
+        Participante
     }
 
     class EstadoUsuario {
@@ -163,6 +178,7 @@ classDiagram
     class Sesion {
         <<AggregateRoot>>
         +SesionId sesionId
+        +string nombre
         +TipoSesion tipoSesion
         +MisionId misionId
         +UsuarioId operadorId
@@ -170,9 +186,11 @@ classDiagram
         +CodigoAcceso codigoAcceso
         +ContextoMision contextoMision
         +List~ParticipanteSesion~ participantes
-        +CrearDesdeMision(snapshot, operadorId)$ Sesion
+        +CrearDesdeMision(snapshot, operadorId, nombreSesion)$ Sesion
         +UnirseParticipante(jugadorId, nombre, codigo) ParticipanteSesion
-        +RegistrarEvidencia(participanteId, qr) void
+        +AbandonarParticipante(jugadorId) ParticipanteId
+        +RegistrarEvidencia(participanteId, qr) Evidencia
+        +AplicarPenalizacion(participanteId, penalizacion) void
         +Iniciar() void
         +Pausar() void
         +Finalizar() void
@@ -225,12 +243,13 @@ classDiagram
     }
 
     class RespuestaTrivia {
-        <<Entity>>
+        <<Entity - E2>>
         +RespuestaId respuestaId
         +ParticipanteId participanteId
         +PreguntaId preguntaId
         +bool esCorrecta
         +Puntaje puntosObtenidos
+        +DateTime respondidoEn
     }
 
     class Penalizacion {
@@ -316,7 +335,15 @@ classDiagram
 
     class RankingService {
         <<DomainService>>
-        +Calcular(sesion) List~PosicionRanking~
+        +Calcular(participantes) List~PosicionRanking~
+    }
+
+    class PistaEntregada {
+        <<Entity - E2>>
+        +ParticipanteId participanteId
+        +PistaId pistaId
+        +EtapaId etapaId
+        +DateTime entregadaEn
     }
 
     %% ══════════════════════════════════════════════════
@@ -405,7 +432,8 @@ classDiagram
     Sesion "1" o-- "0..1" ContextoTrivia : legacy
     Sesion "1" *-- "1..*" ParticipanteSesion
     Sesion "1" *-- "0..*" Evidencia
-    Sesion "1" *-- "0..*" RespuestaTrivia
+    Sesion "1" *-- "0..*" RespuestaTrivia : E2
+    Sesion "1" *-- "0..*" PistaEntregada : E2
     ContextoMision --> MisionSnapshot
 
     UsuarioAdministrable --> EmailAddress
@@ -425,10 +453,33 @@ classDiagram
 
 ## Notas de alineación con el código
 
-| Concepto | Estado |
-|----------|--------|
-| **Sesión unificada** | `Sesion.CrearDesdeMision` + `ContextoMision`; progresión secuencial RB-34 / RF-35. |
-| **Legacy** | `ContextoBT`, `ContextoTrivia`, `TipoSesion.BusquedaTesoro` / `Trivia` y factories obsoletas se mantienen solo para datos/API antiguos. |
-| **Trivia en misión** | El banco (`Categoria`, `Pregunta`) no pertenece a la misión; las etapas `EtapaTrivia` guardan `CategoriaId[]`; al crear sesión se resuelven preguntas en aplicación. |
-| **Identidad** | `Participante` no se asigna vía `UsuarioAdministrable` (RB-35); inscripción a sesión con código de acceso. |
-| **Administración usuarios** | Doble commit Keycloak + BD local; compensación RB-37 si falla persistencia local. |
+| Concepto | Estado | Detalle |
+|----------|--------|---------|
+| **Misión polimórfica** | Implementado | `CatalogoMision`, `EtapaBusquedaTesoro`, `EtapaTrivia`, `Pista` en catálogo (HU-01..08, RF-01/02). |
+| **Sesión unificada** | Implementado | `Sesion.CrearDesdeMision` + `ContextoMision`; avance BT RB-04/05/34; trivia en sesión unificada → E2. |
+| **`Sesion.Nombre`** | Implementado | Nombre de instancia operativa; único entre sesiones no finalizadas/canceladas (extensión operativa, no sustituye código de acceso). |
+| **Legacy** | Legacy | `ContextoBusquedaTesoro`, `ContextoTrivia`, `TipoSesion.BusquedaTesoro`/`Trivia` y commands obsoletos solo por datos/API antiguos. |
+| **Banco trivia** | Implementado | `Categoria`, `Pregunta`, soft delete RB-16; RF-23/24. |
+| **`Pregunta.segundosRespuesta`** | E2 | RF-25; previsto en diagrama; aún no existe en `Umbral.Domain`. |
+| **Evidencia BT** | Implementado | `RegistrarEvidencia`, `ValidacionEvidenciaService`, RF-07..11, RF-20. |
+| **Penalización** | Implementado | `AplicarPenalizacion`, RB-20/24/25. |
+| **Ranking** | Parcial | `RankingService` por puntaje descendente; desempate RB-08 por tiempo acumulado → E2 (hoy desempata por nombre). |
+| **`EventoSesion`** | Parcial | Se persiste en dominio/BD; consulta API de auditoría HU-22 → E2. |
+| **Liberación de pistas** | E2 | Catálogo de `Pista` en misión ✅; runtime `PistaEntregada`, RF-14/15, HU-09/10/11 → pendiente. |
+| **`RespuestaTrivia` / trivia en vivo** | E2 | RF-26..30, RB-12/13/17/29..32, HU-33..38; UI participante en modo lectura en E1. |
+| **`IEventPublisher`** | Parcial | Puerto en dominio ✅; implementación `NoOpEventPublisher` en E1; RabbitMQ real RF-19/29, RNF-05 → E2. |
+| **Tiempo real (WebSockets)** | E2 | RF-17/18, RNF-03; clientes usan REST/polling en E1. |
+| **Identidad Keycloak** | Implementado | `UsuarioAdministrable`, doble commit, compensación RB-37, RF-31/33/34. |
+| **Roles en admin** | Implementado | Un rol por usuario (`Administrador`, `Operador` o `Participante` para cuentas demo); ver RB-35 actualizado en ERS. |
+| **Participación en juego** | Implementado | Inscripción con código de acceso + nombre único RB-02; rol Keycloak `Participante` no sustituye la inscripción a sesión. |
+| **RB-27 operador** | Implementado | Listado de sesiones filtrado por `operadorId`. |
+
+### Puertos e infraestructura
+
+| Puerto | E1 | E2 |
+|--------|----|----|
+| `IMisionRepository`, `ISesionRepository`, `IUsuarioRepository`, `IPreguntaRepository` | EF Core + PostgreSQL | — |
+| `IIdentityService` | Keycloak (admin API) | — |
+| `IEventPublisher` | `NoOpEventPublisher` (handlers llaman al puerto) | Publicador RabbitMQ + consumers |
+
+Referencia operativa: [`RESUMEN-COMPACTO-E1-E2.md`](RESUMEN-COMPACTO-E1-E2.md).
