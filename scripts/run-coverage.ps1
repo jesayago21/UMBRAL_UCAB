@@ -3,12 +3,13 @@
 # Uso:
 #   .\scripts\run-coverage.ps1                 # mide y genera reporte HTML
 #   .\scripts\run-coverage.ps1 -Open           # ademas abre el reporte en el navegador
-#   .\scripts\run-coverage.ps1 -Threshold 90   # falla (exit 1) si el total < 90%
+#   .\scripts\run-coverage.ps1 -Threshold 90   # falla si el total o algun ensamblado < 90%
 #
 # Requiere Docker en marcha (los tests de Infrastructure/API usan Testcontainers).
 param(
     [int]$Threshold = 0,
-    [switch]$Open
+    [switch]$Open,
+    [switch]$PerAssembly = $true
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,6 +19,33 @@ Set-Location $Root
 $CoverageDir = Join-Path $Root "coverage"
 $ReportDir   = Join-Path $CoverageDir "report"
 $RunSettings = Join-Path $Root "coverlet.runsettings"
+
+$BackendAssemblies = @(
+    "Umbral.Domain",
+    "Umbral.Application",
+    "Umbral.Infrastructure",
+    "Umbral.API"
+)
+
+function Get-AssemblyLineCoverage {
+    param([string]$SummaryPath)
+    $result = [ordered]@{}
+    foreach ($line in Get-Content $SummaryPath) {
+        if ($line -match "^(Umbral\.(?:Domain|Application|Infrastructure|API))\s+([\d.]+)%") {
+            $result[$Matches[1]] = [double]$Matches[2]
+        }
+    }
+    return $result
+}
+
+function Get-TotalLineCoverage {
+    param([string]$SummaryPath)
+    $line = Get-Content $SummaryPath | Where-Object { $_ -match "^\s*Line coverage:" } | Select-Object -First 1
+    if ($line -match "([\d.]+)%") {
+        return [double]$Matches[1]
+    }
+    return $null
+}
 
 # Partir de cero evita mezclar XMLs de corridas anteriores.
 if (Test-Path $CoverageDir) {
@@ -52,26 +80,71 @@ reportgenerator `
     -reporttypes:"Html;TextSummary"
 
 $summaryPath = Join-Path $ReportDir "Summary.txt"
+$assemblyCoverage = Get-AssemblyLineCoverage $summaryPath
+$totalPct = Get-TotalLineCoverage $summaryPath
 
 Write-Host ""
-Write-Host "=== Resumen de cobertura backend ===" -ForegroundColor Green
-Get-Content $summaryPath | Select-Object -First 20
+Write-Host "=== Cobertura por ensamblado (produccion) ===" -ForegroundColor Green
+foreach ($asm in $BackendAssemblies) {
+    if ($assemblyCoverage.Contains($asm)) {
+        $pct = $assemblyCoverage[$asm]
+        $status = ""
+        if ($Threshold -gt 0 -and $PerAssembly) {
+            $status = if ($pct -ge $Threshold) { " OK" } else { " FAIL" }
+            $color = if ($pct -ge $Threshold) { "Green" } else { "Red" }
+            Write-Host ("  {0,-28} {1,5:N1}%  (meta >= {2}%){3}" -f $asm, $pct, $Threshold, $status) -ForegroundColor $color
+        }
+        else {
+            Write-Host ("  {0,-28} {1,5:N1}%" -f $asm, $pct)
+        }
+    }
+    else {
+        Write-Host "  $asm  (no encontrado en Summary.txt)" -ForegroundColor Yellow
+    }
+}
 
 Write-Host ""
-Write-Host "Reporte HTML: $ReportDir\index.html" -ForegroundColor Green
+Write-Host "=== Cobertura total backend ===" -ForegroundColor Green
+if ($null -ne $totalPct) {
+    Write-Host ("  Line coverage: {0:N1}%" -f $totalPct)
+}
+Write-Host ""
+Write-Host "Detalle por clase: $ReportDir\index.html (secciones Umbral.Domain, ...)" -ForegroundColor Green
+Write-Host "Resumen texto:     $summaryPath" -ForegroundColor Green
 
 if ($Open) {
     Start-Process (Join-Path $ReportDir "index.html")
 }
 
+$failed = $false
 if ($Threshold -gt 0) {
-    $line = Get-Content $summaryPath | Where-Object { $_ -match "Line coverage:" } | Select-Object -First 1
-    if ($line -match "([\d.]+)%") {
-        $pct = [double]$Matches[1]
-        if ($pct -lt $Threshold) {
-            Write-Host "FAIL: cobertura de lineas $pct% < umbral $Threshold%" -ForegroundColor Red
-            exit 1
-        }
-        Write-Host "OK: cobertura de lineas $pct% >= umbral $Threshold%" -ForegroundColor Green
+    if ($null -ne $totalPct -and $totalPct -lt $Threshold) {
+        Write-Host "FAIL: cobertura total $totalPct% < umbral $Threshold%" -ForegroundColor Red
+        $failed = $true
     }
+    elseif ($null -ne $totalPct) {
+        Write-Host "OK: cobertura total $totalPct% >= umbral $Threshold%" -ForegroundColor Green
+    }
+
+    if ($PerAssembly) {
+        foreach ($asm in $BackendAssemblies) {
+            if (-not $assemblyCoverage.Contains($asm)) {
+                Write-Host "FAIL: no se pudo leer cobertura de $asm" -ForegroundColor Red
+                $failed = $true
+                continue
+            }
+            $pct = $assemblyCoverage[$asm]
+            if ($pct -lt $Threshold) {
+                Write-Host "FAIL: $asm $pct% < umbral $Threshold%" -ForegroundColor Red
+                $failed = $true
+            }
+            else {
+                Write-Host "OK: $asm $pct% >= umbral $Threshold%" -ForegroundColor Green
+            }
+        }
+    }
+}
+
+if ($failed) {
+    exit 1
 }

@@ -268,8 +268,11 @@ Meta: **≥ 90%** de líneas en el backend. Estado actual (última medición): *
 # Medir, generar reporte HTML y abrirlo en el navegador
 .\scripts\run-coverage.ps1 -Open
 
-# Verificar el gate ≥ 90% (exit 1 si no cumple; mismo criterio que CI)
+# Gate ≥ 90% en total Y en cada ensamblado (Domain, Application, Infrastructure, API)
 .\scripts\run-coverage.ps1 -Threshold 90
+
+# Solo exigir 90% en el total (sin gate por ensamblado)
+.\scripts\run-coverage.ps1 -Threshold 90 -PerAssembly:$false
 ```
 
 **Linux / macOS / CI:**
@@ -284,8 +287,11 @@ Los scripts hacen todo en un paso: `dotnet test` (Release + coverlet) → XML �
 
 | Artefacto | Cómo abrirlo |
 |-----------|--------------|
-| **`coverage/report/index.html`** | Doble clic, o `.\scripts\run-coverage.ps1 -Open`. Navegador: árbol por ensamblado → clase → líneas verdes/rojas. |
-| **`coverage/report/Summary.txt`** | Texto plano; primera línea útil: `Line coverage: XX%`; debajo, % por ensamblado (`Umbral.Domain`, etc.). |
+| **`coverage/report/index.html`** | Doble clic, o `.\scripts\run-coverage.ps1 -Open`. En el árbol: **Umbral.Domain**, **Umbral.Application**, **Umbral.Infrastructure**, **Umbral.API** (cada uno con % y clases). |
+| **Consola** (`run-coverage.ps1`) | Tabla **Cobertura por ensamblado** con OK/FAIL si usas `-Threshold 90`. |
+| **`coverage/report/Summary.txt`** | Texto plano: `Line coverage: XX%` (total) y bloques por ensamblado (líneas sin sangría `  `). |
+
+Con `-Threshold 90` el script falla (exit 1) si **el total** o **cualquiera** de los cuatro ensamblados de producción queda por debajo del 90 %. Eso es independiente del total global: puedes tener 92 % global y fallar en `Umbral.Domain` al 89 %.
 
 La carpeta `coverage/` está en `.gitignore` — **no se commitea**; se regenera en cada corrida. En **GitHub Actions**, el workflow sube el HTML como artefacto `coverage-report` (14 días).
 
