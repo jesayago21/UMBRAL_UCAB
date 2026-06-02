@@ -10,9 +10,49 @@ Arquitectura: **Monolito hexagonal** (Ports & Adapters) en .NET 8. Comunicación
 
 ## Requisitos previos
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) ≥ 24
+**Backend (.NET)** — suficiente para compilar, API, tests y cobertura:
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) ≥ 24 (Postgres + Keycloak; **obligatorio para tests de infra/API y cobertura**)
 - [.NET SDK 8.0](https://dotnet.microsoft.com/download/dotnet/8.0)
 - Git
+
+**Frontend web** (`src/frontend/umbral-web`, opcional si solo trabajas backend):
+
+- [Node.js](https://nodejs.org/) ≥ 20 + npm
+
+---
+
+## Inicio rápido (desarrollo local)
+
+### Solo backend (.NET)
+
+```bash
+cp .env.example .env
+docker compose up postgres keycloak -d
+dotnet build Umbral.sln
+dotnet run --project src/backend/Umbral.API
+dotnet test Umbral.sln
+# Cobertura: .\scripts\run-coverage.ps1 -Open   (Windows)
+```
+
+| Paso | URL / comando |
+|------|----------------|
+| API health | http://localhost:5000/health |
+| Tests | `dotnet test Umbral.sln` |
+| Cobertura + reporte | `.\scripts\run-coverage.ps1 -Open` (Windows) o `bash scripts/run-coverage.sh` |
+
+### Backend + frontend web
+
+Además de lo anterior, en otra terminal (requiere **Node.js** solo aquí):
+
+```bash
+cd src/frontend/umbral-web && cp .env.example .env && npm install && npm run dev
+```
+
+| Paso | URL |
+|------|-----|
+| Frontend | http://localhost:5173/login |
+| Keycloak admin | http://localhost:8080 (admin / admin) |
 
 ---
 
@@ -178,21 +218,41 @@ Lista para cerrar E1 / abrir E2, en orden sugerido:
 | 7 | **Gameplay BT** | Evidencia QR, lobby post-unión, pantallas de juego |
 | 8 | **E2E Playwright** | Flujos admin + operador + 403 |
 | 9 | **README E1-5 / guion E1-6** | Este README cubre arranque y demo; revisar tras feedback de pruebas |
-| 10 | **CI gate cobertura** | E1-3 si falta automatizar ≥90% |
+| 10 | ~~**CI gate cobertura**~~ | ✅ E1-3 — gate ≥90% en CI y local |
 
 ---
 
-## 8. Tests
+## 8. Tests y cobertura
+
+### Ejecutar tests
 
 ```bash
 dotnet test Umbral.sln
+# o en Release (como CI):
+dotnet test Umbral.sln -c Release
 ```
 
-**389 tests** (Domain, Application, Infrastructure, API). Los de infraestructura usan Testcontainers/Postgres; API usa `TestAuthHandler` sin Keycloak.
+**495 tests** en 4 proyectos:
 
-### Cobertura de código (backend)
+| Proyecto | Qué prueba |
+|----------|------------|
+| `Umbral.Domain.Tests` | Reglas de dominio (misiones, sesión, identidad) |
+| `Umbral.Application.Tests` | Handlers MediatR, validadores |
+| `Umbral.Infrastructure.Tests` | Repositorios EF + Postgres (**Testcontainers**) |
+| `Umbral.API.Tests` | Controllers HTTP (**Testcontainers** + `TestAuthHandler`, sin JWT real) |
 
-Requisito **RNF-09**: cobertura de líneas ≥ **90%**. Requiere **Docker en marcha** (mismos contenedores que los tests de infra/API).
+> **Docker debe estar corriendo** para Infrastructure y API tests (levantan Postgres efímero en contenedor).
+
+### Cobertura de código (backend) — RNF-09
+
+Meta: **≥ 90%** de líneas en el backend. Estado actual (última medición): **~96% total**.
+
+| Ensamblado | Cobertura aprox. |
+|------------|------------------|
+| `Umbral.Domain` | ~91% |
+| `Umbral.Application` | ~99% |
+| `Umbral.API` | ~96% |
+| `Umbral.Infrastructure` | ~98% |
 
 **Windows (recomendado):**
 
@@ -210,14 +270,18 @@ Requisito **RNF-09**: cobertura de líneas ≥ **90%**. Requiere **Docker en mar
 bash scripts/run-coverage.sh --threshold 90
 ```
 
-**Salida:**
+Los scripts hacen todo en un paso: `dotnet test` (Release + coverlet) → XML → reporte HTML.
 
-| Artefacto | Descripción |
-|-----------|-------------|
-| `coverage/report/index.html` | Reporte HTML por ensamblado (no se commitea; se regenera) |
-| `coverage/report/Summary.txt` | Resumen en texto; busca la línea `Line coverage: XX%` |
+#### Dónde ver el reporte
 
-**Comandos manuales** (sin script):
+| Artefacto | Cómo abrirlo |
+|-----------|--------------|
+| **`coverage/report/index.html`** | Doble clic, o `.\scripts\run-coverage.ps1 -Open`. Navegador: árbol por ensamblado → clase → líneas verdes/rojas. |
+| **`coverage/report/Summary.txt`** | Texto plano; primera línea útil: `Line coverage: XX%`; debajo, % por ensamblado (`Umbral.Domain`, etc.). |
+
+La carpeta `coverage/` está en `.gitignore` — **no se commitea**; se regenera en cada corrida. En **GitHub Actions**, el workflow sube el HTML como artefacto `coverage-report` (14 días).
+
+**Comandos manuales** (equivalente a los scripts):
 
 ```powershell
 dotnet test Umbral.sln -c Release `
@@ -229,11 +293,14 @@ reportgenerator `
   -reports:"coverage/**/coverage.cobertura.xml" `
   -targetdir:"coverage/report" `
   -reporttypes:"Html;TextSummary"
+
+# Abrir reporte (Windows)
+start coverage/report/index.html
 ```
 
 > Si falta `reportgenerator`: `dotnet tool install -g dotnet-reportgenerator-globaltool`
 
-Más detalle: [`docs/archive/entrega-1/iter-e1-01-cobertura-baseline.md`](docs/archive/entrega-1/iter-e1-01-cobertura-baseline.md) · CI: [`iter-e1-03-ci-coverage.md`](docs/archive/entrega-1/iter-e1-03-ci-coverage.md)
+Más detalle: [`docs/archive/entrega-1/iter-e1-01-cobertura-baseline.md`](docs/archive/entrega-1/iter-e1-01-cobertura-baseline.md) · CI: [`docs/archive/entrega-1/iter-e1-03-ci-coverage.md`](docs/archive/entrega-1/iter-e1-03-ci-coverage.md)
 
 ---
 
@@ -248,7 +315,11 @@ UMBRAL_UCAB/
 │   ├── backend/                      ← API .NET 8
 │   └── frontend/
 │       └── umbral-web/               ← React (admin, operador, participante E1)
-├── tests/                            ← Proyectos de prueba (Fase 2+)
+├── tests/                            ← Domain, Application, Infrastructure, API
+├── scripts/
+│   ├── run-coverage.ps1              ← Cobertura backend (Windows)
+│   └── run-coverage.sh               ← Cobertura backend (Linux/macOS/CI)
+├── coverlet.runsettings              ← Exclusiones coverlet (migraciones EF, etc.)
 └── docs/
     └── domain-model.md
 ```

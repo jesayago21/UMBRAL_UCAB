@@ -47,7 +47,7 @@ public sealed class UsuarioRepository : IUsuarioRepository
         CancellationToken ct = default) =>
         await _db.UsuariosAdministrables
             .AsNoTracking()
-            .OrderBy(x => x.Email.Value)
+            .OrderBy(x => x.Username)
             .Skip(skip)
             .Take(take)
             .ToListAsync(ct);

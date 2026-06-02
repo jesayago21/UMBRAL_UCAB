@@ -653,6 +653,42 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
+    public async Task POST_sesiones_CuandoMisionActiva_Retorna201()
+    {
+        var misionId = await ApiTestData.SeedMisionActivaAsync(_services);
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(misionId));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var body = await response.Content.ReadFromJsonAsync<CrearSesionMisionResponse>();
+        body!.Id.Should().NotBeEmpty();
+        body.CodigoAcceso.Should().NotBeNullOrWhiteSpace();
+        body.MisionNombre.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task GET_disponibles_CuandoParticipante_Retorna200()
+    {
+        var misionId = await ApiTestData.SeedMisionActivaAsync(_services);
+        await _client.PostAsJsonAsync(
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(misionId));
+
+        SetParticipanteAuth(Guid.NewGuid());
+
+        var response = await _client.GetAsync("/api/v1/sesiones/disponibles");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<List<SesionDisponibleParticipanteResponse>>();
+        body.Should().NotBeNull();
+        body!.Should().NotBeEmpty();
+        ResetAuth();
+    }
+
+    [Fact]
     public async Task GET_sesiones_CuandoOperador_RetornaOperativas()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
