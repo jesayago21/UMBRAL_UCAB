@@ -92,7 +92,7 @@ public sealed class ListSesionesDisponiblesParticipanteQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_SesionLegacyTriviaContexto_RetornaTituloTrivia()
+    public async Task Handle_SesionLegacyTriviaContexto_RetornaNombreSesion()
     {
         var sesion = SesionAR.CrearDesdeMision(
             MisionSnapshot.DesdeSoloBusquedaTesoro(MisionTestBuilder.Activa()),
@@ -111,6 +111,6 @@ public sealed class ListSesionesDisponiblesParticipanteQueryHandlerTests
             new ListSesionesDisponiblesParticipanteQuery(null),
             CancellationToken.None);
 
-        result[0].Titulo.Should().Be("Ciencia");
+        result[0].Titulo.Should().Be("Misión de prueba");
     }
 }

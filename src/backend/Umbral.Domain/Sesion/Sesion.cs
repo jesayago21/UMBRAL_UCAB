@@ -39,8 +39,12 @@ public sealed class Sesion : AggregateRoot
 
     private Sesion() { }
 
-    public static Sesion CrearDesdeMision(MisionSnapshot snapshot, UsuarioId operadorId) =>
-        CrearDesdeMision(snapshot, operadorId, snapshot.Nombre);
+    public static Sesion CrearDesdeMision(MisionSnapshot snapshot, UsuarioId operadorId)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(operadorId);
+        return CrearDesdeMision(snapshot, operadorId, snapshot.Nombre);
+    }
 
     public static Sesion CrearDesdeMision(
         MisionSnapshot snapshot,

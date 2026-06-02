@@ -56,21 +56,25 @@ public sealed class UsuariosControllerTests
     }
 
     [Fact]
-    public async Task POST_usuarios_CuandoRolesParticipante_Retorna400()
+    public async Task POST_usuarios_CuandoRolesParticipante_Retorna201()
     {
         SetRole("Administrador");
 
+        var email = $"part_{Guid.NewGuid():N}@test.com";
         var response = await _client.PostAsJsonAsync(
             "/api/v1/usuarios",
             new CrearUsuarioRequest(
-                "part@test.com",
-                "part_user",
+                email,
+                $"part_user_{Guid.NewGuid():N}",
                 "Part",
                 "Test",
-                "Password1",
+                "Password1!",
                 ["Participante"]));
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var body = await response.Content.ReadFromJsonAsync<UsuarioResponse>();
+        body!.Roles.Should().Contain("Participante");
     }
 
     [Fact]
