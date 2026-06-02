@@ -3,14 +3,15 @@ import {
   abrirInscripcionSesion,
   cancelarSesion,
   crearSesionBusquedaTesoro,
+  crearSesionMision,
   crearSesionTrivia,
+  listSesionesDisponibles,
   finalizarSesion,
   iniciarSesion,
   listMisionesActivas,
-  listSesionesDisponiblesBusqueda,
   listSesionesDisponiblesTrivia,
   listSesionesOperativas,
-  listPreguntasTriviaSesionEquipo,
+  listPreguntasTriviaSesionParticipante,
   obtenerRankingSesion,
   obtenerSesionDetalle,
   pausarSesion,
@@ -26,6 +27,7 @@ import type {
 
 export const MISIONES_ACTIVAS_KEY = ['misiones', 'activas'] as const
 export const SESIONES_OPERATIVAS_KEY = ['sesiones', 'operativas'] as const
+export const SESIONES_DISPONIBLES_KEY = ['sesiones', 'disponibles'] as const
 export const SESIONES_DISPONIBLES_BT_KEY = ['sesiones', 'disponibles', 'bt'] as const
 export const SESIONES_DISPONIBLES_TRIVIA_KEY = ['sesiones', 'disponibles', 'trivia'] as const
 export const SESION_DETALLE_KEY = ['sesiones', 'detalle'] as const
@@ -40,12 +42,16 @@ export function useSesionesOperativas() {
   })
 }
 
-export function useSesionesDisponiblesBusqueda() {
+export function useSesionesDisponibles() {
   return useQuery({
-    queryKey: SESIONES_DISPONIBLES_BT_KEY,
-    queryFn: listSesionesDisponiblesBusqueda,
+    queryKey: SESIONES_DISPONIBLES_KEY,
+    queryFn: listSesionesDisponibles,
     refetchInterval: 10_000,
   })
+}
+
+export function useSesionesDisponiblesBusqueda() {
+  return useSesionesDisponibles()
 }
 
 export function useSesionesDisponiblesTrivia() {
@@ -68,6 +74,16 @@ export function useMisionesActivas() {
   return useQuery({
     queryKey: MISIONES_ACTIVAS_KEY,
     queryFn: listMisionesActivas,
+  })
+}
+
+export function useCrearSesionMision() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (misionId: string) => crearSesionMision(misionId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SESIONES_OPERATIVAS_KEY })
+    },
   })
 }
 
@@ -145,10 +161,10 @@ export function useRankingSesion(sesionId: string, enabled = true) {
   })
 }
 
-export function usePreguntasTriviaSesionEquipo(sesionId: string, enabled = true) {
+export function usePreguntasTriviaSesionParticipante(sesionId: string, enabled = true) {
   return useQuery({
     queryKey: [...TRIVIA_PREGUNTAS_EQUIPO_KEY, sesionId],
-    queryFn: () => listPreguntasTriviaSesionEquipo(sesionId),
+    queryFn: () => listPreguntasTriviaSesionParticipante(sesionId),
     enabled: enabled && Boolean(sesionId),
   })
 }

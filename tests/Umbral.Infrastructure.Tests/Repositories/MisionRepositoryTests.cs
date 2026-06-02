@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Infrastructure.Persistence.Repositories;
 using Umbral.Infrastructure.Tests.Support;
 
@@ -21,7 +21,8 @@ public sealed class MisionRepositoryTests(PostgresFixture fixture)
         loaded.Should().NotBeNull();
         loaded!.Nombre.Should().Be(mision.Nombre);
         loaded.Etapas.Should().HaveCount(2);
-        loaded.Etapas[0].Pistas.Should().ContainSingle(p => p.Contenido == "Pista por tiempo");
+        ((EtapaBusquedaTesoro)loaded.Etapas[0]).Pistas
+            .Should().ContainSingle(p => p.Contenido == "Pista por tiempo");
     }
 
     [Fact]

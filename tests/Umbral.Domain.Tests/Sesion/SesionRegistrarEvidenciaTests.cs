@@ -22,16 +22,16 @@ public sealed class SesionRegistrarEvidenciaTests
     public void RegistrarEvidencia_CuandoQrValido_RegistraEvidenciaConResultadoValida()
     {
         // Arrange
-        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConEquipo("Alpha").Build();
-        var equipo  = sesion.Equipos.First();
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConParticipante("Alpha").Build();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        var evidencia = sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        var evidencia = sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         sesion.Evidencias.Should().ContainSingle();
         evidencia.Resultado.Should().Be(ResultadoValidacion.Valida);
-        evidencia.EquipoId.Should().Be(equipo.EquipoId);
+        evidencia.ParticipanteId.Should().Be(participante.ParticipanteId);
         evidencia.CodigoQR.Valor.Should().Be(QrEtapa1);
         evidencia.TimestampServidor.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
     }
@@ -41,10 +41,10 @@ public sealed class SesionRegistrarEvidenciaTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         sesion.DomainEvents.Should().ContainSingle(e => e is EvidenciaRegistrada);
@@ -55,16 +55,16 @@ public sealed class SesionRegistrarEvidenciaTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
-        var etapa   = sesion.ContextoBT!.ObtenerEtapaActual();
+        var participante  = sesion.Participantes.First();
+        var etapa   = sesion.ContextoMision!.ObtenerEtapaBusquedaTesoroActual();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         var evt = sesion.DomainEvents.OfType<EvidenciaRegistrada>().Single();
         evt.SesionId.Should().Be(sesion.SesionId);
-        evt.EquipoId.Should().Be(equipo.EquipoId);
+        evt.ParticipanteId.Should().Be(participante.ParticipanteId);
         evt.EtapaId.Should().Be(etapa.EtapaId);
         evt.Resultado.Should().Be(ResultadoValidacion.Valida);
         evt.CodigoQR.Should().Be(QrEtapa1);
@@ -75,10 +75,10 @@ public sealed class SesionRegistrarEvidenciaTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         sesion.HistorialEventos.Should()
@@ -92,10 +92,10 @@ public sealed class SesionRegistrarEvidenciaTests
     {
         // Arrange — etapa activa es 1, enviamos QR de etapa 2
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        var evidencia = sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa2);
+        var evidencia = sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa2);
 
         // Assert
         evidencia.Resultado.Should().Be(ResultadoValidacion.Invalida);
@@ -107,10 +107,10 @@ public sealed class SesionRegistrarEvidenciaTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa2);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa2);
 
         // Assert
         sesion.DomainEvents.OfType<EvidenciaRegistrada>().Single()
@@ -125,10 +125,10 @@ public sealed class SesionRegistrarEvidenciaTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.Pausada).Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        var evidencia = sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        var evidencia = sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         evidencia.Resultado.Should().Be(ResultadoValidacion.Rechazada);
@@ -142,10 +142,10 @@ public sealed class SesionRegistrarEvidenciaTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().ConEstado(estado).Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        var evidencia = sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        var evidencia = sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         evidencia.Resultado.Should().Be(ResultadoValidacion.Rechazada);
@@ -154,14 +154,14 @@ public sealed class SesionRegistrarEvidenciaTests
     [Fact]
     public void RegistrarEvidencia_CuandoSesionCancelada_RegistraConResultadoRechazada()
     {
-        // Arrange — Cancelada no tiene equipos en builder; se construye y cancela explícitamente
-        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConEquipo("Alpha").Build();
+        // Arrange — Cancelada no tiene participantes en builder; se construye y cancela explícitamente
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConParticipante("Alpha").Build();
         sesion.Cancelar("Cancelada para test");
         sesion.ClearDomainEvents();
-        var equipo = sesion.Equipos.First();
+        var participante = sesion.Participantes.First();
 
         // Act
-        var evidencia = sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        var evidencia = sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         evidencia.Resultado.Should().Be(ResultadoValidacion.Rechazada);
@@ -170,14 +170,14 @@ public sealed class SesionRegistrarEvidenciaTests
     // ── Guards ─────────────────────────────────────────────────────
 
     [Fact]
-    public void RegistrarEvidencia_CuandoEquipoNoPerteneceSesion_LanzaDomainException()
+    public void RegistrarEvidencia_CuandoParticipanteNoPerteneceSesion_LanzaDomainException()
     {
         // Arrange
         var sesion      = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipoAjeno = EquipoId.Nuevo();
+        var participanteAjeno = ParticipanteId.Nuevo();
 
         // Act
-        var act = () => sesion.RegistrarEvidencia(equipoAjeno, QrEtapa1);
+        var act = () => sesion.RegistrarEvidencia(participanteAjeno, QrEtapa1);
 
         // Assert
         act.Should().Throw<DomainException>();
@@ -190,27 +190,27 @@ public sealed class SesionRegistrarEvidenciaTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        var act = () => sesion.RegistrarEvidencia(equipo.EquipoId, qr);
+        var act = () => sesion.RegistrarEvidencia(participante.ParticipanteId, qr);
 
         // Assert
         act.Should().Throw<DomainException>();
     }
 
-    // ── HU-19 parcial: duplicado del mismo equipo ──────────────────
+    // ── HU-19 parcial: duplicado del mismo participante ──────────────────
 
     [Fact]
-    public void RegistrarEvidencia_CuandoEquipoYaEnvioValidaEnEtapa_RegistraSegundaComoInvalida()
+    public void RegistrarEvidencia_CuandoParticipanteYaEnvioValidaEnEtapa_RegistraSegundaComoInvalida()
     {
         // Arrange
-        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConEquipo("Alpha").Build();
-        var equipo  = sesion.Equipos.First();
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConParticipante("Alpha").Build();
+        var participante  = sesion.Participantes.First();
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
-        // Act — segundo envío válido del mismo equipo en la misma etapa
-        var segunda = sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        // Act — segundo envío válido del mismo participante en la misma etapa
+        var segunda = sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         segunda.Resultado.Should().Be(ResultadoValidacion.Invalida);
@@ -218,17 +218,17 @@ public sealed class SesionRegistrarEvidenciaTests
     }
 
     [Fact]
-    public void RegistrarEvidencia_DosEquiposDistintos_SoloPrimeroEnEtapaGanaPuntaje()
+    public void RegistrarEvidencia_DosParticipantesDistintos_SoloPrimeroEnEtapaGanaPuntaje()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
-            .Activa().ConEquipo("Alpha").ConEquipo("Beta").Build();
-        var alpha = sesion.Equipos.First(e => e.Nombre.Valor == "Alpha");
-        var beta  = sesion.Equipos.First(e => e.Nombre.Valor == "Beta");
+            .Activa().ConParticipante("Alpha").ConParticipante("Beta").Build();
+        var alpha = sesion.Participantes.First(e => e.Nombre.Valor == "Alpha");
+        var beta  = sesion.Participantes.First(e => e.Nombre.Valor == "Beta");
 
         // Act
-        var evAlpha = sesion.RegistrarEvidencia(alpha.EquipoId, QrEtapa1);
-        var evBeta  = sesion.RegistrarEvidencia(beta.EquipoId, QrEtapa1);
+        var evAlpha = sesion.RegistrarEvidencia(alpha.ParticipanteId, QrEtapa1);
+        var evBeta  = sesion.RegistrarEvidencia(beta.ParticipanteId, QrEtapa1);
 
         // Assert — Alpha gana etapa 1; Beta envía QR de etapa ya superada (RB-04/RB-05)
         evAlpha.Resultado.Should().Be(ResultadoValidacion.Valida);

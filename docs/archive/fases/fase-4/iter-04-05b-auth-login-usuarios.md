@@ -29,7 +29,7 @@ Campos:
 | `id` | `uuid` | PK |
 | `email` | `varchar(200)` | único |
 | `password_hash` | `varchar(200)` | BCrypt |
-| `rol` | `varchar(50)` | `Administrador` / `Operador` / `EquipoParticipante` |
+| `rol` | `varchar(50)` | `Administrador` / `Operador` / `Participante` |
 | `activo` | `bool` | default `true` |
 
 ### 2) Infrastructure (repositorio + seed)
@@ -44,7 +44,7 @@ Credenciales de demo sembradas:
 
 - `admin@umbral.local` / `Umbral123!` → `Administrador`
 - `operador@umbral.local` / `Umbral123!` → `Operador`
-- `equipo@umbral.local` / `Umbral123!` → `EquipoParticipante`
+- `participante@umbral.local` / `Umbral123!` → `Participante`
 
 ### 3) API (JWT + login)
 

@@ -27,7 +27,7 @@ public sealed class CancelarSesionCommandHandlerTests
     public async Task Handle_CuandoSesionCancelable_CancelaYPublicaEvento()
     {
         // Arrange
-        var sesion = SesionTestBuilder.EnPreparacionSinEquipos();
+        var sesion = SesionTestBuilder.EnPreparacionSinParticipantes();
         _sesionRepo.FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>()).Returns(sesion);
         _sesionRepo.SaveAsync(Arg.Any<SesionAR>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
 

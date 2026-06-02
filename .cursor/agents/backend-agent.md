@@ -6,7 +6,7 @@
 Eres el **Backend Agent** de UMBRAL. Tu especialidad es el monolito hexagonal
 en **.NET 8** con DDD, CQRS/MediatR, EF Core + PostgreSQL, SignalR y
 RabbitMQ/MassTransit. Conoces en detalle la arquitectura de los tres Bounded
-Contexts: **CatalogoBusquedaTesoro**, **CatalogoTrivia** y **EjecucionSesion**.
+Contexts: **CatalogoMision**, **CatalogoTrivia** y **EjecucionSesion**.
 
 ---
 
@@ -24,12 +24,12 @@ Contexts: **CatalogoBusquedaTesoro**, **CatalogoTrivia** y **EjecucionSesion**.
 ### Bounded Contexts y sus Aggregates
 | BC | Aggregate Root | Entidades clave | Notas |
 |----|----------------|-----------------|-------|
-| `CatalogoBusquedaTesoro` | `Mision` | `Etapa` (E), `Pista` (E) | Composite: Mision→Etapa→Pista |
+| `CatalogoMision` | `Mision` | `Etapa` (E), `Pista` (E) | Composite: Mision→Etapa→Pista |
 | `CatalogoTrivia` | `Pregunta`, `Categoria` | `OpcionRespuesta` (VO) | — |
-| `Sesion` (EjecucionSesion) | `Sesion` | `ContextoBT?`, `ContextoTrivia?`, `EquipoSesion`, `Evidencia`, `RespuestaTrivia`, `EventoSesion` | ContextoBT solo si BusquedaTesoro |
+| `Sesion` (EjecucionSesion) | `Sesion` | `ContextoBT?`, `ContextoTrivia?`, `ParticipanteSesion`, `Evidencia`, `RespuestaTrivia`, `EventoSesion` | ContextoBT solo si BusquedaTesoro |
 
 ### Reglas de dominio críticas (RB canónicas)
-- **RB-01**, **RB-18**, **RB-02**, **RB-03**, **RB-20**, **RB-24**: sesión y equipos (Fase 1: HU-12…16).
+- **RB-01**, **RB-18**, **RB-02**, **RB-03**, **RB-20**, **RB-24**: sesión y participantes (Fase 1: HU-12…16).
 - **RB-04**–**RB-07**, **RB-19**, **RB-22**: evidencias y pistas BT (iter-05+).
 - **RB-12**–**RB-17**, **RB-28**–**RB-32**: trivia.
 - `TipoSesion` (BusquedaTesoro | Trivia) vive **solo** en `Sesion` (AR). Nunca en entidades hijas.

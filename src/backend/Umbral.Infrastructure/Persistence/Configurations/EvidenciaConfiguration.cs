@@ -19,8 +19,8 @@ public sealed class EvidenciaConfiguration : IEntityTypeConfiguration<Evidencia>
             .HasColumnName("sesion_id")
             .IsRequired();
 
-        builder.Property(x => x.EquipoId)
-            .HasColumnName("equipo_id")
+        builder.Property(x => x.ParticipanteId)
+            .HasColumnName("participante_id")
             .IsRequired();
 
         builder.Property(x => x.EtapaId)

@@ -216,7 +216,7 @@ SignalR Hub
 │
 ├─► Grupo "sesion-{sesionId}"     → todos los clientes de la sesión
 ├─► Grupo "operador-{sesionId}"   → solo el operador
-└─► Grupo "equipo-{equipoId}"     → solo un equipo específico
+└─► Grupo "equipo-{participanteId}"     → solo un participante específico
 │
 ▼
 React Client
@@ -238,7 +238,7 @@ umbral/
 ├── src/
 │   ├── backend/
 │   │   ├── Umbral.Domain/
-│   │   │   ├── CatalogoBusquedaTesoro/
+│   │   │   ├── CatalogoMision/
 │   │   │   │   └── Mision/
 │   │   │   │       ├── Mision.cs
 │   │   │   │       ├── Etapa.cs
@@ -264,7 +264,7 @@ umbral/
 │   │   │   │   ├── Sesion.cs
 │   │   │   │   ├── ContextoBusquedaTesoro.cs
 │   │   │   │   ├── ContextoTrivia.cs
-│   │   │   │   ├── EquipoSesion.cs
+│   │   │   │   ├── ParticipanteSesion.cs
 │   │   │   │   ├── Evidencia.cs
 │   │   │   │   ├── RespuestaTrivia.cs
 │   │   │   │   ├── Penalizacion.cs
@@ -285,7 +285,7 @@ umbral/
 │   │   │       └── INotificacionRealTime.cs
 │   │   │
 │   │   ├── Umbral.Application/
-│   │   │   ├── CatalogoBusquedaTesoro/
+│   │   │   ├── CatalogoMision/
 │   │   │   │   ├── Commands/
 │   │   │   │   │   ├── CrearMision/
 │   │   │   │   │   │   ├── CrearMisionCommand.cs
@@ -351,7 +351,7 @@ umbral/
 │   │   │   │   │   ├── SesionConfiguration.cs
 │   │   │   │   │   ├── ContextoBusquedaTesoroConfiguration.cs
 │   │   │   │   │   ├── ContextoTriviaConfiguration.cs
-│   │   │   │   │   ├── EquipoSesionConfiguration.cs
+│   │   │   │   │   ├── ParticipanteSesionConfiguration.cs
 │   │   │   │   │   ├── EvidenciaConfiguration.cs
 │   │   │   │   │   └── RespuestaTriviaConfiguration.cs
 │   │   │   │   ├── Migrations/
@@ -384,7 +384,7 @@ umbral/
 │   │       ├── Controllers/
 │   │       │   ├── MisionesController.cs
 │   │       │   ├── SesionesController.cs
-│   │       │   ├── EquiposController.cs
+│   │       │   ├── ParticipantesController.cs
 │   │       │   ├── PreguntasController.cs
 │   │       │   ├── CategoriasController.cs
 │   │       │   └── AuthController.cs
@@ -531,7 +531,7 @@ umbral/
 |-------------------------|--------------------|------------------------------------------|------------------|
 | `MisionesController`    | HTTP REST          | CRUD de misiones                         | Web (Admin)      |
 | `SesionesController`    | HTTP REST          | Ciclo de vida de sesiones                | Web (Operador)   |
-| `EquiposController`     | HTTP REST          | Registro y consulta de equipos           | Web + Mobile     |
+| `ParticipantesController`     | HTTP REST          | Registro y consulta de participantes           | Web + Mobile     |
 | `PreguntasController`   | HTTP REST          | CRUD del banco de preguntas              | Web (Admin)      |
 | `CategoriasController`  | HTTP REST          | CRUD de categorías                       | Web (Admin)      |
 | `AuthController`        | HTTP REST          | Login y generación de JWT                | Web + Mobile     |
@@ -563,12 +563,12 @@ contextos_bt            (id, sesion_id, mision_snapshot_json,
                          etapa_actual_index, pistas_liberadas_json)
 contextos_trivia        (id, sesion_id, preguntas_ordenadas_json,
                          pregunta_actual_index, timer_cerrado_en)
-equipos_sesion          (id, sesion_id, nombre, codigo_acceso,
+participantes_sesion          (id, sesion_id, nombre, codigo_acceso,
                          puntaje_total, tiempo_acumulado_ms,
                          bloqueado_para_ronda_actual)
-evidencias              (id, sesion_id, equipo_id, etapa_id,
+evidencias              (id, sesion_id, participante_id, etapa_id,
                          codigo_qr, timestamp_servidor, resultado)
-respuestas_trivia       (id, sesion_id, equipo_id, pregunta_id,
+respuestas_trivia       (id, sesion_id, participante_id, pregunta_id,
                          opcion_seleccionada, timestamp_servidor,
                          es_correcta, puntos_obtenidos, estado)
 penalizaciones          (id, equipo_sesion_id, puntos, motivo,

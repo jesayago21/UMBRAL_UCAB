@@ -69,57 +69,67 @@ function EtapaRow({
         <span className="rounded bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-800">
           Etapa {etapa.orden}
         </span>
-        <span className="font-medium text-slate-900">{etapa.descripcion}</span>
+        <span className="text-xs text-slate-500">{etapa.tipoEtapa}</span>
+        <span className="font-medium text-slate-900">{etapa.descripcion ?? '—'}</span>
       </div>
-      <p className="mt-2 font-mono text-xs text-slate-600">
-        QR solución: <span className="text-slate-900">{etapa.codigoQrSolucion}</span>
-      </p>
+      {etapa.tipoEtapa === 'BusquedaTesoro' && (
+        <p className="mt-2 font-mono text-xs text-slate-600">
+          QR solución: <span className="text-slate-900">{etapa.codigoQrSolucion}</span>
+        </p>
+      )}
 
-      {etapa.pistas.length > 0 ? (
+      {etapa.tipoEtapa === 'Trivia' && (
+        <p className="mt-2 text-xs text-slate-600">
+          Categorías: {(etapa.categoriaIds ?? []).join(', ') || '—'}
+        </p>
+      )}
+
+      {etapa.tipoEtapa === 'BusquedaTesoro' && (etapa.pistas?.length ?? 0) > 0 ? (
         <ul className="mt-2 space-y-1">
-          {etapa.pistas.map((p) => (
+          {etapa.pistas!.map((p) => (
             <PistaRow key={p.pistaId} pista={p} />
           ))}
         </ul>
-      ) : (
+      ) : etapa.tipoEtapa === 'BusquedaTesoro' ? (
         <p className="mt-2 text-xs text-slate-500">Sin pistas en esta etapa.</p>
-      )}
+      ) : null}
 
       {error && <div className="mt-2"><ErrorState message={error} /></div>}
 
-      {!adding ? (
-        <button
-          type="button"
-          className="mt-2 text-sm text-indigo-600 hover:underline"
-          onClick={() => setAdding(true)}
-        >
-          + Agregar pista a esta etapa
-        </button>
-      ) : (
-        <div className="mt-3 space-y-2">
-          <PistasEditor pistas={pistasDraft} onChange={setPistasDraft} />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={agregar.isPending}
-              onClick={() => {
-                setError(null)
-                void agregar.mutateAsync()
-              }}
-              className={btnPrimary}
-            >
-              {agregar.isPending ? 'Guardando…' : 'Guardar pista'}
-            </button>
-            <button
-              type="button"
-              className="text-sm text-slate-600 hover:underline"
-              onClick={() => setAdding(false)}
-            >
-              Cancelar
-            </button>
+      {etapa.tipoEtapa === 'BusquedaTesoro' &&
+        (!adding ? (
+          <button
+            type="button"
+            className="mt-2 text-sm text-indigo-600 hover:underline"
+            onClick={() => setAdding(true)}
+          >
+            + Agregar pista a esta etapa
+          </button>
+        ) : (
+          <div className="mt-3 space-y-2">
+            <PistasEditor pistas={pistasDraft} onChange={setPistasDraft} />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={agregar.isPending}
+                onClick={() => {
+                  setError(null)
+                  void agregar.mutateAsync()
+                }}
+                className={btnPrimary}
+              >
+                {agregar.isPending ? 'Guardando…' : 'Guardar pista'}
+              </button>
+              <button
+                type="button"
+                className="text-sm text-slate-600 hover:underline"
+                onClick={() => setAdding(false)}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        ))}
     </li>
   )
 }

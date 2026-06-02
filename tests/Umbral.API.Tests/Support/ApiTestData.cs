@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.CatalogoTrivia.Categoria;
 using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Infrastructure.Persistence;
@@ -16,8 +16,8 @@ internal static class ApiTestData
             scope.ServiceProvider.GetRequiredService<Umbral.Infrastructure.Persistence.UmbralDbContext>());
 
         var mision = Mision.Crear($"Misión integración API {Guid.NewGuid():N}");
-        mision.AgregarEtapa("Etapa 1", "QR-API-001");
-        mision.AgregarEtapa("Etapa 2", "QR-API-002");
+        mision.AgregarEtapaBusquedaTesoro("Etapa 1", "QR-API-001");
+        mision.AgregarEtapaBusquedaTesoro("Etapa 2", "QR-API-002");
         mision.Activar();
         mision.ClearDomainEvents();
 

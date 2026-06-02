@@ -8,7 +8,7 @@ namespace Umbral.Domain.Sesion.Events;
 public sealed record EtapaCompletada(
     SesionId SesionId,
     int      EtapaCompletadaIndex,
-    EquipoId EquipoGanadorId) : IDomainEvent
+    ParticipanteId ParticipanteGanadorId) : IDomainEvent
 {
     public Guid     EventId     { get; } = Guid.NewGuid();
     public DateTime OcurridoEn { get; } = DateTime.UtcNow;

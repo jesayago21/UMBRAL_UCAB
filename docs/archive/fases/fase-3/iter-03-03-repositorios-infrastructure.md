@@ -19,7 +19,7 @@ Implementar los puertos de persistencia del dominio (`ISesionRepository`, `IMisi
   - `FindActivasAsync`: `AsNoTracking()` para consultas de lectura.
   - `SaveAsync`: persiste agregado detached con `AddAsync` y confirma con `SaveChangesAsync`.
 - Carga de agregado completo por includes sobre backing fields:
-  - `Sesion`: `_equipos`, `_historialEventos`, `_evidencias`
+  - `Sesion`: `_participantes`, `_historialEventos`, `_evidencias`
   - `Mision`: `_etapas`, `_etapas._pistas`
 
 ## Validación

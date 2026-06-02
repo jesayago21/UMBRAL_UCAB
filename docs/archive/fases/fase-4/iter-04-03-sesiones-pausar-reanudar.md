@@ -21,4 +21,4 @@ dotnet test tests/Umbral.API.Tests/Umbral.API.Tests.csproj
 ## Notas
 
 - Auth local: `TestAuthHandler` en Development/Testing (sin JWT).
-- Prerrequisito pausar: sesión en estado `Activa` (crear → equipo → iniciar).
+- Prerrequisito pausar: sesión en estado `Activa` (crear → participante → iniciar).

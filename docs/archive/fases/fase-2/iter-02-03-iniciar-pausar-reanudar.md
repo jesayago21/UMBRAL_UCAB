@@ -15,7 +15,7 @@
 
 Retorno: `Result<Guid>` (id de sesión).
 
-**Prerrequisito operador (web):** sesión en `EnPreparacion` con ≥1 equipo antes de `Iniciar` (tras `AbrirParaRegistro` + `RegistrarEquipo` en iteraciones previas).
+**Prerrequisito operador (web):** sesión en `EnPreparacion` con ≥1 participante antes de `Iniciar` (tras `AbrirParaRegistro` + `RegistrarEquipo` en iteraciones previas).
 
 ---
 

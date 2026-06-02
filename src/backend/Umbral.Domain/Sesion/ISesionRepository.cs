@@ -7,8 +7,8 @@ public interface ISesionRepository
     Task<IReadOnlyList<Sesion>> FindOperativasByOperadorAsync(
         UsuarioId operadorId,
         CancellationToken ct = default);
-    Task<IReadOnlyList<Sesion>> FindDisponiblesParaEquipoAsync(
-        TipoSesion tipo,
+    Task<IReadOnlyList<Sesion>> FindDisponiblesParaParticipanteAsync(
+        TipoSesion? tipo,
         CancellationToken ct = default);
     Task SaveAsync(Sesion sesion, CancellationToken ct = default);
 }

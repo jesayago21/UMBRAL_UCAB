@@ -6,15 +6,16 @@ public sealed record SesionResumenDto(
     Guid MisionId,
     string MisionNombre,
     string Estado,
-    int EquiposCount,
+    int ParticipantesCount,
     DateTime? IniciadaEn,
     DateTime? FinalizadaEn,
     int EtapaActualOrden,
     int TotalEtapas,
-    string? EtapaActualDescripcion);
+    string? EtapaActualDescripcion,
+    string? EtapaActivaTipo);
 
-public sealed record EquipoSesionDto(
-    Guid EquipoId,
+public sealed record ParticipanteSesionDto(
+    Guid ParticipanteId,
     Guid JugadorId,
     string Nombre);
 
@@ -25,9 +26,11 @@ public sealed record PistaSesionDto(
 
 public sealed record EtapaSesionDto(
     int Orden,
+    string TipoEtapa,
     string Descripcion,
     bool EsActual,
-    IReadOnlyList<PistaSesionDto> Pistas);
+    IReadOnlyList<PistaSesionDto>? Pistas,
+    IReadOnlyList<Guid>? CategoriaIds);
 
 public sealed record SesionDetalleDto(
     Guid Id,
@@ -41,5 +44,6 @@ public sealed record SesionDetalleDto(
     int EtapaActualOrden,
     int TotalEtapas,
     string? EtapaActualDescripcion,
-    IReadOnlyList<EquipoSesionDto> Equipos,
+    string? EtapaActivaTipo,
+    IReadOnlyList<ParticipanteSesionDto> Participantes,
     IReadOnlyList<EtapaSesionDto>? Etapas);

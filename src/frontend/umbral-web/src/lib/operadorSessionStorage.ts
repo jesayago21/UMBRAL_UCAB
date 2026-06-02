@@ -9,8 +9,8 @@ export function detalleToOperadorState(detalle: SesionDetalleDto): OperadorSesio
     misionNombre: detalle.misionNombre,
     estado: mapEstadoSesionFromApi(detalle.estado),
     codigoAcceso: detalle.codigoAcceso,
-    equipos: detalle.equipos.map((e) => ({
-      equipoId: e.equipoId,
+    participantes: detalle.participantes.map((e) => ({
+      participanteId: e.participanteId,
       jugadorId: e.jugadorId,
       nombre: e.nombre,
     })),
@@ -52,6 +52,6 @@ export function createInitialSesionState(
     misionNombre,
     codigoAcceso,
     estado: 'programada',
-    equipos: [],
+    participantes: [],
   }
 }

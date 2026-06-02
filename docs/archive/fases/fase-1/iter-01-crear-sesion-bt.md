@@ -12,7 +12,7 @@ Esta es la iteración 0→1 de Fase 1. Antes de poder "iniciar" una sesión
 es necesario poder *crearla*. El spec define dos factory methods separados:
 `CrearBusquedaTesoro(snapshot, operadorId)` y `CrearTrivia(preguntas, operadorId)`.
 Esta iteración implementa solo el primero, que requiere la cadena
-**CatalogoBusquedaTesoro → MisionSnapshot → Sesion**.
+**CatalogoMision → MisionSnapshot → Sesion**.
 
 ---
 
@@ -27,10 +27,10 @@ Esta iteración implementa solo el primero, que requiere la cadena
 | `Shared/AggregateRoot.cs` | `AggregateRoot : Entity` sin `<TId>`; `RaiseDomainEvent` (no `AddDomainEvent`) |
 | `Shared/ValueObject.cs` | Alineado al spec canónico |
 
-### BC CatalogoBusquedaTesoro (nuevo)
+### BC CatalogoMision (nuevo)
 
 ```
-CatalogoBusquedaTesoro/Mision/
+CatalogoMision/Mision/
   MisionId.cs          ← record MisionId(Guid Valor)
   EtapaId.cs           ← record EtapaId(Guid Valor)
   PistaId.cs           ← record PistaId(Guid Valor)
@@ -52,12 +52,12 @@ CatalogoBusquedaTesoro/Mision/
 | Archivo | Cambio |
 |---------|--------|
 | `Sesion/ValueObjects/SesionId.cs` | `record SesionId(Guid Valor)` (era clase genérica) |
-| `Sesion/ValueObjects/EquipoId.cs` | Nuevo: reemplaza `EquipoSesionId` |
+| `Sesion/ValueObjects/ParticipanteId.cs` | Nuevo: reemplaza `ParticipanteSesionId` |
 | `Sesion/ValueObjects/UsuarioId.cs` | Nuevo: para `OperadorId` |
-| `Sesion/ValueObjects/NombreEquipo.cs` | Nuevo: VO con validación |
-| `Sesion/ValueObjects/CodigoAcceso.cs` | Nuevo: VO para acceso de equipos |
+| `Sesion/ValueObjects/NombreParticipante.cs` | Nuevo: VO con validación |
+| `Sesion/ValueObjects/CodigoAcceso.cs` | Nuevo: VO para acceso de participantes |
 | `Sesion/ValueObjects/Puntaje.cs` | Nuevo: VO con `Sumar`/`Restar` |
-| `Sesion/EquipoSesion.cs` | Actualizado: usa `EquipoId`, `NombreEquipo`, `CodigoAcceso`, `Puntaje` |
+| `Sesion/ParticipanteSesion.cs` | Actualizado: usa `ParticipanteId`, `NombreParticipante`, `CodigoAcceso`, `Puntaje` |
 | `Sesion/Penalizacion.cs` | Nuevo: VO con validación de puntos y motivo |
 | `Sesion/ContextoBusquedaTesoro.cs` | Nuevo: Entity que contiene `MisionSnapshot` |
 | `Sesion/Sesion.cs` | `CrearBusquedaTesoro()` reemplaza el antiguo `Crear()`; máquina de estados completa |
@@ -108,7 +108,7 @@ Domain/Ports/
 | `CrearBusquedaTesoro_ConDatosValidos_EventoSesionCreadaTienePayloadCorrecto` | Domain Event |
 | `CrearBusquedaTesoro_ConDatosValidos_ContextoBTNoEsNull` | Happy |
 | `CrearBusquedaTesoro_ConDatosValidos_ContextoBTContieneMisionSnapshot` | Happy |
-| `CrearBusquedaTesoro_ConDatosValidos_SesionNaceConEquiposVacios` | Happy |
+| `CrearBusquedaTesoro_ConDatosValidos_SesionNaceConParticipantesVacios` | Happy |
 | `CrearBusquedaTesoro_CuandoSnapshotEsNull_LanzaArgumentNullException` | Error |
 | `CrearBusquedaTesoro_CuandoOperadorIdEsNull_LanzaArgumentNullException` | Error |
 
@@ -148,7 +148,7 @@ la máquina de estados completa.
 ## Patrón aplicado
 
 - **Factory Method**: `Sesion.CrearBusquedaTesoro(snapshot, operadorId)` — garantiza que el objeto nace en estado válido con todos los invariantes satisfechos.
-- **Anti-Corruption Layer (ACL)**: `MisionSnapshot` es la frontera entre `CatalogoBusquedaTesoro` y el BC `Sesion`. El BC `Sesion` nunca importa `Mision` directamente.
+- **Anti-Corruption Layer (ACL)**: `MisionSnapshot` es la frontera entre `CatalogoMision` y el BC `Sesion`. El BC `Sesion` nunca importa `Mision` directamente.
 - **Domain Event**: `SesionCreada` se emite inmediatamente en el factory; será despachado por el Application Layer *después* de persistir.
 
 ---
@@ -173,4 +173,4 @@ la máquina de estados completa.
 
 - Verificar `Estado` permitido para registro (spec: cualquier estado no terminal).
 - Tests para nombre duplicado, estado terminal.
-- El builder `SesionBuilder` ya tiene soporte para `ConEstado` y `ConEquipo`.
+- El builder `SesionBuilder` ya tiene soporte para `ConEstado` y `ConParticipante`.

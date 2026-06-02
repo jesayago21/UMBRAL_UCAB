@@ -7,7 +7,7 @@
 
 ## Objetivo
 
-Orquestar `Sesion.RegistrarEvidencia` para el flujo del equipo participante en sesiones BT activas.
+Orquestar `Sesion.RegistrarEvidencia` para el flujo del participante participante en sesiones BT activas.
 
 ---
 
@@ -25,7 +25,7 @@ Orquestar `Sesion.RegistrarEvidencia` para el flujo del equipo participante en s
 ## Flujo del handler
 
 1. Buscar sesión por id (`NotFoundException` si no existe).  
-2. Ejecutar `sesion.RegistrarEvidencia(equipoId, codigoQr)`.  
+2. Ejecutar `sesion.RegistrarEvidencia(participanteId, codigoQr)`.  
 3. Persistir, publicar `DomainEvents`, limpiar eventos.  
 4. Retornar `Result<SubmitEvidenciaResult>`.
 
@@ -34,4 +34,4 @@ Orquestar `Sesion.RegistrarEvidencia` para el flujo del equipo participante en s
 ## Tests
 
 - Handler: happy path, sesión no encontrada, error de dominio.  
-- Validator: comando válido, `EquipoId` vacío, `CodigoQr` vacío.
+- Validator: comando válido, `ParticipanteId` vacío, `CodigoQr` vacío.

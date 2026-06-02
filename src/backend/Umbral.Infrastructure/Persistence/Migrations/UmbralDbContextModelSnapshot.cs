@@ -22,23 +22,11 @@ namespace Umbral.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Etapa", b =>
+            modelBuilder.Entity("Umbral.Domain.CatalogoMision.Mision.Etapa", b =>
                 {
                     b.Property<Guid>("EtapaId")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.Property<string>("CodigoQRSolucion")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("codigo_qr_solucion");
-
-                    b.Property<string>("Descripcion")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("descripcion");
 
                     b.Property<Guid>("MisionId")
                         .HasColumnType("uuid")
@@ -48,15 +36,24 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("orden");
 
+                    b.Property<string>("tipo_etapa")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
+
                     b.HasKey("EtapaId");
 
                     b.HasIndex("MisionId", "Orden")
                         .IsUnique();
 
                     b.ToTable("etapas", (string)null);
+
+                    b.HasDiscriminator<string>("tipo_etapa").HasValue("Etapa");
+
+                    b.UseTphMappingStrategy();
                 });
 
-            modelBuilder.Entity("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Mision", b =>
+            modelBuilder.Entity("Umbral.Domain.CatalogoMision.Mision.Mision", b =>
                 {
                     b.Property<Guid>("MisionId")
                         .HasColumnType("uuid")
@@ -82,7 +79,7 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                     b.ToTable("misiones", (string)null);
                 });
 
-            modelBuilder.Entity("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Pista", b =>
+            modelBuilder.Entity("Umbral.Domain.CatalogoMision.Mision.Pista", b =>
                 {
                     b.Property<Guid>("PistaId")
                         .HasColumnType("uuid")
@@ -182,15 +179,33 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                     b.ToTable("preguntas", (string)null);
                 });
 
-            modelBuilder.Entity("Umbral.Domain.Sesion.EquipoSesion", b =>
+            modelBuilder.Entity("Umbral.Domain.IdentidadYAccesos.UsuarioAdministrable", b =>
                 {
-                    b.Property<Guid>("EquipoId")
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<Guid>("JugadorId")
+                    b.Property<string>("Apellido")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("apellido");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("estado");
+
+                    b.Property<Guid>("KeycloakUserId")
                         .HasColumnType("uuid")
-                        .HasColumnName("jugador_id");
+                        .HasColumnName("keycloak_user_id");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -198,23 +213,26 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("nombre");
 
-                    b.Property<int>("PuntajeTotal")
-                        .HasColumnType("integer")
-                        .HasColumnName("puntaje_total");
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("username");
 
-                    b.Property<Guid>("SesionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("sesion_id");
+                    b.Property<string>("_roles")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("roles_json");
 
-                    b.HasKey("EquipoId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("SesionId", "JugadorId")
+                    b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("SesionId", "Nombre")
+                    b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("equipos_sesion", (string)null);
+                    b.ToTable("usuarios_administrables", (string)null);
                 });
 
             modelBuilder.Entity("Umbral.Domain.Sesion.EventoSesion", b =>
@@ -262,13 +280,13 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("codigo_qr_leido");
 
-                    b.Property<Guid>("EquipoId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("equipo_id");
-
                     b.Property<Guid>("EtapaId")
                         .HasColumnType("uuid")
                         .HasColumnName("etapa_id");
+
+                    b.Property<Guid>("ParticipanteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("participante_id");
 
                     b.Property<string>("Resultado")
                         .IsRequired()
@@ -289,6 +307,41 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                     b.HasIndex("SesionId");
 
                     b.ToTable("evidencias", (string)null);
+                });
+
+            modelBuilder.Entity("Umbral.Domain.Sesion.ParticipanteSesion", b =>
+                {
+                    b.Property<Guid>("ParticipanteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("JugadorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("jugador_id");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("nombre");
+
+                    b.Property<int>("PuntajeTotal")
+                        .HasColumnType("integer")
+                        .HasColumnName("puntaje_total");
+
+                    b.Property<Guid>("SesionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sesion_id");
+
+                    b.HasKey("ParticipanteId");
+
+                    b.HasIndex("SesionId", "JugadorId")
+                        .IsUnique();
+
+                    b.HasIndex("SesionId", "Nombre")
+                        .IsUnique();
+
+                    b.ToTable("participantes_sesion", (string)null);
                 });
 
             modelBuilder.Entity("Umbral.Domain.Sesion.Sesion", b =>
@@ -317,6 +370,10 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("iniciada_en");
 
+                    b.Property<Guid?>("MisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mision_id");
+
                     b.Property<Guid>("OperadorId")
                         .HasColumnType("uuid")
                         .HasColumnName("operador_id");
@@ -332,18 +389,49 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                     b.ToTable("sesiones", (string)null);
                 });
 
-            modelBuilder.Entity("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Etapa", b =>
+            modelBuilder.Entity("Umbral.Domain.CatalogoMision.Mision.EtapaBusquedaTesoro", b =>
                 {
-                    b.HasOne("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Mision", null)
+                    b.HasBaseType("Umbral.Domain.CatalogoMision.Mision.Etapa");
+
+                    b.Property<string>("CodigoQRSolucion")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("codigo_qr_solucion");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("descripcion");
+
+                    b.HasDiscriminator().HasValue("BusquedaTesoro");
+                });
+
+            modelBuilder.Entity("Umbral.Domain.CatalogoMision.Mision.EtapaTrivia", b =>
+                {
+                    b.HasBaseType("Umbral.Domain.CatalogoMision.Mision.Etapa");
+
+                    b.Property<string>("CategoriaIdsStorage")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("categoria_ids_json");
+
+                    b.HasDiscriminator().HasValue("Trivia");
+                });
+
+            modelBuilder.Entity("Umbral.Domain.CatalogoMision.Mision.Etapa", b =>
+                {
+                    b.HasOne("Umbral.Domain.CatalogoMision.Mision.Mision", null)
                         .WithMany("_etapas")
                         .HasForeignKey("MisionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Pista", b =>
+            modelBuilder.Entity("Umbral.Domain.CatalogoMision.Mision.Pista", b =>
                 {
-                    b.HasOne("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Etapa", null)
+                    b.HasOne("Umbral.Domain.CatalogoMision.Mision.EtapaBusquedaTesoro", null)
                         .WithMany("_pistas")
                         .HasForeignKey("EtapaId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -356,15 +444,6 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("CategoriaId")
                         .OnDelete(DeleteBehavior.SetNull);
-                });
-
-            modelBuilder.Entity("Umbral.Domain.Sesion.EquipoSesion", b =>
-                {
-                    b.HasOne("Umbral.Domain.Sesion.Sesion", null)
-                        .WithMany("_equipos")
-                        .HasForeignKey("SesionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Umbral.Domain.Sesion.EventoSesion", b =>
@@ -380,6 +459,15 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Umbral.Domain.Sesion.Sesion", null)
                         .WithMany("_evidencias")
+                        .HasForeignKey("SesionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Umbral.Domain.Sesion.ParticipanteSesion", b =>
+                {
+                    b.HasOne("Umbral.Domain.Sesion.Sesion", null)
+                        .WithMany("_participantes")
                         .HasForeignKey("SesionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -408,6 +496,40 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                             b1.HasKey("SesionId");
 
                             b1.ToTable("contextos_bt", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("SesionId");
+                        });
+
+                    b.OwnsOne("Umbral.Domain.Sesion.ContextoMision", "ContextoMision", b1 =>
+                        {
+                            b1.Property<Guid>("SesionId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("EtapaActualIndex")
+                                .HasColumnType("integer")
+                                .HasColumnName("etapa_actual_index");
+
+                            b1.Property<Guid?>("GanadorEtapaActualId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("ganador_etapa_actual_id");
+
+                            b1.Property<Guid>("MisionId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("mision_id");
+
+                            b1.Property<string>("MisionSnapshot")
+                                .IsRequired()
+                                .HasColumnType("jsonb")
+                                .HasColumnName("mision_snapshot_json");
+
+                            b1.Property<int>("PreguntaTriviaActualIndex")
+                                .HasColumnType("integer")
+                                .HasColumnName("pregunta_trivia_actual_index");
+
+                            b1.HasKey("SesionId");
+
+                            b1.ToTable("contextos_mision", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("SesionId");
@@ -447,26 +569,28 @@ namespace Umbral.Infrastructure.Persistence.Migrations
 
                     b.Navigation("ContextoBT");
 
+                    b.Navigation("ContextoMision");
+
                     b.Navigation("ContextoTrivia");
                 });
 
-            modelBuilder.Entity("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Etapa", b =>
-                {
-                    b.Navigation("_pistas");
-                });
-
-            modelBuilder.Entity("Umbral.Domain.CatalogoBusquedaTesoro.Mision.Mision", b =>
+            modelBuilder.Entity("Umbral.Domain.CatalogoMision.Mision.Mision", b =>
                 {
                     b.Navigation("_etapas");
                 });
 
             modelBuilder.Entity("Umbral.Domain.Sesion.Sesion", b =>
                 {
-                    b.Navigation("_equipos");
-
                     b.Navigation("_evidencias");
 
                     b.Navigation("_historialEventos");
+
+                    b.Navigation("_participantes");
+                });
+
+            modelBuilder.Entity("Umbral.Domain.CatalogoMision.Mision.EtapaBusquedaTesoro", b =>
+                {
+                    b.Navigation("_pistas");
                 });
 #pragma warning restore 612, 618
         }

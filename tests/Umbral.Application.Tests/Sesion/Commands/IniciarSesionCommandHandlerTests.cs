@@ -25,9 +25,9 @@ public sealed class IniciarSesionCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_CuandoEnPreparacionConEquipos_IniciaYPublicaEvento()
+    public async Task Handle_CuandoEnPreparacionConParticipantes_IniciaYPublicaEvento()
     {
-        var sesion = SesionTestBuilder.ConEquipo("Alpha");
+        var sesion = SesionTestBuilder.ConParticipante("Alpha");
         ConfigurarSesion(sesion);
 
         IReadOnlyList<IDomainEvent>? eventos = null;
@@ -65,9 +65,9 @@ public sealed class IniciarSesionCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_CuandoSinEquipos_LanzaDomainException()
+    public async Task Handle_CuandoSinParticipantes_LanzaDomainException()
     {
-        var sesion = SesionTestBuilder.EnPreparacionSinEquipos();
+        var sesion = SesionTestBuilder.EnPreparacionSinParticipantes();
         ConfigurarSesion(sesion);
 
         var act = () => _sut.Handle(
@@ -75,7 +75,7 @@ public sealed class IniciarSesionCommandHandlerTests
             CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainException>()
-            .WithMessage("*al menos un equipo*");
+            .WithMessage("*al menos un participante*");
     }
 
     [Fact]

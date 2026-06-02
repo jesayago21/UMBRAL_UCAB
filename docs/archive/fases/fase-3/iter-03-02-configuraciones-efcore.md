@@ -9,10 +9,10 @@ Mapear entidades/agregados principales de `Sesion` y `Mision` en EF Core, respet
 - Se extendió `UmbralDbContext` para registrar converters globales de IDs tipados en `ConfigureConventions`.
 - Se crearon `ValueConverters` para:
   - `MisionId`, `EtapaId`, `PistaId`
-  - `SesionId`, `EquipoId`, `EvidenciaId`, `UsuarioId`
+  - `SesionId`, `ParticipanteId`, `EvidenciaId`, `UsuarioId`
 - Se crearon configuraciones EF Core (`IEntityTypeConfiguration<T>`) para:
   - `Sesion`
-  - `EquipoSesion`
+  - `ParticipanteSesion`
   - `EventoSesion`
   - `Evidencia`
   - `Mision`
@@ -20,7 +20,7 @@ Mapear entidades/agregados principales de `Sesion` y `Mision` en EF Core, respet
   - `Pista`
 - Enums mapeados como `string` según convención.
 - Se ignoró `DomainEvents` del agregado `Sesion` y `Mision`.
-- Se definieron relaciones por backing fields para colecciones internas del agregado (`_equipos`, `_historialEventos`, `_evidencias`, `_etapas`, `_pistas`).
+- Se definieron relaciones por backing fields para colecciones internas del agregado (`_participantes`, `_historialEventos`, `_evidencias`, `_etapas`, `_pistas`).
 
 ## Validación
 

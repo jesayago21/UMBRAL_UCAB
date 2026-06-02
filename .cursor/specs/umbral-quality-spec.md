@@ -136,7 +136,7 @@ public class SesionTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .ConEquipo("Equipo Alpha")
+            .ConParticipante("Equipo Alpha")
             .Build();
 
         // Act
@@ -169,12 +169,12 @@ public class SesionTests
     }
 
     [Fact]
-    public void Iniciar_SinEquiposRegistrados_LanzaDomainException()
+    public void Iniciar_SinParticipantesRegistrados_LanzaDomainException()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .SinEquipos()
+            .SinParticipantes()
             .Build();
 
         // Act
@@ -182,7 +182,7 @@ public class SesionTests
 
         // Assert
         act.Should().Throw<DomainException>()
-            .WithMessage("*al menos un equipo*");
+            .WithMessage("*al menos un participante*");
     }
 
     [Fact]
@@ -215,22 +215,22 @@ public class SesionTests
         sesion.DomainEvents.Should().ContainSingle(e => e is SesionFinalizada);
     }
 
-    // ── Equipos ───────────────────────────────────────────────────
+    // ── Participantes ───────────────────────────────────────────────────
 
     [Fact]
-    public void RegistrarEquipo_CuandoNombreUnico_AgregaEquipo()
+    public void RegistrarEquipo_CuandoNombreUnico_AgregaParticipante()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion).Build();
 
         // Act
-        var equipo = sesion.RegistrarEquipo("Los Sabuesos");
+        var participante = sesion.RegistrarEquipo("Los Sabuesos");
 
         // Assert
-        sesion.Equipos.Should().ContainSingle();
-        equipo.Nombre.Valor.Should().Be("Los Sabuesos");
-        equipo.CodigoAcceso.Should().NotBeNull();
+        sesion.Participantes.Should().ContainSingle();
+        participante.Nombre.Valor.Should().Be("Los Sabuesos");
+        participante.CodigoAcceso.Should().NotBeNull();
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class SesionTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .ConEquipo("Los Sabuesos")
+            .ConParticipante("Los Sabuesos")
             .Build();
 
         // Act
@@ -273,18 +273,18 @@ public class SesionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
-            .Activa().ConEquipo("Alpha").Build();
-        var equipo     = sesion.Equipos.First();
+            .Activa().ConParticipante("Alpha").Build();
+        var participante     = sesion.Participantes.First();
         var penalizacion = new Penalizacion(
             10, "Trampa detectada", new UsuarioId(Guid.NewGuid()));
 
-        equipo.SumarPuntaje(50);
+        participante.SumarPuntaje(50);
 
         // Act
-        sesion.AplicarPenalizacion(equipo.EquipoId, penalizacion);
+        sesion.AplicarPenalizacion(participante.ParticipanteId, penalizacion);
 
         // Assert
-        equipo.PuntajeTotal.Valor.Should().Be(40);
+        participante.PuntajeTotal.Valor.Should().Be(40);
         sesion.DomainEvents.Should()
             .ContainSingle(e => e is PenalizacionAplicada);
     }
@@ -376,7 +376,7 @@ public class SesionBuilder
 {
     private TipoSesion     _tipo       = TipoSesion.BusquedaTesoro;
     private EstadoSesion   _estado     = EstadoSesion.Programada;
-    private List<string>   _equipos    = [];
+    private List<string>   _participantes    = [];
     private MisionSnapshot _snapshot   = MisionSnapshotFaker.Valido();
     private List<PreguntaId> _preguntas = [];
 
@@ -395,19 +395,19 @@ public class SesionBuilder
     public SesionBuilder Activa()
     {
         _estado = EstadoSesion.Activa;
-        _equipos.Add("Equipo Default");
+        _participantes.Add("Equipo Default");
         return this;
     }
 
-    public SesionBuilder ConEquipo(string nombre)
+    public SesionBuilder ConParticipante(string nombre)
     {
-        _equipos.Add(nombre);
+        _participantes.Add(nombre);
         return this;
     }
 
-    public SesionBuilder SinEquipos()
+    public SesionBuilder SinParticipantes()
     {
-        _equipos = [];
+        _participantes = [];
         return this;
     }
 
@@ -429,7 +429,7 @@ public class SesionBuilder
                 .GetProperty(nameof(Sesion.Estado))!
                 .SetValue(sesion, _estado);
 
-        foreach (var nombre in _equipos)
+        foreach (var nombre in _participantes)
             sesion.RegistrarEquipo(nombre);
 
         sesion.ClearDomainEvents();
@@ -605,10 +605,10 @@ public class SesionIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetRanking_CuandoSesionConEquipos_RetornaOrdenCorrecto()
+    public async Task GetRanking_CuandoSesionConParticipantes_RetornaOrdenCorrecto()
     {
         // Arrange
-        var sesionId = await CrearSesionConEquiposAsync(
+        var sesionId = await CrearSesionConParticipantesAsync(
             ("Alpha", 150),
             ("Beta", 200),
             ("Gamma", 75));
@@ -623,14 +623,14 @@ public class SesionIntegrationTests : IAsyncLifetime
         var ranking = await response.Content
             .ReadFromJsonAsync<List<PosicionRankingDto>>();
 
-        ranking![0].NombreEquipo.Should().Be("Beta");
-        ranking[1].NombreEquipo.Should().Be("Alpha");
-        ranking[2].NombreEquipo.Should().Be("Gamma");
+        ranking![0].NombreParticipante.Should().Be("Beta");
+        ranking[1].NombreParticipante.Should().Be("Alpha");
+        ranking[2].NombreParticipante.Should().Be("Gamma");
     }
 
     private async Task<Guid> CrearMisionActivaAsync() { /* helper */ }
-    private async Task<Guid> CrearSesionConEquiposAsync(
-        params (string nombre, int puntaje)[] equipos) { /* helper */ }
+    private async Task<Guid> CrearSesionConParticipantesAsync(
+        params (string nombre, int puntaje)[] participantes) { /* helper */ }
 }
 ```
 
@@ -696,7 +696,7 @@ public class FlujoSesionBusquedaTesoroTests : PageTest
     public async Task RankingActualizaEnTiempoReal_CuandoSeAplicaPenalizacion()
     {
         // Arrange — sesión activa con dos equipos
-        var sesionId = await PrepararSesionActivaConDosEquipos();
+        var sesionId = await PrepararSesionActivaConDosParticipantes();
 
         await Page.GotoAsync($"{BaseUrl}/operador/sesiones/{sesionId}");
 
@@ -724,12 +724,12 @@ import { RankingList } from './RankingList';
 import type { PosicionRankingDto } from '@/types/sesion.types';
 
 const mockRanking: PosicionRankingDto[] = [
-  { posicion: 1, nombreEquipo: 'Alpha', puntajeTotal: 200, tiempoAcumuladoMs: 5000 },
-  { posicion: 2, nombreEquipo: 'Beta',  puntajeTotal: 150, tiempoAcumuladoMs: 6000 },
+  { posicion: 1, nombreParticipante: 'Alpha', puntajeTotal: 200, tiempoAcumuladoMs: 5000 },
+  { posicion: 2, nombreParticipante: 'Beta',  puntajeTotal: 150, tiempoAcumuladoMs: 6000 },
 ];
 
 describe('RankingList', () => {
-  it('renderiza todos los equipos en orden', () => {
+  it('renderiza todos los participantes en orden', () => {
     render(<RankingList ranking={mockRanking} />);
 
     expect(screen.getByText('Alpha')).toBeInTheDocument();
@@ -744,7 +744,7 @@ describe('RankingList', () => {
 
   it('muestra mensaje cuando ranking está vacío', () => {
     render(<RankingList ranking={[]} />);
-    expect(screen.getByText(/sin equipos/i)).toBeInTheDocument();
+    expect(screen.getByText(/sin participantes/i)).toBeInTheDocument();
   });
 });
 ```
@@ -1027,7 +1027,7 @@ Resumen alineado al PLAN:
 - [ ] Gameplay completo BT (evidencia QR mobile, penalización UI avanzada).
 - [ ] Ranking en tiempo real / **SignalR** (E1 usa solo GET ranking + refresh).
 - [ ] Consumers RabbitMQ en demo.
-- [ ] **React Native** gameplay (equipo participante); E1 solo login opcional.
+- [ ] **React Native** gameplay (participante participante); E1 solo login opcional.
 - [ ] Modo Trivia jugable (HU-32..40).
 - [ ] E2E Playwright (`Umbral.E2E.Tests`).
 
@@ -1035,7 +1035,7 @@ Resumen alineado al PLAN:
 
 #### §13.1 Autenticación — Keycloak (OIDC), vigente en Entrega 1
 
-La identidad se gestiona con **Keycloak** (a veces el equipo lo llama "clickload";
+La identidad se gestiona con **Keycloak** (a veces el participante lo llama "clickload";
 **no** es load testing). El **JWT propio** anterior (`POST /auth/login`, BCrypt,
 tabla `usuarios`) **se reemplaza** por Keycloak. Guía: `.cursor/skills/keycloak-auth-skill.md`.
 

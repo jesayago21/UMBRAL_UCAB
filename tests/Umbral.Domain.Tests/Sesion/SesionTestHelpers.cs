@@ -6,9 +6,9 @@ namespace Umbral.Domain.Tests.Sesion;
 
 internal static class SesionTestHelpers
 {
-    public static EquipoSesion UnirEquipo(SesionAR sesion, string nombre, UsuarioId? jugador = null)
+    public static ParticipanteSesion UnirParticipante(SesionAR sesion, string nombre, UsuarioId? jugador = null)
     {
         var j = jugador ?? UsuarioId.Nuevo();
-        return sesion.UnirseEquipo(j, nombre, sesion.CodigoAcceso.Valor);
+        return sesion.UnirseParticipante(j, nombre, sesion.CodigoAcceso.Valor);
     }
 }

@@ -14,13 +14,13 @@
 | Pantalla / ruta | Funcionalidad |
 |-----------------|---------------|
 | `/operador/sesiones` | Crear sesión BT (elegir misión activa), ver `sesionId` |
-| `/operador/sesiones/:id` | Registrar equipos (nombre → código acceso), controles sesión |
+| `/operador/sesiones/:id` | Registrar participantes (nombre → código acceso), controles sesión |
 | Misma página o panel | **Ranking**: `GET /api/v1/sesiones/{id}/ranking` con botón/refresco manual |
 
 **Acciones API** (ya existen, rol `Operador,Administrador`):
 
 - `POST /api/v1/sesiones/busqueda-tesoro`
-- `POST .../equipos`, `.../iniciar`, `.../pausar`, `.../reanudar`, `.../finalizar`, `.../cancelar`
+- `POST .../participantes`, `.../iniciar`, `.../pausar`, `.../reanudar`, `.../finalizar`, `.../cancelar`
 - `GET .../ranking`
 
 **Redirect tras login (E1-K4):**
@@ -62,7 +62,7 @@ El operador **no** puede `GET /api/v1/misiones` (solo Administrador). Para el co
 
 1. Login OIDC como `operador` / `Umbral123!`
 2. Crear sesión con misión activa (creada antes por `admin`)
-3. Registrar 2 equipos, iniciar sesión
+3. Registrar 2 participantes, iniciar sesión
 4. Refrescar ranking (vacío o con puntajes según dominio)
 5. Pausar → reanudar → finalizar
 6. Login `admin` → catálogo OK; `operador` → `/admin/misiones` bloqueado

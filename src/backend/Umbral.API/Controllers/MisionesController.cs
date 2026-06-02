@@ -41,13 +41,16 @@ public sealed class MisionesController : ControllerBase
         var command = new CrearMisionCommand(
             request.Nombre,
             request.Etapas
-                .Select(etapa => new CrearEtapaInput(
+                .Select(etapa => new EtapaMisionInput(
+                    etapa.TipoEtapa,
+                    etapa.Orden,
                     etapa.Descripcion,
                     etapa.CodigoQrSolucion,
                     (etapa.Pistas ?? []).Select(pista => new CrearPistaInput(
                         pista.Contenido,
                         pista.TipoLiberacion,
-                        pista.SegundosLiberacion)).ToList()))
+                        pista.SegundosLiberacion)).ToList(),
+                    etapa.CategoriaIds))
                 .ToList(),
             request.Activar);
 
@@ -146,13 +149,15 @@ public sealed class MisionesController : ControllerBase
             mision.Etapas.Select(etapa => new EtapaMisionResponse(
                 etapa.EtapaId,
                 etapa.Orden,
+                etapa.TipoEtapa,
                 etapa.Descripcion,
                 etapa.CodigoQrSolucion,
-                etapa.Pistas.Select(pista => new PistaMisionResponse(
+                etapa.Pistas?.Select(pista => new PistaMisionResponse(
                     pista.PistaId,
                     pista.Contenido,
                     pista.TipoLiberacion,
-                    pista.SegundosLiberacion)).ToList())).ToList());
+                    pista.SegundosLiberacion)).ToList(),
+                etapa.CategoriaIds)).ToList());
 
     private static ValidationException BuildValidationException(string property, string error) =>
         new([new ValidationFailure(property, error)]);

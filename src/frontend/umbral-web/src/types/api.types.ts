@@ -1,4 +1,4 @@
-export type RolUsuario = 'Administrador' | 'Operador' | 'EquipoParticipante'
+export type RolUsuario = 'Administrador' | 'Operador' | 'Participante'
 
 export interface ApiErrorResponse {
   tipo: string

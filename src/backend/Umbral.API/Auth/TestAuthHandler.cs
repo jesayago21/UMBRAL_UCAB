@@ -42,7 +42,7 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Role, "Operador"),
                 new Claim(ClaimTypes.Role, "Administrador"),
-                new Claim(ClaimTypes.Role, "EquipoParticipante")
+                new Claim(ClaimTypes.Role, "Participante")
             }
             : new[]
             {

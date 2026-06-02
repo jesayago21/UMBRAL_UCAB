@@ -103,7 +103,7 @@ public sealed class SesionTests
         sesion.Tipo.Should().Be(tipo);
         sesion.Estado.Should().Be(EstadoSesion.Borrador);
         sesion.Id.Should().NotBeNull();
-        sesion.Equipos.Should().BeEmpty();
+        sesion.Participantes.Should().BeEmpty();
     }
 
     [Theory]
@@ -133,10 +133,10 @@ public sealed class SesionTests
     // ── Iniciar ────────────────────────────────────────────────
 
     [Fact]
-    public void Iniciar_ConEquipoRegistrado_DebeActivarSesion()
+    public void Iniciar_ConParticipanteRegistrado_DebeActivarSesion()
     {
         // Arrange
-        var sesion = CrearSesionConEquipo();
+        var sesion = CrearSesionConParticipante();
 
         // Act
         sesion.Iniciar();
@@ -147,7 +147,7 @@ public sealed class SesionTests
     }
 
     [Fact]
-    public void Iniciar_SinEquipos_DebeRlanzarDomainException()
+    public void Iniciar_SinParticipantes_DebeRlanzarDomainException()
     {
         // Arrange
         var sesion = Sesion.Crear("Test", TipoSesion.Trivia, DateTimeOffset.UtcNow.AddDays(1));
@@ -157,14 +157,14 @@ public sealed class SesionTests
 
         // Assert
         act.Should().Throw<DomainException>()
-            .WithMessage("*al menos un equipo*");
+            .WithMessage("*al menos un participante*");
     }
 
     [Fact]
     public void Iniciar_SesionYaActiva_DebeRlanzarDomainException()
     {
         // Arrange
-        var sesion = CrearSesionConEquipo();
+        var sesion = CrearSesionConParticipante();
         sesion.Iniciar();
 
         // Act
@@ -180,7 +180,7 @@ public sealed class SesionTests
     public void Finalizar_SesionActiva_DebeFinalizarConFecha()
     {
         // Arrange
-        var sesion = CrearSesionConEquipo();
+        var sesion = CrearSesionConParticipante();
         sesion.Iniciar();
         sesion.ClearDomainEvents();
 
@@ -195,11 +195,11 @@ public sealed class SesionTests
 
     // ── Helpers ────────────────────────────────────────────────
 
-    private static Sesion CrearSesionConEquipo()
+    private static Sesion CrearSesionConParticipante()
     {
         var sesion = Sesion.Crear("Test", TipoSesion.Trivia, DateTimeOffset.UtcNow.AddDays(1));
-        var equipo = Equipo.Crear(sesion.Id, "Equipo Alpha");
-        sesion.AgregarEquipo(equipo);
+        var participante = Equipo.Crear(sesion.Id, "Equipo Alpha");
+        sesion.AgregarEquipo(participante);
         sesion.ClearDomainEvents();
         return sesion;
     }
@@ -413,8 +413,8 @@ public sealed class SesionRepositoryTests : IAsyncLifetime
         // Arrange — crear sesiones en distintos estados
         var sesionBorrador = Sesion.Crear("Borrador", TipoSesion.Trivia, DateTimeOffset.UtcNow.AddDays(1));
         var sesionActiva = Sesion.Crear("Activa", TipoSesion.BusquedaTesoro, DateTimeOffset.UtcNow.AddDays(1));
-        var equipo = Equipo.Crear(sesionActiva.Id, "Equipo");
-        sesionActiva.AgregarEquipo(equipo);
+        var participante = Equipo.Crear(sesionActiva.Id, "Equipo");
+        sesionActiva.AgregarEquipo(participante);
         sesionActiva.Iniciar();
 
         foreach (var s in new[] { sesionBorrador, sesionActiva })
@@ -539,7 +539,7 @@ describe("SesionCard", () => {
     nombre: "Sesión Test",
     tipo: "Trivia" as const,
     estado: "Borrador" as const,
-    totalEquipos: 3,
+    totalParticipantes: 3,
   };
 
   it("renderiza el nombre y tipo de sesión", () => {
@@ -620,7 +620,7 @@ describe("SesionScreen", () => {
     render(
       <SesionScreen
         sesionId="123"
-        equipoId="456"
+        participanteId="456"
         isLoading={true}
         etapaActual={null}
       />
@@ -640,7 +640,7 @@ describe("SesionScreen", () => {
     render(
       <SesionScreen
         sesionId="123"
-        equipoId="456"
+        participanteId="456"
         isLoading={false}
         etapaActual={etapaMock}
       />

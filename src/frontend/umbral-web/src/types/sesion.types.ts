@@ -6,7 +6,7 @@ export type EstadoSesionUi =
   | 'finalizada'
   | 'cancelada'
 
-export type TipoSesionApi = 'BusquedaTesoro' | 'Trivia'
+export type TipoSesionApi = 'BusquedaTesoro' | 'Trivia' | 'Mision'
 
 export interface SesionResumenDto {
   id: string
@@ -14,7 +14,7 @@ export interface SesionResumenDto {
   misionId: string
   misionNombre: string
   estado: string
-  equiposCount: number
+  participantesCount: number
   iniciadaEn: string | null
   finalizadaEn: string | null
   etapaActualOrden: number
@@ -37,15 +37,15 @@ export interface EtapaSesionDto {
 
 export interface SesionDetalleDto extends SesionResumenDto {
   codigoAcceso: string
-  equipos: EquipoSesionDto[]
+  participantes: ParticipanteSesionDto[]
   etapas: EtapaSesionDto[] | null
 }
 
-export interface SesionDisponibleEquipoDto {
+export interface SesionDisponibleParticipanteDto {
   id: string
   titulo: string
   estado: string
-  equiposInscritos: number
+  participantesInscritos: number
 }
 
 export interface OperadorSesionState {
@@ -56,7 +56,7 @@ export interface OperadorSesionState {
   misionNombre: string
   estado: EstadoSesionUi
   codigoAcceso: string
-  equipos: EquipoSesionDto[]
+  participantes: ParticipanteSesionDto[]
   iniciadaEn?: string | null
   finalizadaEn?: string | null
   etapaActualOrden?: number
@@ -64,8 +64,8 @@ export interface OperadorSesionState {
   etapaDescripcion?: string | null
 }
 
-export interface EquipoSesionDto {
-  equipoId: string
+export interface ParticipanteSesionDto {
+  participanteId: string
   jugadorId?: string
   nombre: string
 }
@@ -87,11 +87,11 @@ export type CrearSesionTriviaResponse = CrearSesionBusquedaTesoroResponse
 
 export interface UnirseSesionRequest {
   codigoAcceso: string
-  nombreEquipo?: string
+  nombreParticipante?: string
 }
 
 export interface UnirseSesionResponse {
-  equipoId: string
+  participanteId: string
 }
 
 export interface CancelarSesionRequest {
@@ -100,8 +100,8 @@ export interface CancelarSesionRequest {
 
 export interface PosicionRankingDto {
   posicion: number
-  equipoId: string
-  nombreEquipo: string
+  participanteId: string
+  nombreParticipante: string
   puntajeTotal: number
 }
 
@@ -110,7 +110,7 @@ export interface MisionActivaDto {
   nombre: string
 }
 
-export interface PreguntaTriviaEquipoDto {
+export interface PreguntaTriviaParticipanteDto {
   orden: number
   id: string
   enunciado: string

@@ -4,15 +4,14 @@ import { OperadorLayout } from '@/components/layout/OperadorLayout'
 import { TriviaLayout } from '@/components/layout/TriviaLayout'
 import { CategoriasPage } from '@/pages/admin/CategoriasPage'
 import { MisionesPage } from '@/pages/admin/MisionesPage'
+import { UsuariosPage } from '@/pages/admin/UsuariosPage'
 import { PreguntasPage } from '@/pages/admin/PreguntasPage'
 import { CallbackPage } from '@/pages/auth/CallbackPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
-import { EquipoLayout } from '@/components/layout/EquipoLayout'
-import { EquipoBusquedaPage } from '@/pages/equipo/EquipoBusquedaPage'
-import { EquipoSesionJuegoPage } from '@/pages/equipo/EquipoSesionJuegoPage'
-import { EquipoHomePage } from '@/pages/equipo/EquipoHomePage'
-import { EquipoTriviaPage } from '@/pages/equipo/EquipoTriviaPage'
-import { EquipoTriviaSesionPage } from '@/pages/equipo/EquipoTriviaSesionPage'
+import { ParticipanteLayout } from '@/components/layout/ParticipanteLayout'
+import { ParticipanteSesionesActivasPage } from '@/pages/participante/ParticipanteSesionesActivasPage'
+import { ParticipanteSesionJuegoPage } from '@/pages/participante/ParticipanteSesionJuegoPage'
+import { ParticipanteHomePage } from '@/pages/participante/ParticipanteHomePage'
 import { OperadorSesionDetailPage } from '@/pages/operador/OperadorSesionDetailPage'
 import { OperadorSesionesPage } from '@/pages/operador/OperadorSesionesPage'
 import { HomeRedirect, RequireRoles } from '@/router/guards'
@@ -36,6 +35,7 @@ export function AppRouter() {
       >
         <Route index element={<Navigate to="misiones" replace />} />
         <Route path="misiones" element={<MisionesPage />} />
+        <Route path="usuarios" element={<UsuariosPage />} />
         <Route path="trivia" element={<TriviaLayout />}>
           <Route index element={<Navigate to="categorias" replace />} />
           <Route path="categorias" element={<CategoriasPage />} />
@@ -61,21 +61,23 @@ export function AppRouter() {
       </Route>
 
       <Route
-        path="/equipo"
+        path="/participante"
         element={
           <RequireRoles
-            roles={['EquipoParticipante']}
-            deniedMessage="Esta zona es solo para jugadores (rol Equipo). Cierra sesión e inicia con la cuenta equipo."
+            roles={['Participante']}
+            deniedMessage="Esta zona es solo para jugadores (rol Participante). Cierra sesión e inicia con la cuenta participante."
           >
-            <EquipoLayout />
+            <ParticipanteLayout />
           </RequireRoles>
         }
       >
-        <Route index element={<EquipoHomePage />} />
-        <Route path="busqueda" element={<EquipoBusquedaPage />} />
-        <Route path="busqueda/:sesionId" element={<EquipoSesionJuegoPage />} />
-        <Route path="trivia" element={<EquipoTriviaPage />} />
-        <Route path="trivia/:sesionId" element={<EquipoTriviaSesionPage />} />
+        <Route index element={<ParticipanteHomePage />} />
+        <Route path="sesiones" element={<ParticipanteSesionesActivasPage />} />
+        <Route path="sesiones/:sesionId" element={<ParticipanteSesionJuegoPage />} />
+        <Route path="busqueda" element={<ParticipanteSesionesActivasPage />} />
+        <Route path="busqueda/:sesionId" element={<ParticipanteSesionJuegoPage />} />
+        <Route path="trivia" element={<ParticipanteSesionesActivasPage />} />
+        <Route path="trivia/:sesionId" element={<ParticipanteSesionJuegoPage />} />
       </Route>
 
       <Route path="/" element={<HomeRedirect />} />

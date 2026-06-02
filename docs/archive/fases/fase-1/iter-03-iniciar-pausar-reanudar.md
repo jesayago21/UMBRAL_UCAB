@@ -10,8 +10,8 @@
 
 El operador controla el ciclo de vida activo de la sesión:
 
-1. **AbrirParaRegistro** — `Programada → EnPreparacion` (habilita registro de equipos)
-2. **Iniciar** — `EnPreparacion → Activa` (comienza el juego, requiere ≥1 equipo)
+1. **AbrirParaRegistro** — `Programada → EnPreparacion` (habilita registro de participantes)
+2. **Iniciar** — `EnPreparacion → Activa` (comienza el juego, requiere ≥1 participante)
 3. **Pausar** — `Activa → Pausada` (detiene la sesión temporalmente)
 4. **Reanudar** — `Pausada → Activa` (retoma la sesión)
 
@@ -22,7 +22,7 @@ El operador controla el ciclo de vida activo de la sesión:
 | ID | Regla |
 |----|-------|
 | RB-14-01 | `Iniciar` solo válido desde `EnPreparacion` |
-| RB-14-02 | `Iniciar` requiere ≥1 equipo registrado → regla global **RB-18** |
+| RB-14-02 | `Iniciar` requiere ≥1 participante registrado → regla global **RB-18** |
 | RB-14-03 | `Iniciar` emite `SesionIniciada(SesionId, TipoSesion)` |
 | RB-14-04 | `Iniciar` registra `IniciadaEn = DateTime.UtcNow` |
 | RB-14-05 | `AbrirParaRegistro` solo válido desde `Programada` |
@@ -62,7 +62,7 @@ El operador controla el ciclo de vida activo de la sesión:
 | `Iniciar_CuandoEstaEnPreparacion_EmiteSesionIniciadaEvent` | Domain event |
 | `Iniciar_CuandoEstaEnPreparacion_EventoContieneSesionIdYTipo` | Payload evento |
 | `Iniciar_CuandoEstaEnPreparacion_RegistraEventoEnHistorial` | Historial |
-| `Iniciar_SinEquiposRegistrados_LanzaDomainException` | Guard equipos |
+| `Iniciar_SinParticipantesRegistrados_LanzaDomainException` | Guard participantes |
 | `Iniciar_CuandoEstadoNoEsEnPreparacion_LanzaDomainException` | Theory×4 estados |
 
 ### Pausar (4 + 1 Theory×5 = 9)
@@ -94,7 +94,7 @@ El operador controla el ciclo de vida activo de la sesión:
 |----|--------|--------|
 | **HU-14** | Control de inicio de sesión | ✅ |
 | **HU-15** | Pausa y reanudación de sesión | ✅ |
-| HU-13 | Registrar equipos | ✅ (iter-02) |
+| HU-13 | Registrar participantes | ✅ (iter-02) |
 | HU-12 | Crear sesión BT | ✅ (iter-01) |
 
 **Tests:** 77/77  
@@ -104,5 +104,5 @@ El operador controla el ciclo de vida activo de la sesión:
 
 ## Pendiente — Iteración 4 (HU-16 AplicarPenalizacion)
 
-- Tests dedicados: puntaje rebaja, motivo vacío, sesión no activa, equipo inexistente
-- `SesionBuilder` ya soporta `.Activa().ConEquipo(nombre)` para setup
+- Tests dedicados: puntaje rebaja, motivo vacío, sesión no activa, participante inexistente
+- `SesionBuilder` ya soporta `.Activa().ConParticipante(nombre)` para setup

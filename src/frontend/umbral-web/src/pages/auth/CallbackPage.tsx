@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from 'react-oidc-context'
 import { getHomePathForRol } from '@/auth/authPaths'
-import { isEquipoWebEnabled } from '@/auth/equipoWebAccess'
+import { isParticipanteWebEnabled } from '@/auth/participanteWebAccess'
 import { syncOidcSession } from '@/auth/syncOidcSession'
 import { SessionEndActions } from '@/components/shared/SessionEndActions'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -16,7 +16,7 @@ export function CallbackPage() {
   const navigate = useNavigate()
   const logout = useOidcLogout()
   const [rolError, setRolError] = useState<string | null>(null)
-  const [equipoWebBlocked, setEquipoWebBlocked] = useState(false)
+  const [participanteWebBlocked, setParticipanteWebBlocked] = useState(false)
 
   useEffect(() => {
     if (auth.isLoading) return
@@ -27,13 +27,13 @@ export function CallbackPage() {
 
     if (!rol) {
       setRolError(
-        'Tu usuario no tiene un rol válido (Administrador, Operador o Equipo).',
+        'Tu usuario no tiene un rol válido (Administrador, Operador o Participante).',
       )
       return
     }
 
-    if (rol === 'EquipoParticipante' && !isEquipoWebEnabled()) {
-      setEquipoWebBlocked(true)
+    if (rol === 'Participante' && !isParticipanteWebEnabled()) {
+      setParticipanteWebBlocked(true)
       return
     }
 
@@ -71,9 +71,9 @@ export function CallbackPage() {
     )
   }
 
-  if (equipoWebBlocked) {
+  if (participanteWebBlocked) {
     return (
-      <SessionEndActions message="El rol equipo está deshabilitado en web. Usa la app mobile cuando esté disponible." />
+      <SessionEndActions message="El rol participante está deshabilitado en web. Usa la app mobile cuando esté disponible." />
     )
   }
 

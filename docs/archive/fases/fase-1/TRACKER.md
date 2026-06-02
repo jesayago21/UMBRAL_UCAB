@@ -26,7 +26,7 @@
 | Iter | Caso de uso (dominio) | HU ERS principal | HU soporte | Estado | Doc |
 |------|-----------------------|------------------|------------|--------|-----|
 | 01 | CrearSesionBusquedaTesoro | **HU-12** | HU-01, HU-05, HU-06 | ✅ | [iter-01](iter-01-crear-sesion-bt.md) |
-| 02 | RegistrarEquipo | **HU-13** | — | ✅ | [iter-02](iter-02-registrar-equipo.md) |
+| 02 | RegistrarEquipo | **HU-13** | — | ✅ | [iter-02](iter-02-registrar-participante.md) |
 | 03 | IniciarSesion + Pausar/Reanudar | **HU-14**, **HU-15** | — | ✅ | [iter-03](iter-03-iniciar-pausar-reanudar.md) |
 | 04 | AplicarPenalizacion | **HU-16** | — | ✅ | [iter-04](iter-04-aplicar-penalizacion.md) |
 | 05 | RegistrarEvidencia (base) | **HU-18** | HU-19 (parcial) | ✅ | [iter-05](iter-05-registrar-evidencia.md) |
@@ -53,7 +53,7 @@
 ### Sesión Operador
 
 - [x] **HU-12** Operador crea sesión BT — ✅ iter-01
-- [x] **HU-13** Operador registra equipos — ✅ iter-02 (`SesionRegistrarEquipoTests`, 15 tests)
+- [x] **HU-13** Operador registra participantes — ✅ iter-02 (`SesionRegistrarEquipoTests`, 15 tests)
 - [x] **HU-14** Operador inicia sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
 - [x] **HU-15** Pausar / reanudar sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
 - [x] **HU-16** Aplicar penalización — ✅ iter-04 (`PuntajeTests` + `SesionAplicarPenalizacionTests`, 30 tests)
@@ -67,7 +67,7 @@
 
 ### Dominio compartido / transversal
 
-- [x] Equipo se une con código de acceso — 🔶 `CodigoAcceso` por equipo en `RegistrarEquipo`; flujo mobile ⬜
+- [x] Equipo se une con código de acceso — 🔶 `CodigoAcceso` por participante en `RegistrarEquipo`; flujo mobile ⬜
 - [ ] Liberación manual de pistas (RF-15) — ⬜
 
 ### Fuera de Fase 1

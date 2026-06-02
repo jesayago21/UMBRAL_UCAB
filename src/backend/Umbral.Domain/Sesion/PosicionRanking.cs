@@ -5,6 +5,6 @@ namespace Umbral.Domain.Sesion;
 /// </summary>
 public sealed record PosicionRanking(
     int      Posicion,
-    EquipoId EquipoId,
-    string   NombreEquipo,
+    ParticipanteId ParticipanteId,
+    string   NombreParticipante,
     int      PuntajeTotal);

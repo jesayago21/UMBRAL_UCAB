@@ -12,11 +12,11 @@ Referencia: `docs/TRAZABILIDAD.md`, `umbral-backend-spec.md` §7.
 | **Operador** | Web | Sesiones BT/Trivia en vivo |
 | **Equipo participante** | Mobile | Unirse con código, jugar (evidencias, trivia) |
 
-JWT (futuro): claim `role` = `Administrador` | `Operador` | `EquipoParticipante`.
+JWT (futuro): claim `role` = `Administrador` | `Operador` | `Participante`.
 
 ---
 
-## Flujo BT típico (operador + equipo)
+## Flujo BT típico (operador + participante)
 
 ```mermaid
 sequenceDiagram
@@ -38,7 +38,7 @@ sequenceDiagram
     Op->>API: IniciarSesion HU-14
     App->>Dom: Iniciar
     Mob->>API: Unirse con código HU-07
-    Mob->>API: Evidencia HU-18 EquipoParticipante
+    Mob->>API: Evidencia HU-18 Participante
 ```
 
 ---
@@ -52,7 +52,7 @@ sequenceDiagram
 | `[Authorize(Roles=…)]` | **No** | Capa API |
 | Identity / login / registro usuarios | **No** | Entrega auth (tracker: Auth JWT) |
 | RB-27 (operador solo sus sesiones) | **No** | Requiere persistencia + claims |
-| Equipo solo mobile | **No** en commands actuales | `EquipoParticipante` en endpoints de juego |
+| Equipo solo mobile | **No** en commands actuales | `Participante` en endpoints de juego |
 
 Los handlers **no comprueban rol**: asumen que el mediator solo los invoca desde un endpoint ya autorizado (más adelante).
 
@@ -66,11 +66,11 @@ Los handlers **no comprueban rol**: asumen que el mediator solo los invoca desde
 | `RegistrarEquipo` | Operador, Administrador |
 | `IniciarSesion` / `Pausar` / `Reanudar` | Operador, Administrador |
 | `AplicarPenalizacion` (02-04) | Operador, Administrador |
-| `SubmitEvidencia` (02-05) | **EquipoParticipante** |
+| `SubmitEvidencia` (02-05) | **Participante** |
 | Queries ranking / sesión | Autenticados según spec |
 
 ---
 
 ## Resumen
 
-Sí existen **admin, operador y equipo (jugador)** en el diseño del ERS. En **Fase 2** solo modelamos **casos de uso** y `UsuarioId` donde el dominio lo exige; la **seguridad por rol** se conecta cuando existan API + JWT + Identity.
+Sí existen **admin, operador y participante (jugador)** en el diseño del ERS. En **Fase 2** solo modelamos **casos de uso** y `UsuarioId` donde el dominio lo exige; la **seguridad por rol** se conecta cuando existan API + JWT + Identity.

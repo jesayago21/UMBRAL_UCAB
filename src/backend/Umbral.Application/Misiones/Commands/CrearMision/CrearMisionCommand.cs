@@ -5,13 +5,16 @@ namespace Umbral.Application.Misiones.Commands.CrearMision;
 
 public sealed record CrearMisionCommand(
     string Nombre,
-    IReadOnlyList<CrearEtapaInput> Etapas,
+    IReadOnlyList<EtapaMisionInput> Etapas,
     bool Activar) : IRequest<Result<Guid>>;
 
-public sealed record CrearEtapaInput(
-    string Descripcion,
-    string CodigoQrSolucion,
-    IReadOnlyList<CrearPistaInput> Pistas);
+public sealed record EtapaMisionInput(
+    string TipoEtapa,
+    int Orden,
+    string? Descripcion,
+    string? CodigoQrSolucion,
+    IReadOnlyList<CrearPistaInput>? Pistas,
+    IReadOnlyList<Guid>? CategoriaIds);
 
 public sealed record CrearPistaInput(
     string Contenido,

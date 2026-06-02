@@ -1,4 +1,4 @@
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Sesion.Events;
 using Umbral.Domain.Sesion.Validacion;
@@ -7,62 +7,62 @@ using Umbral.Domain.Shared;
 namespace Umbral.Domain.Sesion;
 
 /// <summary>
-/// Aggregate Root del BC EjecucionSesion.
-///
-/// Máquina de estados (umbral-backend-spec.md §2.4):
-///   Programada → EnPreparacion → Activa ⇄ Pausada → Finalizada
-///   Cualquier estado no terminal → Cancelada
-///
-/// Factory methods:
-///   CrearBusquedaTesoro(snapshot, operadorId) → emite SesionCreada
-///   CrearTrivia(preguntas, operadorId)         → emite SesionCreada
+/// Aggregate Root del BC EjecucionSesion — sesión de misión polimórfica.
 /// </summary>
 public sealed class Sesion : AggregateRoot
 {
     public SesionId SesionId { get; private set; } = default!;
     public TipoSesion TipoSesion { get; private set; }
+    public MisionId? MisionId { get; private set; }
     public UsuarioId OperadorId { get; private set; } = default!;
     public EstadoSesion Estado { get; private set; }
     public CodigoAcceso CodigoAcceso { get; private set; } = default!;
     public DateTime IniciadaEn { get; private set; }
     public DateTime? FinalizadaEn { get; private set; }
 
+    public ContextoMision? ContextoMision { get; private set; }
+
+    [Obsolete("Usar ContextoMision. Mantenido para migración de datos legacy.")]
     public ContextoBusquedaTesoro? ContextoBT { get; private set; }
+
+    [Obsolete("Usar ContextoMision. Mantenido para migración de datos legacy.")]
     public ContextoTrivia? ContextoTrivia { get; private set; }
 
-    private readonly List<EquipoSesion> _equipos = [];
+    private readonly List<ParticipanteSesion> _participantes = [];
     private readonly List<EventoSesion> _historialEventos = [];
     private readonly List<Evidencia> _evidencias = [];
 
-    public IReadOnlyList<EquipoSesion> Equipos => _equipos.AsReadOnly();
+    public IReadOnlyList<ParticipanteSesion> Participantes => _participantes.AsReadOnly();
     public IReadOnlyList<EventoSesion> HistorialEventos => _historialEventos.AsReadOnly();
     public IReadOnlyList<Evidencia> Evidencias => _evidencias.AsReadOnly();
 
     private Sesion() { }
 
-    // ── Factory methods ─────────────────────────────────────────────────────
-
-    public static Sesion CrearBusquedaTesoro(
-        MisionSnapshot snapshot,
-        UsuarioId operadorId)
+    public static Sesion CrearDesdeMision(MisionSnapshot snapshot, UsuarioId operadorId)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(operadorId);
 
         var sesion = new Sesion
         {
-            SesionId     = SesionId.Nuevo(),
-            TipoSesion   = TipoSesion.BusquedaTesoro,
-            OperadorId   = operadorId,
-            Estado       = EstadoSesion.Programada,
-            CodigoAcceso = CodigoAcceso.Generar(),
-            ContextoBT   = ContextoBusquedaTesoro.Crear(snapshot),
+            SesionId       = SesionId.Nuevo(),
+            TipoSesion     = TipoSesion.Mision,
+            MisionId       = snapshot.MisionId,
+            OperadorId     = operadorId,
+            Estado         = EstadoSesion.Programada,
+            CodigoAcceso   = CodigoAcceso.Generar(),
+            ContextoMision = ContextoMision.Crear(snapshot)
         };
         sesion.RaiseDomainEvent(
-            new SesionCreada(sesion.SesionId, TipoSesion.BusquedaTesoro, operadorId));
+            new SesionCreada(sesion.SesionId, TipoSesion.Mision, operadorId));
         return sesion;
     }
 
+    [Obsolete("Usar CrearDesdeMision")]
+    public static Sesion CrearBusquedaTesoro(MisionSnapshot snapshot, UsuarioId operadorId) =>
+        CrearDesdeMision(snapshot, operadorId);
+
+    [Obsolete("Usar CrearDesdeMision con misión que incluya etapas trivia")]
     public static Sesion CrearTrivia(
         IReadOnlyList<PreguntaId> preguntasOrdenadas,
         UsuarioId operadorId,
@@ -71,25 +71,25 @@ public sealed class Sesion : AggregateRoot
         ArgumentNullException.ThrowIfNull(preguntasOrdenadas);
         ArgumentNullException.ThrowIfNull(operadorId);
 
-        var sesion = new Sesion
-        {
-            SesionId       = SesionId.Nuevo(),
-            TipoSesion     = TipoSesion.Trivia,
-            OperadorId     = operadorId,
-            Estado         = EstadoSesion.Programada,
-            CodigoAcceso   = CodigoAcceso.Generar(),
-            ContextoTrivia = ContextoTrivia.Crear(preguntasOrdenadas, categoriasTitulo)
-        };
-        sesion.RaiseDomainEvent(
-            new SesionCreada(sesion.SesionId, TipoSesion.Trivia, operadorId));
-        return sesion;
+        if (preguntasOrdenadas.Count == 0)
+            throw new DomainException(
+                "La sesión trivia requiere al menos una pregunta.");
+
+        var etapaTrivia = EtapaTriviaSnapshot.Rehydrate(
+            EtapaId.Nuevo(),
+            1,
+            [],
+            preguntasOrdenadas,
+            categoriasTitulo);
+
+        var snapshot = MisionSnapshot.Rehydrate(
+            MisionId.Nuevo(),
+            categoriasTitulo,
+            [etapaTrivia]);
+
+        return CrearDesdeMision(snapshot, operadorId);
     }
 
-    // ── Comportamiento (máquina de estados) ─────────────────────────────────
-
-    /// <summary>
-    /// Abre la sesión para registro de equipos: Programada → EnPreparacion.
-    /// </summary>
     public void AbrirParaRegistro()
     {
         if (Estado != EstadoSesion.Programada)
@@ -101,15 +101,11 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionAbiertaParaRegistro", string.Empty);
     }
 
-    /// <summary>
-    /// Un jugador autenticado se une a la sesión con el código de acceso de la sesión (RB-02).
-    /// Solo en Programada o EnPreparacion; abre inscripción si aún está programada.
-    /// </summary>
-    public EquipoSesion UnirseEquipo(UsuarioId jugadorId, string nombre, string codigoAccesoIngresado)
+    public ParticipanteSesion UnirseParticipante(UsuarioId jugadorId, string nombre, string codigoAccesoIngresado)
     {
         if (Estado is EstadoSesion.Finalizada or EstadoSesion.Cancelada)
             throw new DomainException(
-                "No se pueden unir equipos a una sesión cerrada.");
+                "No se pueden unir participantes a una sesión cerrada.");
 
         if (Estado is EstadoSesion.Activa or EstadoSesion.Pausada)
             throw new DomainException(
@@ -121,27 +117,22 @@ public sealed class Sesion : AggregateRoot
         if (Estado == EstadoSesion.Programada)
             AbrirParaRegistro();
 
-        if (_equipos.Any(e => e.JugadorId == jugadorId))
+        if (_participantes.Any(e => e.JugadorId == jugadorId))
             throw new DomainException("Ya estás inscrito en esta sesión.");
 
-        var nombreEquipo = NombreEquipo.Crear(nombre);
+        var nombreParticipante = NombreParticipante.Crear(nombre);
 
-        if (_equipos.Any(e =>
-                string.Equals(e.Nombre.Valor, nombreEquipo.Valor, StringComparison.OrdinalIgnoreCase)))
+        if (_participantes.Any(e =>
+                string.Equals(e.Nombre.Valor, nombreParticipante.Valor, StringComparison.OrdinalIgnoreCase)))
             throw new DomainException(
-                $"Ya existe un equipo con el nombre '{nombreEquipo.Valor}' en esta sesión.");
+                $"Ya existe un participante con el nombre '{nombreParticipante.Valor}' en esta sesión.");
 
-        var equipo = EquipoSesion.Crear(SesionId, jugadorId, nombreEquipo.Valor);
-        _equipos.Add(equipo);
-        RegistrarEvento("EquipoUnido", nombreEquipo.Valor);
-        return equipo;
+        var participante = ParticipanteSesion.Crear(SesionId, jugadorId, nombreParticipante.Valor);
+        _participantes.Add(participante);
+        RegistrarEvento("ParticipanteUnido", nombreParticipante.Valor);
+        return participante;
     }
 
-    /// <summary>
-    /// Inicia la sesión: EnPreparacion → Activa (HU-14).
-    /// RB-18: requiere al menos un equipo registrado.
-    /// Criterios iter-03: RB-14-01…05.
-    /// </summary>
     public void Iniciar()
     {
         if (Estado != EstadoSesion.EnPreparacion)
@@ -149,9 +140,9 @@ public sealed class Sesion : AggregateRoot
                 $"No se puede iniciar una sesión en estado '{Estado}'. " +
                 "Solo es posible desde 'EnPreparacion'.");
 
-        if (!_equipos.Any())
+        if (!_participantes.Any())
             throw new DomainException(
-                "La sesión necesita al menos un equipo registrado.");
+                "La sesión necesita al menos un participante registrado.");
 
         Estado     = EstadoSesion.Activa;
         IniciadaEn = DateTime.UtcNow;
@@ -159,7 +150,6 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionIniciada", $"operador={OperadorId.Valor}");
     }
 
-    /// <summary>Activa → Pausada (HU-15).</summary>
     public void Pausar()
     {
         if (Estado != EstadoSesion.Activa)
@@ -171,7 +161,6 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionPausada", string.Empty);
     }
 
-    /// <summary>Pausada → Activa (HU-15).</summary>
     public void Reanudar()
     {
         if (Estado != EstadoSesion.Pausada)
@@ -183,7 +172,6 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionReanudada", string.Empty);
     }
 
-    /// <summary>Activa|Pausada → Finalizada (HU-23).</summary>
     public void Finalizar()
     {
         if (Estado is not (EstadoSesion.Activa or EstadoSesion.Pausada))
@@ -196,10 +184,6 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionFinalizada", string.Empty);
     }
 
-    /// <summary>
-    /// Cancela la sesión desde cualquier estado no terminal (HU-23).
-    /// Emite <see cref="Events.SesionCancelada"/> y registra motivo en historial.
-    /// </summary>
     public void Cancelar(string motivo)
     {
         if (Estado is EstadoSesion.Finalizada or EstadoSesion.Cancelada)
@@ -216,59 +200,52 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionCancelada", motivoLimpio);
     }
 
-    /// <summary>
-    /// Ranking final ordenado por puntaje (HU-23). Solo en sesiones cerradas.
-    /// </summary>
     public IReadOnlyList<PosicionRanking> ObtenerRankingFinal()
     {
         if (Estado is not (EstadoSesion.Finalizada or EstadoSesion.Cancelada))
             throw new DomainException(
                 "Solo se puede obtener el ranking de sesiones finalizadas o canceladas.");
 
-        return RankingService.Calcular(Equipos);
+        return RankingService.Calcular(Participantes);
     }
 
-    /// <summary>
-    /// Aplica una penalización a un equipo (HU-16).
-    /// Criterios iter-04: RB-16-01…05. Globales: RB-20 (motivo), RB-24 (piso 0), RB-25 (OperadorId).
-    /// </summary>
-    public void AplicarPenalizacion(EquipoId equipoId, Penalizacion penalizacion)
+    public void AplicarPenalizacion(ParticipanteId participanteId, Penalizacion penalizacion)
     {
         if (Estado != EstadoSesion.Activa)
             throw new DomainException(
                 "Solo se pueden aplicar penalizaciones en sesiones activas.");
 
-        var equipo = ObtenerEquipo(equipoId);
-        equipo.AplicarPenalizacion(penalizacion);
+        var participante = ObtenerParticipante(participanteId);
+        participante.AplicarPenalizacion(penalizacion);
 
         RaiseDomainEvent(new Events.PenalizacionAplicada(
-            SesionId, equipoId,
+            SesionId, participanteId,
             penalizacion.Puntos, penalizacion.Motivo,
             penalizacion.OperadorId));
 
         RegistrarEvento("PenalizacionAplicada",
-            $"equipo={equipoId.Valor};puntos={penalizacion.Puntos};motivo={penalizacion.Motivo}");
+            $"participante={participanteId.Valor};puntos={penalizacion.Puntos};motivo={penalizacion.Motivo}");
     }
 
-    /// <summary>
-    /// Registra evidencia QR enviada por un equipo (HU-18).
-    /// RB-06, RB-19, RB-22. HU-19/RB-04: ganador único. HU-20/RB-05: transición de etapa.
-    /// </summary>
-    public Evidencia RegistrarEvidencia(EquipoId equipoId, string codigoQR)
+    public Evidencia RegistrarEvidencia(ParticipanteId participanteId, string codigoQR)
     {
-        if (TipoSesion != TipoSesion.BusquedaTesoro || ContextoBT is null)
+        if (ContextoMision is null)
             throw new DomainException(
-                "Solo las sesiones de Búsqueda del Tesoro aceptan evidencias QR.");
+                "Solo las sesiones de misión aceptan evidencias QR.");
 
-        var equipo = ObtenerEquipo(equipoId);
+        if (ContextoMision.ObtenerEtapaActual() is not EtapaBusquedaTesoroSnapshot)
+            throw new DomainException(
+                "Solo se aceptan evidencias en etapas de Búsqueda del Tesoro.");
+
+        var participante = ObtenerParticipante(participanteId);
         var qr     = CodigoQR.Crear(codigoQR);
-        var etapa  = ContextoBT.ObtenerEtapaActual();
+        var etapa  = ContextoMision.ObtenerEtapaBusquedaTesoroActual();
 
         var resultado = ValidacionEvidenciaService.Validar(this, qr);
 
         if (resultado == ResultadoValidacion.Valida &&
             _evidencias.Any(e =>
-                e.EquipoId == equipoId &&
+                e.ParticipanteId == participanteId &&
                 e.EtapaId == etapa.EtapaId &&
                 e.Resultado == ResultadoValidacion.Valida))
         {
@@ -276,58 +253,58 @@ public sealed class Sesion : AggregateRoot
         }
 
         if (resultado == ResultadoValidacion.Valida &&
-            ContextoBT.YaHayGanadorEnEtapaActual())
+            ContextoMision.YaHayGanadorEnEtapaActual())
         {
             resultado = ResultadoValidacion.Invalida;
         }
 
         var evidencia = Evidencia.Registrar(
-            SesionId, equipo.EquipoId, etapa.EtapaId, qr, resultado);
+            SesionId, participante.ParticipanteId, etapa.EtapaId, qr, resultado);
         _evidencias.Add(evidencia);
 
         RaiseDomainEvent(new EvidenciaRegistrada(
-            SesionId, equipo.EquipoId, etapa.EtapaId, resultado, qr.Valor));
+            SesionId, participante.ParticipanteId, etapa.EtapaId, resultado, qr.Valor));
 
         RegistrarEvento("EvidenciaRegistrada",
-            $"equipo={equipo.EquipoId.Valor};etapa={etapa.EtapaId.Valor};resultado={resultado};qr={qr.Valor}");
+            $"participante={participante.ParticipanteId.Valor};etapa={etapa.EtapaId.Valor};resultado={resultado};qr={qr.Valor}");
 
         if (resultado == ResultadoValidacion.Valida)
-            ProcesarEvidenciaGanadora(equipo, etapa);
+            ProcesarEvidenciaGanadora(participante, etapa);
 
         return evidencia;
     }
 
-    private void ProcesarEvidenciaGanadora(EquipoSesion equipo, EtapaSnapshot etapa)
+    private void ProcesarEvidenciaGanadora(ParticipanteSesion participante, EtapaBusquedaTesoroSnapshot etapa)
     {
         var puntos = CalculoPuntajeBusquedaService.Calcular(esGanador: true);
-        equipo.SumarPuntaje(puntos.Valor);
+        participante.SumarPuntaje(puntos.Valor);
 
-        ContextoBT!.RegistrarGanadorEtapa(equipo.EquipoId);
+        ContextoMision!.RegistrarGanadorEtapa(participante.ParticipanteId);
 
         RaiseDomainEvent(new EvidenciaValidada(
-            SesionId, equipo.EquipoId, etapa.EtapaId, puntos));
+            SesionId, participante.ParticipanteId, etapa.EtapaId, puntos));
 
-        var indexCompletada = ContextoBT.EtapaActualIndex;
-        var esUltima        = ContextoBT.EsUltimaEtapa();
+        var indexCompletada = ContextoMision.EtapaActualIndex;
+        var esUltima        = ContextoMision.EsUltimaEtapa();
 
         RaiseDomainEvent(new EtapaCompletada(
-            SesionId, indexCompletada, equipo.EquipoId));
+            SesionId, indexCompletada, participante.ParticipanteId));
 
         RegistrarEvento("EtapaCompletada",
-            $"etapaIndex={indexCompletada};ganador={equipo.EquipoId.Valor}");
+            $"etapaIndex={indexCompletada};ganador={participante.ParticipanteId.Valor}");
 
         if (esUltima)
             Finalizar();
         else
-            ContextoBT.AvanzarEtapa();
+            ContextoMision.AvanzarEtapa();
     }
 
     public bool EstaActiva() => Estado == EstadoSesion.Activa;
 
-    private EquipoSesion ObtenerEquipo(EquipoId equipoId) =>
-        _equipos.FirstOrDefault(e => e.EquipoId == equipoId)
+    private ParticipanteSesion ObtenerParticipante(ParticipanteId participanteId) =>
+        _participantes.FirstOrDefault(e => e.ParticipanteId == participanteId)
         ?? throw new DomainException(
-            $"El equipo '{equipoId.Valor}' no pertenece a esta sesión.");
+            $"El participante '{participanteId.Valor}' no pertenece a esta sesión.");
 
     private void RegistrarEvento(string tipo, string payload) =>
         _historialEventos.Add(EventoSesion.Crear(SesionId, tipo, payload));

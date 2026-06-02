@@ -1,7 +1,8 @@
 using MediatR;
-using Umbral.Domain.Shared;
 using Umbral.Application.Common.Models;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
+using Umbral.Domain.CatalogoTrivia.Categoria;
+using Umbral.Domain.Shared;
 
 namespace Umbral.Application.Misiones.Commands.CrearMision;
 
@@ -9,10 +10,8 @@ internal sealed class CrearMisionCommandHandler : IRequestHandler<CrearMisionCom
 {
     private readonly IMisionRepository _misionRepository;
 
-    public CrearMisionCommandHandler(IMisionRepository misionRepository)
-    {
+    public CrearMisionCommandHandler(IMisionRepository misionRepository) =>
         _misionRepository = misionRepository;
-    }
 
     public async Task<Result<Guid>> Handle(CrearMisionCommand command, CancellationToken cancellationToken)
     {
@@ -23,15 +22,27 @@ internal sealed class CrearMisionCommandHandler : IRequestHandler<CrearMisionCom
 
         var mision = Mision.Crear(command.Nombre);
 
-        foreach (var etapa in command.Etapas)
+        foreach (var etapa in command.Etapas.OrderBy(e => e.Orden))
         {
-            mision.AgregarEtapa(etapa.Descripcion, etapa.CodigoQrSolucion);
-            var etapaCreada = mision.Etapas.Last();
-
-            foreach (var pista in etapa.Pistas)
+            if (string.Equals(etapa.TipoEtapa, "Trivia", StringComparison.OrdinalIgnoreCase))
             {
-                var tipo = Enum.Parse<TipoLiberacion>(pista.TipoLiberacion, ignoreCase: true);
-                etapaCreada.AgregarPista(pista.Contenido, tipo, pista.SegundosLiberacion);
+                var cats = (etapa.CategoriaIds ?? [])
+                    .Select(id => new CategoriaId(id))
+                    .ToList();
+                mision.AgregarEtapaTrivia(cats);
+            }
+            else
+            {
+                mision.AgregarEtapaBusquedaTesoro(
+                    etapa.Descripcion ?? string.Empty,
+                    etapa.CodigoQrSolucion ?? string.Empty);
+
+                var etapaBt = mision.Etapas.OfType<EtapaBusquedaTesoro>().Last();
+                foreach (var pista in etapa.Pistas ?? [])
+                {
+                    var tipo = Enum.Parse<TipoLiberacion>(pista.TipoLiberacion, ignoreCase: true);
+                    etapaBt.AgregarPista(pista.Contenido, tipo, pista.SegundosLiberacion);
+                }
             }
         }
 

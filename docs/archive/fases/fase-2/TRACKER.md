@@ -24,7 +24,7 @@
 | Iter | Command / Query | HU | Domain | Estado | Doc |
 |------|-----------------|-----|--------|--------|-----|
 | 02-01 | `CrearSesionBusquedaTesoroCommand` | **HU-12** | `Sesion.CrearBusquedaTesoro` | ✅ | [iter-02-01](iter-02-01-crear-sesion-busqueda-tesoro.md) |
-| 02-02 | `RegistrarEquipoCommand` | **HU-13** | `Sesion.RegistrarEquipo` | ✅ | [iter-02-02](iter-02-02-registrar-equipo.md) |
+| 02-02 | `RegistrarEquipoCommand` | **HU-13** | `Sesion.RegistrarEquipo` | ✅ | [iter-02-02](iter-02-02-registrar-participante.md) |
 | 02-03 | `IniciarSesionCommand`, `PausarSesionCommand`, `ReanudarSesionCommand` | **HU-14**, **HU-15** | Iniciar / Pausar / Reanudar | ✅ | [iter-02-03](iter-02-03-iniciar-pausar-reanudar.md) |
 | 02-04 | `AplicarPenalizacionCommand` | **HU-16** | `AplicarPenalizacion` | ✅ | [iter-02-04](iter-02-04-aplicar-penalizacion.md) |
 | 02-05 | `SubmitEvidenciaCommand` | **HU-18** | `RegistrarEvidencia` | ✅ | [iter-02-05](iter-02-05-submit-evidencia.md) |

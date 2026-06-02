@@ -21,7 +21,7 @@ export function SesionCodigoAccesoPanel({
         <h3 className="font-medium text-slate-900">Código de acceso de la sesión</h3>
         <p className="mt-1 text-sm text-slate-600">
           Comparte este código con los jugadores. Lo ingresan al unirse desde su panel (login Keycloak).
-          <strong> Un solo código por sesión</strong>, no por equipo.
+          <strong> Un solo código por sesión</strong>, no por participante.
         </p>
       </div>
 
@@ -33,7 +33,7 @@ export function SesionCodigoAccesoPanel({
         <div className="space-y-2">
           <p className="text-sm text-amber-800">
             La sesión aún no es visible para jugadores. Ábrela para inscripción cuando quieras recibir
-            equipos.
+            participantes.
           </p>
           {canAbrirInscripcion && (
             <button

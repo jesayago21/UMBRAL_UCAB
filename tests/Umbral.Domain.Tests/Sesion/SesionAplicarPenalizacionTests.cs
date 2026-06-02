@@ -13,7 +13,7 @@ namespace Umbral.Domain.Tests.Sesion;
 ///
 /// Reglas:
 /// RB-16-01: solo en estado Activa.
-/// RB-16-02: equipo debe pertenecer a la sesión.
+/// RB-16-02: participante debe pertenecer a la sesión.
 /// RB-16-03: emite PenalizacionAplicada; puntaje no baja de cero.
 /// RB-16-04: Penalizacion.Puntos > 0; Motivo no vacío.
 /// </summary>
@@ -29,18 +29,18 @@ public sealed class SesionAplicarPenalizacionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
-            .Activa().ConEquipo("Alpha").Build();
-        var equipo      = sesion.Equipos.First();
+            .Activa().ConParticipante("Alpha").Build();
+        var participante      = sesion.Participantes.First();
         var penalizacion = new Penalizacion(10, "Trampa detectada",
             new UsuarioId(Guid.NewGuid()));
 
-        equipo.SumarPuntaje(50);
+        participante.SumarPuntaje(50);
 
         // Act
-        sesion.AplicarPenalizacion(equipo.EquipoId, penalizacion);
+        sesion.AplicarPenalizacion(participante.ParticipanteId, penalizacion);
 
         // Assert
-        equipo.PuntajeTotal.Valor.Should().Be(40);
+        participante.PuntajeTotal.Valor.Should().Be(40);
     }
 
     [Fact]
@@ -48,10 +48,10 @@ public sealed class SesionAplicarPenalizacionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.AplicarPenalizacion(equipo.EquipoId, PenalizacionValida());
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida());
 
         // Assert
         sesion.DomainEvents.Should().ContainSingle(e => e is PenalizacionAplicada);
@@ -65,15 +65,15 @@ public sealed class SesionAplicarPenalizacionTests
         var penalizacion = new Penalizacion(15, "Pista saltada", operadorId);
 
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.AplicarPenalizacion(equipo.EquipoId, penalizacion);
+        sesion.AplicarPenalizacion(participante.ParticipanteId, penalizacion);
 
         // Assert
         var evt = sesion.DomainEvents.OfType<PenalizacionAplicada>().Single();
         evt.SesionId.Should().Be(sesion.SesionId);
-        evt.EquipoId.Should().Be(equipo.EquipoId);
+        evt.ParticipanteId.Should().Be(participante.ParticipanteId);
         evt.Puntos.Should().Be(15);
         evt.Motivo.Should().Be("Pista saltada");
         evt.OperadorId.Should().Be(operadorId);
@@ -84,10 +84,10 @@ public sealed class SesionAplicarPenalizacionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.AplicarPenalizacion(equipo.EquipoId, PenalizacionValida());
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida());
 
         // Assert
         sesion.HistorialEventos.Should()
@@ -99,28 +99,28 @@ public sealed class SesionAplicarPenalizacionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
-        equipo.SumarPuntaje(5);
+        var participante  = sesion.Participantes.First();
+        participante.SumarPuntaje(5);
 
         // Act
-        sesion.AplicarPenalizacion(equipo.EquipoId, PenalizacionValida(100));
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida(100));
 
         // Assert
-        equipo.PuntajeTotal.Valor.Should().Be(0);
+        participante.PuntajeTotal.Valor.Should().Be(0);
     }
 
     [Fact]
-    public void AplicarPenalizacion_CuandoEquipoConPuntajeCero_PermaneceCero()
+    public void AplicarPenalizacion_CuandoParticipanteConPuntajeCero_PermaneceCero()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.AplicarPenalizacion(equipo.EquipoId, PenalizacionValida(50));
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida(50));
 
         // Assert
-        equipo.PuntajeTotal.Valor.Should().Be(0);
+        participante.PuntajeTotal.Valor.Should().Be(0);
     }
 
     [Fact]
@@ -128,15 +128,15 @@ public sealed class SesionAplicarPenalizacionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
-        equipo.SumarPuntaje(100);
+        var participante  = sesion.Participantes.First();
+        participante.SumarPuntaje(100);
 
         // Act
-        sesion.AplicarPenalizacion(equipo.EquipoId, PenalizacionValida(20));
-        sesion.AplicarPenalizacion(equipo.EquipoId, PenalizacionValida(15));
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida(20));
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida(15));
 
         // Assert
-        equipo.PuntajeTotal.Valor.Should().Be(65);
+        participante.PuntajeTotal.Valor.Should().Be(65);
     }
 
     // ── Guard: estado de sesion ────────────────────────────────────
@@ -152,26 +152,26 @@ public sealed class SesionAplicarPenalizacionTests
     {
         // Arrange
         var sesion   = SesionBuilder.BusquedaTesoro().ConEstado(estadoInvalido).Build();
-        var equipoId = EquipoId.Nuevo();
+        var participanteId = ParticipanteId.Nuevo();
 
         // Act
-        var act = () => sesion.AplicarPenalizacion(equipoId, PenalizacionValida());
+        var act = () => sesion.AplicarPenalizacion(participanteId, PenalizacionValida());
 
         // Assert
         act.Should().Throw<DomainException>();
     }
 
-    // ── Guard: equipo inexistente ──────────────────────────────────
+    // ── Guard: participante inexistente ──────────────────────────────────
 
     [Fact]
-    public void AplicarPenalizacion_CuandoEquipoNoPerteneceSesion_LanzaDomainException()
+    public void AplicarPenalizacion_CuandoParticipanteNoPerteneceSesion_LanzaDomainException()
     {
         // Arrange
         var sesion         = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipoAjeno    = EquipoId.Nuevo();
+        var participanteAjeno    = ParticipanteId.Nuevo();
 
         // Act
-        var act = () => sesion.AplicarPenalizacion(equipoAjeno, PenalizacionValida());
+        var act = () => sesion.AplicarPenalizacion(participanteAjeno, PenalizacionValida());
 
         // Assert
         act.Should().Throw<DomainException>();

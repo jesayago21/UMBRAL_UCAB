@@ -1,7 +1,7 @@
 using FluentAssertions;
 using NSubstitute;
 using Umbral.Application.Misiones.Commands.AgregarPistaEtapa;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Xunit;
 
 namespace Umbral.Application.Tests.Misiones.Commands;
@@ -12,7 +12,7 @@ public sealed class AgregarPistaEtapaCommandHandlerTests
     public async Task Handle_CuandoMisionYEtapaExisten_AgregaPistaYPersiste()
     {
         var mision = Mision.Crear("Misión prueba");
-        mision.AgregarEtapa("Hall", "QR-001");
+        mision.AgregarEtapaBusquedaTesoro("Hall", "QR-001");
         var etapaId = mision.Etapas[0].EtapaId.Valor;
 
         var repo = Substitute.For<IMisionRepository>();
@@ -31,7 +31,8 @@ public sealed class AgregarPistaEtapaCommandHandlerTests
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        mision.Etapas[0].Pistas.Should().ContainSingle(p => p.Contenido == "Busca cerca del mural");
+        ((EtapaBusquedaTesoro)mision.Etapas[0]).Pistas
+            .Should().ContainSingle(p => p.Contenido == "Busca cerca del mural");
         await repo.Received(1).SaveAsync(mision, Arg.Any<CancellationToken>());
     }
 }

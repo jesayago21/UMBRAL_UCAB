@@ -17,7 +17,7 @@
 `CatalogoTrivia/{Pregunta,Categoria}` existía solo como carpetas con `.gitkeep`
 (sin código). Esta iteración crea el dominio mínimo del banco de preguntas para
 tener listo el CRUD de Trivia como respaldo de la entrega, siguiendo el mismo
-patrón del BC `CatalogoBusquedaTesoro` (AggregateRoot + factory `Crear` + eventos
+patrón del BC `CatalogoMision` (AggregateRoot + factory `Crear` + eventos
 + soft delete).
 
 **No incluye** gameplay de Trivia (sesión, sala de espera, rondas, respuestas,

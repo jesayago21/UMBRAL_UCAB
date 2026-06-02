@@ -66,7 +66,7 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
-    public async Task GET_trivia_preguntas_CuandoEquipoInscrito_RetornaPreguntasSinRespuestaCorrecta()
+    public async Task GET_trivia_preguntas_CuandoParticipanteInscrito_RetornaPreguntasSinRespuestaCorrecta()
     {
         var (categoriaId, _) = await ApiTestData.SeedCategoriaConPreguntaAsync(_services);
         var crear = await _client.PostAsJsonAsync(
@@ -80,7 +80,7 @@ public sealed class SesionesControllerTests
             null);
 
         var jugadorId = Guid.NewGuid();
-        await UnirseEquipoAsync(sesion.Id, sesion.CodigoAcceso, "Alpha", jugadorId);
+        await UnirseParticipanteAsync(sesion.Id, sesion.CodigoAcceso, "Alpha", jugadorId);
         SetParticipanteAuth(jugadorId);
 
         var response = await _client.GetAsync(
@@ -88,7 +88,7 @@ public sealed class SesionesControllerTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var preguntas = await response.Content.ReadFromJsonAsync<List<PreguntaTriviaEquipoResponse>>();
+        var preguntas = await response.Content.ReadFromJsonAsync<List<PreguntaTriviaParticipanteResponse>>();
         preguntas.Should().NotBeNull();
         var list = preguntas!;
         list.Should().NotBeEmpty();
@@ -158,12 +158,12 @@ public sealed class SesionesControllerTests
     {
         var (sesionId, codigo) = await CrearSesionAsync();
 
-        var response = await UnirseEquipoRequestAsync(sesionId, codigo, "Alpha");
+        var response = await UnirseParticipanteRequestAsync(sesionId, codigo, "Alpha");
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var body = await response.Content.ReadFromJsonAsync<UnirseSesionResponse>();
-        body!.EquipoId.Should().NotBeEmpty();
+        body!.ParticipanteId.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public sealed class SesionesControllerTests
     {
         var (sesionId, _) = await CrearSesionAsync();
 
-        var response = await UnirseEquipoRequestAsync(sesionId, "", "Alpha");
+        var response = await UnirseParticipanteRequestAsync(sesionId, "", "Alpha");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -183,7 +183,7 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_unirse_CuandoSesionNoExiste_Retorna404()
     {
-        var response = await UnirseEquipoRequestAsync(
+        var response = await UnirseParticipanteRequestAsync(
             Guid.NewGuid(),
             "ABC123",
             "Alpha");
@@ -196,7 +196,7 @@ public sealed class SesionesControllerTests
     {
         var (sesionId, _) = await CrearSesionAsync();
 
-        var response = await UnirseEquipoRequestAsync(sesionId, "CODIGO-INVALIDO", "Alpha");
+        var response = await UnirseParticipanteRequestAsync(sesionId, "CODIGO-INVALIDO", "Alpha");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -208,10 +208,10 @@ public sealed class SesionesControllerTests
     public async Task POST_unirse_CuandoSesionActiva_Retorna400()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        await UnirseEquipoAsync(sesionId, codigo, "Alpha");
+        await UnirseParticipanteAsync(sesionId, codigo, "Alpha");
         await IniciarSesionAsync(sesionId);
 
-        var response = await UnirseEquipoRequestAsync(sesionId, codigo, "Beta");
+        var response = await UnirseParticipanteRequestAsync(sesionId, codigo, "Beta");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -220,10 +220,10 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
-    public async Task POST_iniciar_CuandoSesionConEquipo_Retorna204()
+    public async Task POST_iniciar_CuandoSesionConParticipante_Retorna204()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        await UnirseEquipoAsync(sesionId, codigo, "Beta");
+        await UnirseParticipanteAsync(sesionId, codigo, "Beta");
         ResetAuth();
 
         var response = await _client.PostAsync(
@@ -234,7 +234,7 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
-    public async Task POST_iniciar_CuandoSinEquipos_Retorna400()
+    public async Task POST_iniciar_CuandoSinParticipantes_Retorna400()
     {
         var (sesionId, _) = await CrearSesionAsync();
 
@@ -327,11 +327,11 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_penalizaciones_CuandoSesionActiva_Retorna204()
     {
-        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
 
         var response = await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{sesionId}/penalizaciones",
-            new AplicarPenalizacionRequest(equipoId, 15, "Llegada tardía"));
+            new AplicarPenalizacionRequest(participanteId, 15, "Llegada tardía"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
@@ -339,11 +339,11 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_penalizaciones_CuandoPuntosInvalidos_Retorna400()
     {
-        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
 
         var response = await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{sesionId}/penalizaciones",
-            new AplicarPenalizacionRequest(equipoId, 0, "Motivo válido"));
+            new AplicarPenalizacionRequest(participanteId, 0, "Motivo válido"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -356,11 +356,11 @@ public sealed class SesionesControllerTests
     public async Task POST_penalizaciones_CuandoSesionNoIniciada_Retorna400()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        var equipoId = await UnirseEquipoYObtenerIdAsync(sesionId, codigo, "Gamma");
+        var participanteId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Gamma");
 
         var response = await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{sesionId}/penalizaciones",
-            new AplicarPenalizacionRequest(equipoId, 10, "Fuera de tiempo"));
+            new AplicarPenalizacionRequest(participanteId, 10, "Fuera de tiempo"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -381,11 +381,11 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_evidencias_CuandoQrValido_Retorna201()
     {
-        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
 
         var response = await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{sesionId}/evidencias",
-            new SubmitEvidenciaRequest(equipoId, "QR-API-001"));
+            new SubmitEvidenciaRequest(participanteId, "QR-API-001"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -397,11 +397,11 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_evidencias_CuandoCodigoQrVacio_Retorna400()
     {
-        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
 
         var response = await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{sesionId}/evidencias",
-            new SubmitEvidenciaRequest(equipoId, ""));
+            new SubmitEvidenciaRequest(participanteId, ""));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -413,11 +413,11 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_evidencias_CuandoQrInvalido_Retorna201ConResultadoInvalida()
     {
-        var (sesionId, equipoId) = await CrearSesionIniciadaConEquipoAsync();
+        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
 
         var response = await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{sesionId}/evidencias",
-            new SubmitEvidenciaRequest(equipoId, "QR-INEXISTENTE"));
+            new SubmitEvidenciaRequest(participanteId, "QR-INEXISTENTE"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -531,8 +531,8 @@ public sealed class SesionesControllerTests
     public async Task GET_ranking_CuandoEmpateOrdenaPorNombre_Retorna200()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        await UnirseEquipoAsync(sesionId, codigo, "Gamma");
-        await UnirseEquipoAsync(sesionId, codigo, "Alpha");
+        await UnirseParticipanteAsync(sesionId, codigo, "Gamma");
+        await UnirseParticipanteAsync(sesionId, codigo, "Alpha");
         await IniciarSesionAsync(sesionId);
 
         var response = await _client.GetAsync($"/api/v1/sesiones/{sesionId}/ranking");
@@ -541,17 +541,17 @@ public sealed class SesionesControllerTests
 
         var ranking = await response.Content.ReadFromJsonAsync<List<PosicionRankingResponse>>();
         ranking.Should().HaveCount(2);
-        ranking![0].NombreEquipo.Should().Be("Alpha");
+        ranking![0].NombreParticipante.Should().Be("Alpha");
         ranking[0].PuntajeTotal.Should().Be(0);
-        ranking[1].NombreEquipo.Should().Be("Gamma");
+        ranking[1].NombreParticipante.Should().Be("Gamma");
     }
 
     [Fact]
     public async Task GET_ranking_DespuesDeEvidenciaValida_OrdenaPorPuntaje()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        var alphaId = await UnirseEquipoYObtenerIdAsync(sesionId, codigo, "Alpha");
-        var betaId = await UnirseEquipoYObtenerIdAsync(sesionId, codigo, "Beta");
+        var alphaId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Alpha");
+        var betaId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Beta");
         await IniciarSesionAsync(sesionId);
 
         await _client.PostAsJsonAsync(
@@ -564,9 +564,9 @@ public sealed class SesionesControllerTests
 
         var ranking = await response.Content.ReadFromJsonAsync<List<PosicionRankingResponse>>();
         ranking.Should().HaveCount(2);
-        ranking![0].EquipoId.Should().Be(betaId);
+        ranking![0].ParticipanteId.Should().Be(betaId);
         ranking[0].PuntajeTotal.Should().Be(100);
-        ranking[1].EquipoId.Should().Be(alphaId);
+        ranking[1].ParticipanteId.Should().Be(alphaId);
         ranking[1].PuntajeTotal.Should().Be(0);
     }
 
@@ -590,7 +590,7 @@ public sealed class SesionesControllerTests
         crear.EnsureSuccessStatusCode();
         var sesion = (await crear.Content.ReadFromJsonAsync<CrearSesionResponse>())!;
 
-        var unirse = await UnirseEquipoRequestAsync(sesion.Id, sesion.CodigoAcceso, "Alpha");
+        var unirse = await UnirseParticipanteRequestAsync(sesion.Id, sesion.CodigoAcceso, "Alpha");
         unirse.EnsureSuccessStatusCode();
         ResetAuth();
 
@@ -611,18 +611,18 @@ public sealed class SesionesControllerTests
         return (body!.Id, body.CodigoAcceso);
     }
 
-    private async Task UnirseEquipoAsync(
+    private async Task UnirseParticipanteAsync(
         Guid sesionId,
         string codigo,
         string? nombre = null,
         Guid? jugadorId = null)
     {
-        var response = await UnirseEquipoRequestAsync(sesionId, codigo, nombre, jugadorId);
+        var response = await UnirseParticipanteRequestAsync(sesionId, codigo, nombre, jugadorId);
         response.EnsureSuccessStatusCode();
         ResetAuth();
     }
 
-    private async Task<HttpResponseMessage> UnirseEquipoRequestAsync(
+    private async Task<HttpResponseMessage> UnirseParticipanteRequestAsync(
         Guid sesionId,
         string codigo,
         string? nombre = null,
@@ -632,13 +632,13 @@ public sealed class SesionesControllerTests
 
         return await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{sesionId}/unirse",
-            new UnirseSesionRequest(codigo, nombre ?? "Equipo"));
+            new UnirseSesionRequest(codigo, nombre ?? "Participante"));
     }
 
     private async Task<Guid> CrearSesionIniciadaAsync()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        await UnirseEquipoAsync(sesionId, codigo, "Beta");
+        await UnirseParticipanteAsync(sesionId, codigo, "Beta");
         await IniciarSesionAsync(sesionId);
         return sesionId;
     }
@@ -656,7 +656,7 @@ public sealed class SesionesControllerTests
     public async Task GET_sesiones_CuandoOperador_RetornaOperativas()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        await UnirseEquipoAsync(sesionId, codigo, "Alpha");
+        await UnirseParticipanteAsync(sesionId, codigo, "Alpha");
         ResetAuth();
 
         var response = await _client.GetAsync("/api/v1/sesiones");
@@ -677,7 +677,7 @@ public sealed class SesionesControllerTests
     public async Task GET_sesion_por_id_CuandoExiste_RetornaDetalle()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        await UnirseEquipoAsync(sesionId, codigo, "Beta");
+        await UnirseParticipanteAsync(sesionId, codigo, "Beta");
         ResetAuth();
 
         var response = await _client.GetAsync($"/api/v1/sesiones/{sesionId}");
@@ -686,7 +686,7 @@ public sealed class SesionesControllerTests
 
         var body = await response.Content.ReadFromJsonAsync<SesionDetalleResponse>();
         body!.Id.Should().Be(sesionId);
-        body.Equipos.Should().ContainSingle(e => e.Nombre == "Beta");
+        body.Participantes.Should().ContainSingle(e => e.Nombre == "Beta");
         body.TotalEtapas.Should().BeGreaterThan(0);
     }
 
@@ -698,25 +698,25 @@ public sealed class SesionesControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    private async Task<(Guid SesionId, Guid EquipoId)> CrearSesionIniciadaConEquipoAsync()
+    private async Task<(Guid SesionId, Guid ParticipanteId)> CrearSesionIniciadaConParticipanteAsync()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        var equipoId = await UnirseEquipoYObtenerIdAsync(sesionId, codigo, "Gamma");
+        var participanteId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Gamma");
         await IniciarSesionAsync(sesionId);
-        return (sesionId, equipoId);
+        return (sesionId, participanteId);
     }
 
-    private async Task<Guid> UnirseEquipoYObtenerIdAsync(
+    private async Task<Guid> UnirseParticipanteYObtenerIdAsync(
         Guid sesionId,
         string codigo,
         string nombre,
         Guid? jugadorId = null)
     {
-        var response = await UnirseEquipoRequestAsync(sesionId, codigo, nombre, jugadorId);
+        var response = await UnirseParticipanteRequestAsync(sesionId, codigo, nombre, jugadorId);
         response.EnsureSuccessStatusCode();
-        var equipoId = (await response.Content.ReadFromJsonAsync<UnirseSesionResponse>())!.EquipoId;
+        var participanteId = (await response.Content.ReadFromJsonAsync<UnirseSesionResponse>())!.ParticipanteId;
         ResetAuth();
-        return equipoId;
+        return participanteId;
     }
 
     private void SetParticipanteAuth(Guid jugadorId)
@@ -724,7 +724,7 @@ public sealed class SesionesControllerTests
         _client.DefaultRequestHeaders.Remove(TestAuthHandler.UserIdHeaderName);
         _client.DefaultRequestHeaders.Add(TestAuthHandler.UserIdHeaderName, jugadorId.ToString());
         _client.DefaultRequestHeaders.Remove(TestAuthHandler.RoleHeaderName);
-        _client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeaderName, "EquipoParticipante");
+        _client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeaderName, "Participante");
     }
 
     private void ResetAuth()

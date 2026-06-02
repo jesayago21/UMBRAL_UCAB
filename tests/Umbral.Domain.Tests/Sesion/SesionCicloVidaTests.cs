@@ -79,7 +79,7 @@ public sealed class SesionCicloVidaTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .ConEquipo("Alpha").Build();
+            .ConParticipante("Alpha").Build();
 
         // Act
         sesion.Iniciar();
@@ -95,7 +95,7 @@ public sealed class SesionCicloVidaTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .ConEquipo("Alpha").Build();
+            .ConParticipante("Alpha").Build();
 
         // Act
         sesion.Iniciar();
@@ -111,7 +111,7 @@ public sealed class SesionCicloVidaTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .ConEquipo("Alpha").Build();
+            .ConParticipante("Alpha").Build();
 
         // Act
         sesion.Iniciar();
@@ -119,7 +119,7 @@ public sealed class SesionCicloVidaTests
         // Assert
         var evt = sesion.DomainEvents.OfType<SesionIniciada>().Single();
         evt.SesionId.Should().Be(sesion.SesionId);
-        evt.TipoSesion.Should().Be(TipoSesion.BusquedaTesoro);
+        evt.TipoSesion.Should().Be(TipoSesion.Mision);
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public sealed class SesionCicloVidaTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .ConEquipo("Alpha").Build();
+            .ConParticipante("Alpha").Build();
 
         // Act
         sesion.Iniciar();
@@ -139,19 +139,19 @@ public sealed class SesionCicloVidaTests
     }
 
     [Fact]
-    public void Iniciar_SinEquiposRegistrados_LanzaDomainException()
+    public void Iniciar_SinParticipantesRegistrados_LanzaDomainException()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .SinEquipos().Build();
+            .SinParticipantes().Build();
 
         // Act
         var act = () => sesion.Iniciar();
 
         // Assert
         act.Should().Throw<DomainException>()
-            .WithMessage("*al menos un equipo*");
+            .WithMessage("*al menos un participante*");
     }
 
     [Theory]
@@ -314,7 +314,7 @@ public sealed class SesionCicloVidaTests
         sesion.AbrirParaRegistro();
         sesion.Estado.Should().Be(EstadoSesion.EnPreparacion);
 
-        SesionTestHelpers.UnirEquipo(sesion, "Alpha");
+        SesionTestHelpers.UnirParticipante(sesion, "Alpha");
         sesion.Iniciar();
         sesion.Estado.Should().Be(EstadoSesion.Activa);
 

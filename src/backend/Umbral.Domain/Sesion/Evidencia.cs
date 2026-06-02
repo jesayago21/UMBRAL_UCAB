@@ -1,16 +1,16 @@
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Shared;
 
 namespace Umbral.Domain.Sesion;
 
 /// <summary>
-/// Registro de un envío de evidencia QR por un equipo (HU-18, RF-11).
+/// Registro de un envío de evidencia QR por un participante (HU-18, RF-11).
 /// </summary>
 public sealed class Evidencia : Entity
 {
     public EvidenciaId EvidenciaId { get; private set; } = default!;
     public SesionId SesionId { get; private set; } = default!;
-    public EquipoId EquipoId { get; private set; } = default!;
+    public ParticipanteId ParticipanteId { get; private set; } = default!;
     public EtapaId EtapaId { get; private set; } = default!;
     public CodigoQR CodigoQR { get; private set; } = default!;
     public DateTime TimestampServidor { get; private set; }
@@ -20,13 +20,13 @@ public sealed class Evidencia : Entity
 
     internal static Evidencia Registrar(
         SesionId sesionId,
-        EquipoId equipoId,
+        ParticipanteId participanteId,
         EtapaId etapaId,
         CodigoQR codigoQR,
         ResultadoValidacion resultado)
     {
         ArgumentNullException.ThrowIfNull(sesionId);
-        ArgumentNullException.ThrowIfNull(equipoId);
+        ArgumentNullException.ThrowIfNull(participanteId);
         ArgumentNullException.ThrowIfNull(etapaId);
         ArgumentNullException.ThrowIfNull(codigoQR);
 
@@ -34,7 +34,7 @@ public sealed class Evidencia : Entity
         {
             EvidenciaId        = EvidenciaId.Nuevo(),
             SesionId           = sesionId,
-            EquipoId           = equipoId,
+            ParticipanteId           = participanteId,
             EtapaId            = etapaId,
             CodigoQR           = codigoQR,
             TimestampServidor  = DateTime.UtcNow,

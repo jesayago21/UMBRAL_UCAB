@@ -8,8 +8,8 @@
 
 ## Caso de uso
 
-El operador inscribe equipos en una sesión de Búsqueda del Tesoro antes de iniciarla.
-Cada equipo recibe un `CodigoAcceso` único para unirse desde mobile (Entrega 1, Fase 7).
+El operador inscribe participantes en una sesión de Búsqueda del Tesoro antes de iniciarla.
+Cada participante recibe un `CodigoAcceso` único para unirse desde mobile (Entrega 1, Fase 7).
 
 ---
 
@@ -19,8 +19,8 @@ Cada equipo recibe un `CodigoAcceso` único para unirse desde mobile (Entrega 1,
 |----|-------|
 | RB-13-01 | Nombre único por sesión (comparación sin distinguir mayúsculas) → regla global **RB-02** |
 | RB-13-02 | Rechazo en `Finalizada` y `Cancelada` → regla global **RB-03** |
-| RB-13-03 | `CodigoAcceso` generado por equipo al registrarse |
-| RB-13-04 | `NombreEquipo` valida y recorta espacios |
+| RB-13-03 | `CodigoAcceso` generado por participante al registrarse |
+| RB-13-04 | `NombreParticipante` valida y recorta espacios |
 | RB-13-05 | Entrada en `HistorialEventos` con tipo `EquipoRegistrado` |
 
 ---
@@ -32,7 +32,7 @@ Cada equipo recibe un `CodigoAcceso` único para unirse desde mobile (Entrega 1,
 | `Sesion/EventoSesion.cs` | **Nuevo** — auditoría interna del agregado |
 | `Sesion/Sesion.cs` | `HistorialEventos`, `RegistrarEvento`, `RegistrarEquipo` alineado al spec |
 | `tests/.../SesionRegistrarEquipoTests.cs` | **Nuevo** — 15 tests HU-13 |
-| `tests/.../SesionBuilder.cs` | `SinEquipos()` para setups explícitos |
+| `tests/.../SesionBuilder.cs` | `SinParticipantes()` para setups explícitos |
 
 ---
 
@@ -40,11 +40,11 @@ Cada equipo recibe un `CodigoAcceso` único para unirse desde mobile (Entrega 1,
 
 | Test | Escenario |
 |------|-----------|
-| `RegistrarEquipo_CuandoNombreUnico_AgregaEquipo` | Happy path + `CodigoAcceso` |
-| `RegistrarEquipo_CuandoNombreUnico_AsociaSesionIdDelAgregado` | `SesionId` / `EquipoId` |
+| `RegistrarEquipo_CuandoNombreUnico_AgregaParticipante` | Happy path + `CodigoAcceso` |
+| `RegistrarEquipo_CuandoNombreUnico_AsociaSesionIdDelAgregado` | `SesionId` / `ParticipanteId` |
 | `RegistrarEquipo_CuandoNombreUnico_PuntajeInicialEsCero` | `Puntaje.Zero()` |
-| `RegistrarEquipo_CuandoDosNombresDistintos_AgregaDosEquipos` | Múltiples equipos |
-| `RegistrarEquipo_CuandoDosEquipos_CodigosAccesoSonDistintos` | Códigos distintos |
+| `RegistrarEquipo_CuandoDosNombresDistintos_AgregaDosParticipantes` | Múltiples participantes |
+| `RegistrarEquipo_CuandoDosParticipantes_CodigosAccesoSonDistintos` | Códigos distintos |
 | `RegistrarEquipo_CuandoSesionNoEstaCerrada_PermiteRegistro` | `Programada` y `EnPreparacion` |
 | `RegistrarEquipo_CuandoNombreConEspacios_AplicaTrim` | Trim |
 | `RegistrarEquipo_CuandoNombreUnico_RegistraEventoEnHistorial` | `EventoSesion` |
@@ -59,7 +59,7 @@ Cada equipo recibe un `CodigoAcceso` único para unirse desde mobile (Entrega 1,
 
 | HU | Título | Estado |
 |----|--------|--------|
-| **HU-13** | Inscripción de equipos | ✅ |
+| **HU-13** | Inscripción de participantes | ✅ |
 | HU-12 | Crear sesión BT | ✅ (iter-01) |
 
 **Tests:** 45/45  

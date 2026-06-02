@@ -1,7 +1,7 @@
 using MediatR;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Shared;
 
 namespace Umbral.Application.Misiones.Commands.AgregarPistaEtapa;
@@ -28,7 +28,8 @@ internal sealed class AgregarPistaEtapaCommandHandler
             tipo,
             command.SegundosLiberacion);
 
-        var etapa = mision.Etapas.First(e => e.EtapaId.Valor == command.EtapaId);
+        var etapa = mision.Etapas.OfType<EtapaBusquedaTesoro>()
+            .First(e => e.EtapaId.Valor == command.EtapaId);
         var pistaId = etapa.Pistas.Last().PistaId.Valor;
 
         await _misionRepository.SaveAsync(mision, cancellationToken);

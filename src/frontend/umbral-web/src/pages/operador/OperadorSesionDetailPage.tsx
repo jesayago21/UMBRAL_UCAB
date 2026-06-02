@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { SesionEtapasPistasPanel } from '@/components/operador/SesionEtapasPistasPanel'
-import { EquiposInscritosPanel } from '@/components/operador/EquiposInscritosPanel'
+import { ParticipantesInscritosPanel } from '@/components/operador/ParticipantesInscritosPanel'
 import { SesionCodigoAccesoPanel } from '@/components/operador/SesionCodigoAccesoPanel'
 import { SesionTimerPanel } from '@/components/operador/SesionTimerPanel'
 import { PageHeader } from '@/components/admin/PageHeader'
@@ -148,7 +148,7 @@ export function OperadorSesionDetailPage() {
   }
 
   const canAbrirInscripcion = sesion.estado === 'programada'
-  const canIniciar = sesion.estado === 'enPreparacion' && sesion.equipos.length > 0
+  const canIniciar = sesion.estado === 'enPreparacion' && sesion.participantes.length > 0
   const canPausar = sesion.estado === 'activa'
   const canReanudar = sesion.estado === 'pausada'
   const canFinalizar = sesion.estado === 'activa' || sesion.estado === 'pausada'
@@ -205,7 +205,7 @@ export function OperadorSesionDetailPage() {
         <SesionEtapasPistasPanel etapas={detalle.etapas} />
       )}
 
-      <EquiposInscritosPanel equipos={sesion.equipos} />
+      <ParticipantesInscritosPanel participantes={sesion.participantes} />
 
       <section className={`${cardClass} space-y-3`}>
         <h3 className="font-medium text-slate-900">Controles de sesión</h3>
@@ -271,8 +271,8 @@ export function OperadorSesionDetailPage() {
 
       <SesionRankingPanel
         sesionId={sesionId ?? ''}
-        enabled={Boolean(sesion && sesion.equipos.length > 0)}
-        emptyEquiposMessage="Espera a que los jugadores se unan con el código de sesión."
+        enabled={Boolean(sesion && sesion.participantes.length > 0)}
+        emptyParticipantesMessage="Espera a que los jugadores se unan con el código de sesión."
       />
     </div>
   )

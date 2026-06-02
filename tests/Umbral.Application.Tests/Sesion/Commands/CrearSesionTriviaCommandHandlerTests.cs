@@ -3,6 +3,7 @@ using NSubstitute;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Sesion.Commands.CrearSesionTrivia;
 using Umbral.Application.Tests.Builders;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.CatalogoTrivia.Categoria;
 using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Ports;
@@ -72,9 +73,11 @@ public sealed class CrearSesionTriviaCommandHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         sesionGuardada.Should().NotBeNull();
-        sesionGuardada!.TipoSesion.Should().Be(TipoSesion.Trivia);
-        sesionGuardada.ContextoTrivia!.TotalPreguntas.Should().Be(1);
-        sesionGuardada.ContextoTrivia.CategoriasTitulo.Should().Be(categoria.Nombre);
+        sesionGuardada!.TipoSesion.Should().Be(TipoSesion.Mision);
+        sesionGuardada.ContextoMision.Should().NotBeNull();
+        var trivia = (EtapaTriviaSnapshot)sesionGuardada.ContextoMision!.ObtenerEtapaActual();
+        trivia.PreguntasOrdenadas.Should().HaveCount(1);
+        trivia.CategoriasTitulo.Should().Be(categoria.Nombre);
 
         eventosPublicados.Should().NotBeNull();
         eventosPublicados!.Should().ContainSingle().Which.Should().BeOfType<SesionCreada>();

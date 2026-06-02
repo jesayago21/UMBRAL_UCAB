@@ -9,6 +9,6 @@ public sealed class UnirseSesionValidator : AbstractValidator<UnirseSesionComman
         RuleFor(x => x.SesionId).NotEmpty();
         RuleFor(x => x.CodigoAcceso).NotEmpty();
         RuleFor(x => x.JugadorId).NotEmpty();
-        RuleFor(x => x.NombreEquipo).NotEmpty();
+        RuleFor(x => x.NombreParticipante).NotEmpty();
     }
 }

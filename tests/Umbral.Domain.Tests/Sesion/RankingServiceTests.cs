@@ -8,24 +8,24 @@ namespace Umbral.Domain.Tests.Sesion;
 public sealed class RankingServiceTests
 {
     [Fact]
-    public void Calcular_CuandoEquiposConDistintoPuntaje_OrdenaDescendente()
+    public void Calcular_CuandoParticipantesConDistintoPuntaje_OrdenaDescendente()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
-            .Activa().ConEquipo("Alpha").ConEquipo("Beta").Build();
-        var alpha = sesion.Equipos.First(e => e.Nombre.Valor == "Alpha");
-        var beta  = sesion.Equipos.First(e => e.Nombre.Valor == "Beta");
+            .Activa().ConParticipante("Alpha").ConParticipante("Beta").Build();
+        var alpha = sesion.Participantes.First(e => e.Nombre.Valor == "Alpha");
+        var beta  = sesion.Participantes.First(e => e.Nombre.Valor == "Beta");
         alpha.SumarPuntaje(50);
         beta.SumarPuntaje(100);
 
         // Act
-        var ranking = RankingService.Calcular(sesion.Equipos);
+        var ranking = RankingService.Calcular(sesion.Participantes);
 
         // Assert
         ranking.Should().HaveCount(2);
-        ranking[0].NombreEquipo.Should().Be("Beta");
+        ranking[0].NombreParticipante.Should().Be("Beta");
         ranking[0].PuntajeTotal.Should().Be(100);
-        ranking[1].NombreEquipo.Should().Be("Alpha");
+        ranking[1].NombreParticipante.Should().Be("Alpha");
     }
 
     [Fact]
@@ -33,15 +33,15 @@ public sealed class RankingServiceTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
-            .Activa().ConEquipo("Gamma").ConEquipo("Alpha").Build();
-        sesion.Equipos.First(e => e.Nombre.Valor == "Gamma").SumarPuntaje(50);
-        sesion.Equipos.First(e => e.Nombre.Valor == "Alpha").SumarPuntaje(50);
+            .Activa().ConParticipante("Gamma").ConParticipante("Alpha").Build();
+        sesion.Participantes.First(e => e.Nombre.Valor == "Gamma").SumarPuntaje(50);
+        sesion.Participantes.First(e => e.Nombre.Valor == "Alpha").SumarPuntaje(50);
 
         // Act
-        var ranking = RankingService.Calcular(sesion.Equipos);
+        var ranking = RankingService.Calcular(sesion.Participantes);
 
         // Assert
-        ranking[0].NombreEquipo.Should().Be("Alpha");
-        ranking[1].NombreEquipo.Should().Be("Gamma");
+        ranking[0].NombreParticipante.Should().Be("Alpha");
+        ranking[1].NombreParticipante.Should().Be("Gamma");
     }
 }

@@ -6,9 +6,12 @@ public sealed record CrearMisionRequest(
     bool Activar = false);
 
 public sealed record CrearEtapaRequest(
-    string Descripcion,
-    string CodigoQrSolucion,
-    IReadOnlyList<CrearPistaRequest> Pistas);
+    string TipoEtapa,
+    int Orden,
+    string? Descripcion,
+    string? CodigoQrSolucion,
+    IReadOnlyList<CrearPistaRequest>? Pistas,
+    IReadOnlyList<Guid>? CategoriaIds);
 
 public sealed record CrearPistaRequest(
     string Contenido,

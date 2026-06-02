@@ -7,6 +7,6 @@ public sealed record UnirseSesionCommand(
     Guid SesionId,
     string CodigoAcceso,
     Guid JugadorId,
-    string NombreEquipo) : IRequest<Result<UnirseSesionResult>>;
+    string NombreParticipante) : IRequest<Result<UnirseSesionResult>>;
 
-public sealed record UnirseSesionResult(Guid EquipoId);
+public sealed record UnirseSesionResult(Guid ParticipanteId);

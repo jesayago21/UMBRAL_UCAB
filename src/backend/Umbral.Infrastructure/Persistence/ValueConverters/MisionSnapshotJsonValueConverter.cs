@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Infrastructure.Persistence.Serialization;
 
 namespace Umbral.Infrastructure.Persistence.ValueConverters;

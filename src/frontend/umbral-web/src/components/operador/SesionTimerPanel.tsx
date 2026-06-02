@@ -77,7 +77,7 @@ export function SesionTimerPanel({
         </>
       ) : (
         <p className="text-sm text-slate-600">
-          El temporizador comienza al <strong>iniciar</strong> la sesión con equipos registrados.
+          El temporizador comienza al <strong>iniciar</strong> la sesión con participantes registrados.
         </p>
       )}
 

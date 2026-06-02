@@ -31,9 +31,9 @@ internal sealed class UnirseSesionCommandHandler
                          cancellationToken)
                      ?? throw new NotFoundException(nameof(SesionAR), command.SesionId);
 
-        var equipo = sesion.UnirseEquipo(
+        var participante = sesion.UnirseParticipante(
             new UsuarioId(command.JugadorId),
-            command.NombreEquipo,
+            command.NombreParticipante,
             command.CodigoAcceso);
 
         await _sesionRepository.SaveAsync(sesion, cancellationToken);
@@ -42,6 +42,6 @@ internal sealed class UnirseSesionCommandHandler
             cancellationToken);
         sesion.ClearDomainEvents();
 
-        return Result<UnirseSesionResult>.Ok(new UnirseSesionResult(equipo.EquipoId.Valor));
+        return Result<UnirseSesionResult>.Ok(new UnirseSesionResult(participante.ParticipanteId.Valor));
     }
 }

@@ -5,7 +5,7 @@
 ## Propósito
 Guía paso a paso para modelar, implementar y evolucionar elementos de
 Domain-Driven Design dentro del monolito hexagonal de UMBRAL.
-Aplica a los tres Bounded Contexts: **CatalogoBusquedaTesoro**,
+Aplica a los tres Bounded Contexts: **CatalogoMision**,
 **CatalogoTrivia** y **Sesion** (Ejecución de Sesión).
 
 > **Fuente de verdad:** `.cursor/specs/umbral-backend-spec.md` y
@@ -37,7 +37,7 @@ Aplica a los tres Bounded Contexts: **CatalogoBusquedaTesoro**,
 │         │    TipoSesion (enum)     │ ← BusquedaTesoro | Trivia │
 │         │    ContextoBT? (E)       │ ← solo si BusquedaTesoro  │
 │         │    ContextoTrivia? (E)   │ ← solo si Trivia          │
-│         │    EquipoSesion (E)      │                           │
+│         │    ParticipanteSesion (E)      │                           │
 │         │    Evidencia (E)         │ ← solo BusquedaTesoro     │
 │         │    RespuestaTrivia (E)   │ ← solo Trivia             │
 │         │    Penalizacion (VO)     │                           │
@@ -46,7 +46,7 @@ Aplica a los tres Bounded Contexts: **CatalogoBusquedaTesoro**,
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Patrón Composite en CatalogoBusquedaTesoro:**
+**Patrón Composite en CatalogoMision:**
 `Mision` contiene `List<Etapa>`, cada `Etapa` contiene `List<Pista>`.
 
 **Regla de oro:** ningún BC importa directamente las entidades de otro.
@@ -60,7 +60,7 @@ Las preguntas de Trivia se referencian solo por `PreguntaId`.
 ```
 src/
 └── Umbral.Domain/
-    ├── CatalogoBusquedaTesoro/
+    ├── CatalogoMision/
     │   └── Mision/
     │       ├── Mision.cs              ← AggregateRoot (contiene Etapas → Pistas)
     │       ├── Etapa.cs               ← Entity hija de Mision
@@ -85,13 +85,13 @@ src/
     │   ├── Sesion.cs                  ← AggregateRoot principal
     │   ├── ContextoBusquedaTesoro.cs  ← Entity (solo si TipoSesion=BusquedaTesoro)
     │   ├── ContextoTrivia.cs          ← Entity (solo si TipoSesion=Trivia)
-    │   ├── EquipoSesion.cs            ← Entity
+    │   ├── ParticipanteSesion.cs            ← Entity
     │   ├── Evidencia.cs               ← Entity (BusquedaTesoro)
     │   ├── RespuestaTrivia.cs         ← Entity (Trivia)
     │   ├── EventoSesion.cs            ← Entity (historial)
     │   ├── ValueObjects/
     │   │   ├── SesionId.cs
-    │   │   ├── EquipoId.cs
+    │   │   ├── ParticipanteId.cs
     │   │   ├── TipoSesion.cs         ← enum: BusquedaTesoro | Trivia
     │   │   ├── EstadoSesion.cs       ← enum: Programada|EnPreparacion|Activa|Pausada|Finalizada|Cancelada
     │   │   ├── Puntaje.cs            ← ValueObject (no record — hereda ValueObject)
@@ -166,14 +166,14 @@ public abstract class ValueObject
 }
 ```
 
-### 3.2 Aggregate Root — Mision (CatalogoBusquedaTesoro)
+### 3.2 Aggregate Root — Mision (CatalogoMision)
 
 ```csharp
-// CatalogoBusquedaTesoro/Mision/Mision.cs
-namespace Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+// CatalogoMision/Mision/Mision.cs
+namespace Umbral.Domain.CatalogoMision.Mision;
 
 /// <summary>
-/// Aggregate Root del BC CatalogoBusquedaTesoro.
+/// Aggregate Root del BC CatalogoMision.
 /// Implementa el patrón Composite: Mision → List<Etapa> → List<Pista>.
 /// </summary>
 public sealed class Mision : AggregateRoot
@@ -229,8 +229,8 @@ public sealed class Mision : AggregateRoot
 ### 3.3 Entity hija — Etapa y Pista (Composite)
 
 ```csharp
-// CatalogoBusquedaTesoro/Mision/Etapa.cs
-namespace Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+// CatalogoMision/Mision/Etapa.cs
+namespace Umbral.Domain.CatalogoMision.Mision;
 
 public sealed class Etapa : Entity
 {
@@ -269,7 +269,7 @@ public sealed class Etapa : Entity
     protected override int GetIdHashCode() => EtapaId.GetHashCode();
 }
 
-// CatalogoBusquedaTesoro/Mision/Pista.cs
+// CatalogoMision/Mision/Pista.cs
 public sealed class Pista : Entity
 {
     public PistaId PistaId { get; private set; }
@@ -306,13 +306,13 @@ public sealed class Pista : Entity
 ### 3.4 Value Object MisionSnapshot (inmutable, ACL hacia Sesion)
 
 ```csharp
-// CatalogoBusquedaTesoro/Mision/MisionSnapshot.cs
-namespace Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+// CatalogoMision/Mision/MisionSnapshot.cs
+namespace Umbral.Domain.CatalogoMision.Mision;
 
 /// <summary>
 /// Copia inmutable de la misión en el momento de crear la sesión.
 /// Los cambios posteriores a la Mision NO afectan sesiones en curso (RB-11).
-/// Es el contrato de Anti-Corruption Layer entre CatalogoBusquedaTesoro y Sesion BC.
+/// Es el contrato de Anti-Corruption Layer entre CatalogoMision y Sesion BC.
 /// </summary>
 public sealed class MisionSnapshot : ValueObject
 {
@@ -390,12 +390,12 @@ public sealed class Sesion : AggregateRoot
     public ContextoTrivia? ContextoTrivia { get; private set; }          // solo Trivia
 
     // ── Colecciones ────────────────────────────────────────────
-    private readonly List<EquipoSesion> _equipos = [];
+    private readonly List<ParticipanteSesion> _participantes = [];
     private readonly List<EventoSesion> _historialEventos = [];
     private readonly List<Evidencia> _evidencias = [];
     private readonly List<RespuestaTrivia> _respuestas = [];
 
-    public IReadOnlyList<EquipoSesion> Equipos => _equipos.AsReadOnly();
+    public IReadOnlyList<ParticipanteSesion> Participantes => _participantes.AsReadOnly();
     public IReadOnlyList<EventoSesion> HistorialEventos => _historialEventos.AsReadOnly();
     public IReadOnlyList<Evidencia> Evidencias => _evidencias.AsReadOnly();
     public IReadOnlyList<RespuestaTrivia> Respuestas => _respuestas.AsReadOnly();
@@ -446,8 +446,8 @@ public sealed class Sesion : AggregateRoot
     {
         if (Estado != EstadoSesion.EnPreparacion)
             throw new DomainException($"No se puede iniciar una sesión en estado {Estado}.");
-        if (!_equipos.Any())
-            throw new DomainException("La sesión necesita al menos un equipo registrado.");
+        if (!_participantes.Any())
+            throw new DomainException("La sesión necesita al menos un participante registrado.");
 
         Estado     = EstadoSesion.Activa;
         IniciadaEn = DateTime.UtcNow;
@@ -491,35 +491,35 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionCancelada", motivo);
     }
 
-    public EquipoSesion RegistrarEquipo(string nombre)
+    public ParticipanteSesion RegistrarEquipo(string nombre)
     {
         if (Estado is EstadoSesion.Finalizada or EstadoSesion.Cancelada)
-            throw new DomainException("No se pueden registrar equipos en una sesión cerrada.");
-        if (_equipos.Any(e => e.Nombre.Valor == nombre))
-            throw new DomainException($"Ya existe un equipo con el nombre '{nombre}'.");
+            throw new DomainException("No se pueden registrar participantes en una sesión cerrada.");
+        if (_participantes.Any(e => e.Nombre.Valor == nombre))
+            throw new DomainException($"Ya existe un participante con el nombre '{nombre}'.");
 
-        var equipo = EquipoSesion.Crear(SesionId, nombre);
-        _equipos.Add(equipo);
+        var participante = ParticipanteSesion.Crear(SesionId, nombre);
+        _participantes.Add(participante);
         RegistrarEvento("EquipoRegistrado", nombre);
-        return equipo;
+        return participante;
     }
 
-    public void AplicarPenalizacion(EquipoId equipoId, Penalizacion penalizacion)
+    public void AplicarPenalizacion(ParticipanteId participanteId, Penalizacion penalizacion)
     {
         if (Estado != EstadoSesion.Activa)
             throw new DomainException("Solo se pueden aplicar penalizaciones en sesiones activas.");
-        var equipo = ObtenerEquipo(equipoId);
-        equipo.AplicarPenalizacion(penalizacion);
+        var participante = ObtenerParticipante(participanteId);
+        participante.AplicarPenalizacion(penalizacion);
         RaiseDomainEvent(new PenalizacionAplicada(
-            SesionId, equipoId, penalizacion.Puntos, penalizacion.Motivo,
+            SesionId, participanteId, penalizacion.Puntos, penalizacion.Motivo,
             penalizacion.OperadorId, DateTime.UtcNow));
     }
 
     public bool EstaActiva() => Estado == EstadoSesion.Activa;
 
-    private EquipoSesion ObtenerEquipo(EquipoId equipoId)
-        => _equipos.FirstOrDefault(e => e.EquipoId == equipoId)
-           ?? throw new DomainException($"El equipo {equipoId.Valor} no pertenece a esta sesión.");
+    private ParticipanteSesion ObtenerParticipante(ParticipanteId participanteId)
+        => _participantes.FirstOrDefault(e => e.ParticipanteId == participanteId)
+           ?? throw new DomainException($"El participante {participanteId.Valor} no pertenece a esta sesión.");
 
     private void RegistrarEvento(string tipo, string payload)
         => _historialEventos.Add(EventoSesion.Crear(SesionId, tipo, payload));
@@ -628,7 +628,7 @@ public interface ISesionRepository
     Task SaveAsync(Sesion sesion, CancellationToken ct = default);
 }
 
-// CatalogoBusquedaTesoro/Mision/IMisionRepository.cs
+// CatalogoMision/Mision/IMisionRepository.cs
 public interface IMisionRepository
 {
     Task<Mision?> FindByIdAsync(MisionId id, CancellationToken ct = default);
@@ -650,7 +650,7 @@ Programada ──→ EnPreparacion ──→ Activa ⇄ Pausada ──→ Finali
 | Desde | Puede ir a |
 |-------|-----------|
 | Programada | EnPreparacion, Cancelada |
-| EnPreparacion | Activa (si hay equipos), Cancelada |
+| EnPreparacion | Activa (si hay participantes), Cancelada |
 | Activa | Pausada, Finalizada, Cancelada |
 | Pausada | Activa, Finalizada, Cancelada |
 | Finalizada | — (terminal) |
@@ -663,7 +663,7 @@ Programada ──→ EnPreparacion ──→ Activa ⇄ Pausada ──→ Finali
 | # | Regla | Motivo |
 |---|-------|--------|
 | 1 | `TipoSesion` vive **solo** en `Sesion` (AR). | Evita dispersión del discriminador. |
-| 2 | El BC CatalogoBusquedaTesoro tiene `Mision` como AR (Composite con `Etapa` → `Pista`). | Es la raíz de la jerarquía de misiones. |
+| 2 | El BC CatalogoMision tiene `Mision` como AR (Composite con `Etapa` → `Pista`). | Es la raíz de la jerarquía de misiones. |
 | 3 | `ContextoBT` y `ContextoTrivia` son entidades separadas. Solo una existe por sesión. | Separación de responsabilidades por tipo. |
 | 4 | Los BCs de catálogo **no se referencian directamente** desde `Sesion`. | Se usa `MisionSnapshot` (ACL inmutable) o solo el ID. |
 | 5 | Los métodos de comportamiento **lanzan `DomainException`** ante invariantes rotas. | El dominio es el guardián de sus propias reglas. |
@@ -696,7 +696,7 @@ Programada ──→ EnPreparacion ──→ Activa ⇄ Pausada ──→ Finali
 ## 7. Anti-patrones a evitar
 
 ```csharp
-// ❌ MALO — AR en CatalogoBusquedaTesoro es PistaBusqueda (incorrecto)
+// ❌ MALO — AR en CatalogoMision es PistaBusqueda (incorrecto)
 // El AR correcto es Mision. Pista es Entity hija de Etapa.
 public class PistaBusqueda : AggregateRoot { }  // ← NUNCA
 
@@ -739,7 +739,7 @@ public abstract class AggregateRoot<TId> { }  // ← no es el diseño de este pr
 public abstract class AggregateRoot : Entity { }
 
 // ❌ MALO — referencia cruzada entre BCs
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;  // en namespace Sesion ← NUNCA
+using Umbral.Domain.CatalogoMision.Mision;  // en namespace Sesion ← NUNCA
 public class Sesion { public Mision Mision { get; set; } }  // ← usar MisionSnapshot
 
 // ✅ BUENO — ACL mediante snapshot inmutable
@@ -753,10 +753,10 @@ public class Sesion { public ContextoBusquedaTesoro? ContextoBT { get; private s
 
 Cuando el usuario pida modelar algo de dominio en UMBRAL:
 
-1. **Identificar BC** → ¿CatalogoBusquedaTesoro, CatalogoTrivia o Sesion?
+1. **Identificar BC** → ¿CatalogoMision, CatalogoTrivia o Sesion?
 2. **Clasificar el concepto** → ¿AR, Entity, ValueObject, Domain Service, Domain Event?
-3. **Para CatalogoBusquedaTesoro**: el AR es `Mision`; `Etapa` y `Pista` son entities hijas (Composite).
-4. **Para Sesion**: el AR es `Sesion`; los equipos son `EquipoSesion` (no `Equipo`).
+3. **Para CatalogoMision**: el AR es `Mision`; `Etapa` y `Pista` son entities hijas (Composite).
+4. **Para Sesion**: el AR es `Sesion`; los participantes son `ParticipanteSesion` (no `Equipo`).
 5. **Aplicar plantilla** de la sección 3 correspondiente.
 6. **Verificar estados**: Sesion usa `Programada/EnPreparacion/Activa/Pausada/Finalizada/Cancelada`.
 7. **Verificar reglas** de la tabla de la sección 5 y correr checklist de la sección 6.

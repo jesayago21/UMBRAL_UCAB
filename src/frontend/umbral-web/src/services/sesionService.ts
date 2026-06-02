@@ -7,9 +7,9 @@ import type {
   CrearSesionTriviaRequest,
   CrearSesionTriviaResponse,
   PosicionRankingDto,
-  PreguntaTriviaEquipoDto,
+  PreguntaTriviaParticipanteDto,
   SesionDetalleDto,
-  SesionDisponibleEquipoDto,
+  SesionDisponibleParticipanteDto,
   SesionResumenDto,
   UnirseSesionRequest,
   UnirseSesionResponse,
@@ -25,15 +25,18 @@ export async function listSesionesOperativas(): Promise<SesionResumenDto[]> {
   return data
 }
 
-export async function listSesionesDisponiblesBusqueda(): Promise<SesionDisponibleEquipoDto[]> {
-  const { data } = await apiClient.get<SesionDisponibleEquipoDto[]>(
-    '/sesiones/disponibles/busqueda-tesoro',
-  )
+export async function listSesionesDisponibles(): Promise<SesionDisponibleParticipanteDto[]> {
+  const { data } = await apiClient.get<SesionDisponibleParticipanteDto[]>('/sesiones/disponibles')
   return data
 }
 
-export async function listSesionesDisponiblesTrivia(): Promise<SesionDisponibleEquipoDto[]> {
-  const { data } = await apiClient.get<SesionDisponibleEquipoDto[]>(
+/** @deprecated Usar listSesionesDisponibles */
+export async function listSesionesDisponiblesBusqueda(): Promise<SesionDisponibleParticipanteDto[]> {
+  return listSesionesDisponibles()
+}
+
+export async function listSesionesDisponiblesTrivia(): Promise<SesionDisponibleParticipanteDto[]> {
+  const { data } = await apiClient.get<SesionDisponibleParticipanteDto[]>(
     '/sesiones/disponibles/trivia',
   )
   return data
@@ -41,6 +44,18 @@ export async function listSesionesDisponiblesTrivia(): Promise<SesionDisponibleE
 
 export async function obtenerSesionDetalle(sesionId: string): Promise<SesionDetalleDto> {
   const { data } = await apiClient.get<SesionDetalleDto>(`/sesiones/${sesionId}`)
+  return data
+}
+
+export async function crearSesionMision(misionId: string): Promise<{
+  id: string
+  codigoAcceso: string
+  misionNombre: string
+}> {
+  const { data } = await apiClient.post<{ id: string; codigoAcceso: string; misionNombre: string }>(
+    '/sesiones',
+    { misionId },
+  )
   return data
 }
 
@@ -104,10 +119,10 @@ export async function obtenerRankingSesion(sesionId: string): Promise<PosicionRa
   return data
 }
 
-export async function listPreguntasTriviaSesionEquipo(
+export async function listPreguntasTriviaSesionParticipante(
   sesionId: string,
-): Promise<PreguntaTriviaEquipoDto[]> {
-  const { data } = await apiClient.get<PreguntaTriviaEquipoDto[]>(
+): Promise<PreguntaTriviaParticipanteDto[]> {
+  const { data } = await apiClient.get<PreguntaTriviaParticipanteDto[]>(
     `/sesiones/${sesionId}/trivia/preguntas`,
   )
   return data

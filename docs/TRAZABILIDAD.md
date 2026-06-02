@@ -35,11 +35,11 @@ Queda fuera de alcance: apps nativas puras (Swift/Kotlin sin Expo), cobros, IoT,
 
 ---
 
-## Reglas de negocio (RB-01 … RB-32)
+## Reglas de negocio (RB-01 … RB-37)
 
 | Código | Regla | Modo |
 |--------|-------|------|
-| RB-01 | Solo se crea sesión BT desde una misión con estado `Activa`. | BT |
+| RB-01 | Solo se crea sesión desde una misión con estado `Activa`. | Ambos |
 | RB-02 | El nombre de equipo es único dentro de la misma sesión. | Ambos |
 | RB-03 | Un equipo no puede registrarse en sesión `Finalizada` o `Cancelada`. | Ambos |
 | RB-04 | Al validar la primera evidencia correcta, los demás no puntúan en esa etapa. | BT |
@@ -47,9 +47,9 @@ Queda fuera de alcance: apps nativas puras (Swift/Kotlin sin Expo), cobros, IoT,
 | RB-06 | Solo se aceptan evidencias para la etapa marcada como activa. | BT |
 | RB-07 | Pistas `PorTiempo` se liberan al transcurrir el tiempo configurado (p. ej. 15 min). | BT |
 | RB-08 | Ranking por puntaje desc.; desempate: menor suma de tiempos de respuesta. | Ambos |
-| RB-09 | Una misión necesita al menos una etapa para activarse. | BT |
-| RB-10 | El nombre de misión es único en el sistema. | BT |
-| RB-11 | El `MisionSnapshot` es inmutable desde que se crea la sesión. | BT |
+| RB-09 |   Una misión necesita al menos una etapa válida para activarse (BT: QR; Trivia: ≥1 categoría). | Ambos |
+| RB-10 | El nombre de misión es único en el sistema. | Ambos |
+| RB-11 | El `MisionSnapshot` es inmutable desde que se crea la sesión. | Ambos |
 | RB-12 | Respuesta de trivia después del cierre del timer → 0 puntos. | Trivia |
 | RB-13 | Respuesta de trivia no modificable tras confirmar o expirar el timer. | Trivia |
 | RB-14 | Si se elimina una categoría, sus preguntas pasan a «Sin Categoría». | Trivia |
@@ -71,6 +71,31 @@ Queda fuera de alcance: apps nativas puras (Swift/Kotlin sin Expo), cobros, IoT,
 | RB-30 | No se aceptan respuestas si el timer de la pregunta ya inició al conectar. | Trivia |
 | RB-31 | En trivia, todos los equipos pueden puntuar si responden correctamente. | Trivia |
 | RB-32 | Pregunta lanzada no se cancela hasta que expire el timer o todos respondan. | Trivia |
+| RB-33 | Etapa `Trivia` debe tener al menos un `CategoriaId` al configurar la misión. | Trivia |
+| RB-34 | Progresión secuencial: al completar una etapa, todos avanzan al siguiente nodo de la misión. | Ambos |
+| RB-35 | Rol `Participante` no se asigna vía administración de usuarios (solo inscripción a sesión). | Identidad |
+| RB-36 | Email y username únicos en tabla espejo de usuarios administrables. | Identidad |
+| RB-37 | Si falla persistencia local tras registro en Keycloak, compensar eliminando el usuario en identity server. | Identidad |
+
+---
+
+## Requerimientos funcionales ampliados (RF-31 … RF-35)
+
+| Código | Requerimiento |
+|--------|---------------|
+| RF-31 | Registrar usuario administrable en Keycloak y tabla espejo local con invariantes. |
+| RF-32 | Asignar/revocar roles `Administrador` y `Operador` (no `Participante` arbitrario). |
+| RF-33 | Bloquear/activar usuario (estado sincronizado con Keycloak). |
+| RF-34 | Listar y consultar usuarios administrables (solo Administrador). |
+| RF-35 | Sesión de misión ejecuta etapas en orden; motor aplica reglas BT o Trivia según `TipoEtapa` activa. |
+
+### Historias nuevas (TO-BE)
+
+| HU | Título |
+|----|--------|
+| HU-A1 | Configuración de etapa Trivia en misión polimórfica |
+| HU-I1 | Registro de usuario administrable (doble commit Keycloak + BD) |
+| HU-I2 | Restricción de rol Participante en administración |
 
 ---
 

@@ -1,14 +1,14 @@
-# Iteración 04-02 — Sesiones: crear, equipos e iniciar
+# Iteración 04-02 — Sesiones: crear, participantes e iniciar
 
 ## Objetivo
 
-Exponer el flujo mínimo de operador vía REST: crear sesión BT, registrar equipo e iniciar sesión, con tests de integración por endpoint.
+Exponer el flujo mínimo de operador vía REST: crear sesión BT, registrar participante e iniciar sesión, con tests de integración por endpoint.
 
 ## Cambios implementados
 
 - `SesionesController` (`/api/v1/sesiones`):
   - `POST busqueda-tesoro` → `CrearSesionBusquedaTesoroCommand`
-  - `POST {id}/equipos` → `RegistrarEquipoCommand`
+  - `POST {id}/participantes` → `RegistrarEquipoCommand`
   - `POST {id}/iniciar` → `IniciarSesionCommand` (204)
 - DTOs en `Umbral.API/Contracts/Sesiones/`.
 - `OperadorId` desde claim JWT/test (`TestAuthHandler`), no desde el body.
@@ -21,7 +21,7 @@ Exponer el flujo mínimo de operador vía REST: crear sesión BT, registrar equi
 | Método | Ruta | Código éxito |
 |--------|------|--------------|
 | POST | `/api/v1/sesiones/busqueda-tesoro` | 201 |
-| POST | `/api/v1/sesiones/{id}/equipos` | 201 |
+| POST | `/api/v1/sesiones/{id}/participantes` | 201 |
 | POST | `/api/v1/sesiones/{id}/iniciar` | 204 |
 
 ## Validación
@@ -37,4 +37,4 @@ dotnet test tests/Umbral.API.Tests/Umbral.API.Tests.csproj
 - Auth: `[Authorize(Roles = "Operador,Administrador")]` con `TestAuthHandler` en Testing/Development.
 - Sin `GET` sesión por id en esta iteración (04-05+ si aplica).
 - **Infrastructure:** `SesionRepository` usa `AsNoTracking` en lecturas y `ExecuteUpdate` + inserción explícita de hijos en actualizaciones. Persistencia de `ContextoBT`: ver [iter-04-02b](iter-04-02b-contexto-bt-persistencia.md).
-- Test infra: `SesionRegistrarEquipoPersistenceTests` (dos pasos crear + registrar equipo).
+- Test infra: `SesionRegistrarEquipoPersistenceTests` (dos pasos crear + registrar participante).

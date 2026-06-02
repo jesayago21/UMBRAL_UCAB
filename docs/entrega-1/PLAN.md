@@ -70,7 +70,7 @@ Reglas no negociables:
 - **Persistencia real** en PostgreSQL (ya operativa).
 - **Frontend web** (`umbral-web`): **login OIDC** + CRUD **Misiones** + CRUD **Trivia**
   (categorías y preguntas) — E1-2 ✅ base; **E1-K4** cierra auth real.
-- **Pantalla operador (mínima)** — E1-2b: crear sesión BT, equipos, iniciar/pausar/
+- **Pantalla operador (mínima)** — E1-2b: crear sesión BT, participantes, iniciar/pausar/
   reanudar/finalizar/cancelar, ver **ranking por polling** (sin SignalR). Backend
   de sesiones ✅ (`SesionesController`).
 - **Mobile login (opcional)** — E1-M1: scaffold Expo + OIDC Keycloak; **sin**
@@ -87,7 +87,7 @@ Reglas no negociables:
 
 - **Dashboard operador completo** (SignalR, sala de espera trivia, panel en vivo).
 - **Ranking en tiempo real / SignalR** (en E1 solo GET `/ranking` con refresh manual).
-- **Evidencia QR** y flujo **EquipoParticipante** en mobile.
+- **Evidencia QR** y flujo **Participante** en mobile.
 - **Consumers RabbitMQ** en demo.
 - **Modo Trivia jugable** (HU-32..40).
 - **E2E con Playwright**.
@@ -172,7 +172,7 @@ Reglas no negociables:
 **Qué se construye / cambia:**
 
 1. **Keycloak en `docker-compose`** + realm export (`docker/keycloak/umbral-realm.json`)
-   con roles (`Administrador`, `Operador`, `EquipoParticipante`), clients
+   con roles (`Administrador`, `Operador`, `Participante`), clients
    (`umbral-web`, `umbral-api`) y usuarios demo.
 2. **API**: `AddJwtBearer` con `Authority` del realm + mapeo de `realm_access.roles`
    a claims `role`. Se eliminan los artefactos del JWT propio + migración que
@@ -261,7 +261,7 @@ El alcance original de la spec metía demasiado en Entrega 1. Con el recorte:
 | 5c | Operador sesiones BT mínimo (UI REST) | E2 | **E1** (E1-2b) |
 | 5d | Mobile login opcional | E2 | **E1** opcional (E1-M1) |
 | 6 | SignalR / ranking tiempo real | E1 | **E2** |
-| 7 | Mobile gameplay (QR, trivia, sesión equipo) | E1 | **E2** |
+| 7 | Mobile gameplay (QR, trivia, sesión participante) | E1 | **E2** |
 | 8 | RabbitMQ consumers (demo) | E1 | **E2** |
 | 9–10 | Trivia jugable (HU-32..40) + E2E Playwright | E2 | **E2** |
 
@@ -273,7 +273,7 @@ El alcance original de la spec metía demasiado en Entrega 1. Con el recorte:
 - [ ] **Cobertura backend ≥ 90%** sobre el código implementado, reportada por CI.
 - [x] **Login real con Keycloak (OIDC)** distinto admin/operador (**E1-K4**).
 - [x] Frontend web: **CRUD Misiones** y **CRUD banco Trivia** (**E1-2**).
-- [ ] **Pantalla operador** mínima: crear sesión BT, equipos, controles, ranking poll (**E1-2b**).
+- [ ] **Pantalla operador** mínima: crear sesión BT, participantes, controles, ranking poll (**E1-2b**).
 - [ ] Se puede demostrar **403 por rol** (operador no entra a `/admin/*`).
 - [ ] *(Opcional)* **Mobile** solo login (**E1-M1**).
 - [ ] PostgreSQL **y Keycloak** levantan vía docker-compose; la app persiste datos

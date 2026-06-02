@@ -1,7 +1,7 @@
 using FluentAssertions;
 using NSubstitute;
 using Umbral.Application.Misiones.Queries.ListMisiones;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Xunit;
 
 namespace Umbral.Application.Tests.Misiones.Queries;
@@ -18,7 +18,7 @@ public sealed class ListMisionesQueryHandlerTests
     private static Mision MisionActiva(string nombre)
     {
         var mision = Mision.Crear(nombre);
-        mision.AgregarEtapa("Etapa 1", "QR-LM-001");
+        mision.AgregarEtapaBusquedaTesoro("Etapa 1", "QR-LM-001");
         mision.Activar();
         return mision;
     }

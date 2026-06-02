@@ -25,14 +25,14 @@ Realm: umbral
 ├── Roles (realm roles)
 │   ├── Administrador
 │   ├── Operador
-│   └── EquipoParticipante
+│   └── Participante
 ├── Clients
 │   ├── umbral-web      → public, Standard Flow (Auth Code + PKCE), redirect a la SPA
 │   └── umbral-api      → bearer-only / confidential (solo valida; sin login propio)
 └── Users (demo)
     ├── admin     → rol Administrador
     ├── operador  → rol Operador
-    └── equipo    → rol EquipoParticipante
+    └── participante    → rol Participante
 ```
 
 - Los roles del realm viajan en el claim **`realm_access.roles`** del access token.

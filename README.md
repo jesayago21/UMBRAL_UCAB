@@ -1,7 +1,7 @@
 # UMBRAL — UCAB Jesus Sayago
 
-Sistema de gestión de sesiones de Búsqueda del Tesoro y Trivia.  
-Arquitectura: **Monolito hexagonal** (Ports & Adapters) en .NET 8.
+Sistema de gestión de misiones polimórficas (Búsqueda del Tesoro + Trivia por etapas), sesiones en vivo e identidad federada con Keycloak.  
+Arquitectura: **Monolito hexagonal** (Ports & Adapters) en .NET 8. Comunicación entre capas **solo por DTOs**.
 
 **Resumen consolidado (fases/iteraciones/HU/RF/RNF):** [`docs/RESUMEN-COMPACTO-E1-E2.md`](docs/RESUMEN-COMPACTO-E1-E2.md)  
 **Trazabilidad (RB / RF / HU):** [`docs/TRAZABILIDAD.md`](docs/TRAZABILIDAD.md) · **Fase 1 dominio:** [`docs/fase-1/TRACKER.md`](docs/fase-1/TRACKER.md)
@@ -109,7 +109,7 @@ Abrir **http://localhost:5173/login**.
 |----------|-----|
 | `VITE_API_URL` | API REST (default `http://localhost:5000`) |
 | `VITE_KEYCLOAK_*` | Realm `umbral`, client `umbral-web` |
-| `VITE_EQUIPO_WEB_ENABLED` | `true` = jugador en `/equipo` (E1). `false` cuando exista mobile |
+| `VITE_PARTICIPANTE_WEB_ENABLED` | `true` = jugador en `/participante` (E1). `false` cuando exista mobile |
 
 ### Usuarios demo (Keycloak)
 
@@ -117,7 +117,7 @@ Abrir **http://localhost:5173/login**.
 |---------|------------|-----|----------------|
 | `admin` | `Umbral123!` | Administrador | `/admin/misiones` |
 | `operador` | `Umbral123!` | Operador | `/operador/sesiones` |
-| `equipo` | `Umbral123!` | EquipoParticipante | `/equipo` (si `VITE_EQUIPO_WEB_ENABLED=true`) |
+| `participante` | `Umbral123!` | Participante | `/participante` (si `VITE_PARTICIPANTE_WEB_ENABLED=true`) |
 
 ---
 
@@ -135,31 +135,31 @@ Duración orientativa: **12–15 min**. Requiere Postgres + Keycloak + API + `np
 ### 6.2 Operador — sesión búsqueda del tesoro
 
 1. Login **`operador`** / `Umbral123!` → `/operador/sesiones`.
-2. **Crear sesión** eligiendo la misión activa → anotar el **código de sesión** (único, no por equipo).
+2. **Crear sesión** eligiendo la misión activa → anotar el **código de sesión** (único, no por participante).
 3. Entrar al **detalle** de la sesión:
    - **Abrir inscripción** (estado `EnPreparacion`).
    - Compartir el código con los jugadores.
-   - Ver **equipos inscritos** (solo lectura; se unen solos).
-   - Con ≥1 equipo: **Iniciar** → temporizador y controles (pausar / reanudar / finalizar).
+   - Ver **participantes inscritos** (solo lectura; se unen solos).
+   - Con ≥1 participante: **Iniciar** → temporizador y controles (pausar / reanudar / finalizar).
    - **Refrescar ranking** (poll manual, sin SignalR).
 4. *(Opcional)* Intentar `/admin/misiones` → pantalla **403** (rol incorrecto).
 
-### 6.3 Equipo — unirse a sesión (web temporal)
+### 6.3 Participante — unirse a sesión (web temporal)
 
-> Cuando exista `umbral-mobile`, poner `VITE_EQUIPO_WEB_ENABLED=false` y repetir el flujo en la app.
+> Cuando exista `umbral-mobile`, poner `VITE_PARTICIPANTE_WEB_ENABLED=false` y repetir el flujo en la app.
 
-1. Login **`equipo`** / `Umbral123!` → `/equipo`.
+1. Login **`participante`** / `Umbral123!` → `/participante`.
 2. **Búsqueda del tesoro** → listado de sesiones abiertas a inscripción.
 3. Ingresar el **código de la sesión** del operador → **Unirse**.
-4. El operador ve el equipo en el detalle de la sesión.
-5. **Trivia** en `/equipo/trivia`: placeholder (sin sesiones trivia creadas aún).
+4. El operador ve el participante en el detalle de la sesión.
+5. **Trivia** en `/participante/trivia`: placeholder (sin sesiones trivia creadas aún).
 
 ### 6.4 Qué decir que queda para E2
 
 - Ranking en **tiempo real** (SignalR).
 - **Gameplay** BT: escanear QR, enviar evidencias desde mobile.
 - **Trivia jugable** y sesiones trivia desde operador.
-- App **React Native** (`umbral-mobile`) como cliente definitivo del equipo.
+- App **React Native** (`umbral-mobile`) como cliente definitivo del participante.
 
 ---
 
@@ -170,10 +170,10 @@ Lista para cerrar E1 / abrir E2, en orden sugerido:
 | # | Ítem | Notas |
 |---|------|--------|
 | 1 | **Afinar E1-2b** | Penalización en UI operador (API ya existe); pulir mensajes/estados vacíos |
-| 2 | **Sesiones trivia** | Operador: crear/orquestar sesión trivia; equipo: listado en `/equipo/trivia` |
+| 2 | **Sesiones trivia** | Operador: crear/orquestar sesión trivia; participante: listado en `/participante/trivia` |
 | 3 | **Misiones completas** | CRUD etapas y pistas en admin (si aún incompleto) |
 | 4 | **`umbral-mobile`** | Expo + OIDC + mismas APIs de unirse/listar |
-| 5 | **Deshabilitar equipo en web** | `VITE_EQUIPO_WEB_ENABLED=false` al tener mobile |
+| 5 | **Deshabilitar participante en web** | `VITE_PARTICIPANTE_WEB_ENABLED=false` al tener mobile |
 | 6 | **SignalR** | Ranking y eventos de sesión en vivo |
 | 7 | **Gameplay BT** | Evidencia QR, lobby post-unión, pantallas de juego |
 | 8 | **E2E Playwright** | Flujos admin + operador + 403 |
@@ -247,7 +247,7 @@ UMBRAL_UCAB/
 ├── src/
 │   ├── backend/                      ← API .NET 8
 │   └── frontend/
-│       └── umbral-web/               ← React (admin, operador, equipo E1)
+│       └── umbral-web/               ← React (admin, operador, participante E1)
 ├── tests/                            ← Proyectos de prueba (Fase 2+)
 └── docs/
     └── domain-model.md

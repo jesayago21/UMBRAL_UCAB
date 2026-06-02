@@ -3,7 +3,7 @@ using NSubstitute;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Sesion.Commands.UnirseSesion;
 using Umbral.Application.Tests.Builders;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Shared;
@@ -26,7 +26,7 @@ public sealed class UnirseSesionCommandHandlerTests
     [Fact]
     public async Task Handle_CuandoSesionExisteYCodigoValido_UneEquipoYPersiste()
     {
-        var sesion = SesionTestBuilder.EnPreparacionSinEquipos();
+        var sesion = SesionTestBuilder.EnPreparacionSinParticipantes();
         var jugadorId = Guid.NewGuid();
 
         _sesionRepo
@@ -52,8 +52,8 @@ public sealed class UnirseSesionCommandHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.EquipoId.Should().NotBeEmpty();
-        sesion.Equipos.Should().ContainSingle(e =>
+        result.Value.ParticipanteId.Should().NotBeEmpty();
+        sesion.Participantes.Should().ContainSingle(e =>
             e.Nombre.Valor == "Alpha" && e.JugadorId.Valor == jugadorId);
 
         await _sesionRepo.Received(1).SaveAsync(sesion, Arg.Any<CancellationToken>());
@@ -64,7 +64,7 @@ public sealed class UnirseSesionCommandHandlerTests
     public async Task Handle_CuandoSesionProgramada_AbreRegistroYUneEquipo()
     {
         var sesion = SesionAR.CrearBusquedaTesoro(
-            MisionSnapshot.Desde(MisionTestBuilder.Activa()),
+            MisionSnapshot.DesdeSoloBusquedaTesoro(MisionTestBuilder.Activa()),
             UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
         sesion.Estado.Should().Be(EstadoSesion.Programada);
@@ -91,7 +91,7 @@ public sealed class UnirseSesionCommandHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         sesion.Estado.Should().Be(EstadoSesion.EnPreparacion);
-        sesion.Equipos.Should().ContainSingle(e => e.Nombre.Valor == "Beta");
+        sesion.Participantes.Should().ContainSingle(e => e.Nombre.Valor == "Beta");
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class UnirseSesionCommandHandlerTests
     [Fact]
     public async Task Handle_CuandoNombreDuplicado_LanzaDomainException()
     {
-        var sesion = SesionTestBuilder.ConEquipo("Alpha");
+        var sesion = SesionTestBuilder.ConParticipante("Alpha");
 
         _sesionRepo
             .FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>())

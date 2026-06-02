@@ -31,6 +31,9 @@ export function AdminLayout() {
             <NavLink to="/admin/misiones" className={linkClass}>
               Misiones
             </NavLink>
+            <NavLink to="/admin/usuarios" className={linkClass}>
+              Usuarios
+            </NavLink>
             <NavLink to="/admin/trivia" className={linkClass} end={false}>
               Trivia
             </NavLink>

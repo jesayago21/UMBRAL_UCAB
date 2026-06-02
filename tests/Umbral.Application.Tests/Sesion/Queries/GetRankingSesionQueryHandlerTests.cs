@@ -23,9 +23,9 @@ public sealed class GetRankingSesionQueryHandlerTests
     public async Task Handle_CuandoSesionExiste_RetornaRankingOrdenado()
     {
         // Arrange
-        var sesion = SesionTestBuilder.ActivaConEquipos("Alpha", "Beta");
-        sesion.Equipos.First(e => e.Nombre.Valor == "Alpha").SumarPuntaje(50);
-        sesion.Equipos.First(e => e.Nombre.Valor == "Beta").SumarPuntaje(90);
+        var sesion = SesionTestBuilder.ActivaConParticipantes("Alpha", "Beta");
+        sesion.Participantes.First(e => e.Nombre.Valor == "Alpha").SumarPuntaje(50);
+        sesion.Participantes.First(e => e.Nombre.Valor == "Beta").SumarPuntaje(90);
 
         _sesionRepo.FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>()).Returns(sesion);
 
@@ -34,9 +34,9 @@ public sealed class GetRankingSesionQueryHandlerTests
 
         // Assert
         result.Should().HaveCount(2);
-        result[0].NombreEquipo.Should().Be("Beta");
+        result[0].NombreParticipante.Should().Be("Beta");
         result[0].Posicion.Should().Be(1);
-        result[1].NombreEquipo.Should().Be("Alpha");
+        result[1].NombreParticipante.Should().Be("Alpha");
         result[1].Posicion.Should().Be(2);
     }
 

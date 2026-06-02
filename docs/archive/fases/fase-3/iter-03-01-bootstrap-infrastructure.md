@@ -13,7 +13,7 @@ Dejar preparado el cascarón funcional de `Umbral.Infrastructure` para soportar 
   - `EFCore.NamingConventions`
 - Creación de `InfrastructureAssemblyMarker` para escaneo por assembly en infraestructura.
 - Creación de `Persistence/UmbralDbContext` con `DbSet` mínimos para:
-  - `Sesion` y entidades de soporte (`EquipoSesion`, `EventoSesion`, `Evidencia`)
+  - `Sesion` y entidades de soporte (`ParticipanteSesion`, `EventoSesion`, `Evidencia`)
   - `Mision` y su jerarquía (`Etapa`, `Pista`)
 - Creación de estructura base de carpetas:
   - `Persistence/Configurations/`

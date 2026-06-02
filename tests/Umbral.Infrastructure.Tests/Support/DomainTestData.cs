@@ -1,4 +1,4 @@
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.CatalogoTrivia.Categoria;
 using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Sesion;
@@ -11,19 +11,19 @@ internal static class DomainTestData
     public static MisionSnapshot MisionSnapshotActiva(string nombre = "Misión integración")
     {
         var mision = Mision.Crear(nombre);
-        mision.AgregarEtapa("Busca el árbol rojo", "QR-ARBOL-001");
-        mision.AgregarEtapa("Encuentra la fuente", "QR-FUENTE-002");
+        mision.AgregarEtapaBusquedaTesoro("Busca el árbol rojo", "QR-ARBOL-001");
+        mision.AgregarEtapaBusquedaTesoro("Encuentra la fuente", "QR-FUENTE-002");
         mision.Activar();
         mision.ClearDomainEvents();
-        return MisionSnapshot.Desde(mision);
+        return MisionSnapshot.DesdeSoloBusquedaTesoro(mision);
     }
 
-    public static Sesion SesionBusquedaTesoroActiva(string equipo = "Alpha")
+    public static Sesion SesionBusquedaTesoroActiva(string participante = "Alpha")
     {
         var sesion = Sesion.CrearBusquedaTesoro(MisionSnapshotActiva(), UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
         sesion.AbrirParaRegistro();
-        sesion.UnirseEquipo(UsuarioId.Nuevo(), equipo, sesion.CodigoAcceso.Valor);
+        sesion.UnirseParticipante(UsuarioId.Nuevo(), participante, sesion.CodigoAcceso.Valor);
         sesion.Iniciar();
         sesion.ClearDomainEvents();
         return sesion;
@@ -32,9 +32,9 @@ internal static class DomainTestData
     public static Mision MisionConEtapasYPistas(string nombre = "Misión persistencia")
     {
         var mision = Mision.Crear(nombre);
-        mision.AgregarEtapa("Etapa 1", "QR-001");
-        mision.Etapas[0].AgregarPista("Pista por tiempo", TipoLiberacion.PorTiempo, 30);
-        mision.AgregarEtapa("Etapa 2", "QR-002");
+        mision.AgregarEtapaBusquedaTesoro("Etapa 1", "QR-001");
+        ((EtapaBusquedaTesoro)mision.Etapas[0]).AgregarPista("Pista por tiempo", TipoLiberacion.PorTiempo, 30);
+        mision.AgregarEtapaBusquedaTesoro("Etapa 2", "QR-002");
         mision.Activar();
         mision.ClearDomainEvents();
         return mision;

@@ -129,7 +129,7 @@ public sealed class MisionesControllerTests
             new CrearSesionBusquedaTesoroRequest(id));
         var sesion = (await crearSesion.Content.ReadFromJsonAsync<CrearSesionResponse>())!;
 
-        SetRole("EquipoParticipante");
+        SetRole("Participante");
         _client.DefaultRequestHeaders.Remove(TestAuthHandler.UserIdHeaderName);
         _client.DefaultRequestHeaders.Add(TestAuthHandler.UserIdHeaderName, Guid.NewGuid().ToString());
         await _client.PostAsJsonAsync(
@@ -165,9 +165,9 @@ public sealed class MisionesControllerTests
     }
 
     [Fact]
-    public async Task GET_misiones_activas_CuandoEquipo_Retorna403()
+    public async Task GET_misiones_activas_CuandoParticipante_Retorna403()
     {
-        SetRole("EquipoParticipante");
+        SetRole("Participante");
         var response = await _client.GetAsync("/api/v1/misiones/activas");
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -184,12 +184,15 @@ public sealed class MisionesControllerTests
             new List<CrearEtapaRequest>
             {
                 new(
+                    "BusquedaTesoro",
+                    1,
                     "Etapa 1",
                     "QR-MISION-001",
                     new List<CrearPistaRequest>
                     {
                         new("Pista 1", "PorTiempo", 30)
-                    })
+                    },
+                    null)
             },
             activar);
 

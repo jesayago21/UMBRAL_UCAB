@@ -16,7 +16,7 @@ UCAB - 2026
 
 Descripción  general:  UMBRAL  es  una  plataforma  web  para  diseñar  misiones  de  investigación
 
-inmersiva,   crear  sesiones  en  vivo,  registrar  equipos  participantes,  liberar  pistas,  recibir  evidencias,
+inmersiva,   crear  sesiones  en  vivo,  registrar  participantes  participantes,  liberar  pistas,  recibir  evidencias,
 
 aplicar  reglas  de   validación  y  puntaje,  y  supervisar  toda  la  operación  desde  una  consola central. El
 
@@ -100,7 +100,7 @@ investigación, pistas y  reglas básicas de avance.
 
 la  sesión y control del tiempo de ejecución.
 
-3.  Gestión de equipos participantes: registro de equipos, asignación a una sesión y consulta de su
+3.  Gestión de participantes participantes: registro de participantes, asignación a una sesión y consulta de su
 
 progreso.
 
@@ -108,7 +108,7 @@ progreso.
 
 de  penalizaciones y seguimiento del ranking.
 
-5.  Panel  del  equipo:  visualización  de  pistas asignadas, temporizador, puntaje acumulado y envío
+5.  Panel  del  participante:  visualización  de  pistas asignadas, temporizador, puntaje acumulado y envío
 
 de  respuestas o evidencias.
 
@@ -251,12 +251,12 @@ activa (RB-01).
 La  sesión  debe  manejar  estados  al  menos de programada, en preparación,
 activa, pausada, finalizada y cancelada.
 
-El  sistema  debe  permitir  registrar  equipos  participantes  y  asociarlos  a  una
+El  sistema  debe  permitir  registrar  participantes  participantes  y  asociarlos  a  una
 sesión (RB-02).
 
-Cada equipo debe visualizar su temporizador, puntaje y pistas habilitadas.
+Cada participante debe visualizar su temporizador, puntaje y pistas habilitadas.
 
-El  sistema  debe  permitir  a  los  equipos  enviar  evidencias  vinculadas  a  la
+El  sistema  debe  permitir  a  los  participantes  enviar  evidencias  vinculadas  a  la
 etapa activa mediante códigos QR
 
 El  sistema  debe  restringir  la  recepción  de  evidencias  únicamente  para  la
@@ -305,17 +305,17 @@ RF-26
 
 para todos los participantes (RB-05).
 
-Cada  envío  debe  quedar  guardado  con  fecha,  hora,  equipo,  sesión  y  el
+Cada  envío  debe  quedar  guardado  con  fecha,  hora,  participante,  sesión  y  el
 resultado de la validación.
 
 El  sistema  debe  recalcular  automáticamente  el  puntaje  total  del  equipo
 cuando una evidencia sea validada o se aplique una penalización.
 
 El operador debe poder aplicar penalizaciones justificadas que resten puntos
-al total del equipo.
+al total del participante.
 
 El sistema debe liberar pistas automáticamente según el tiempo transcurrido
-(RB-07) o cuando un equipo gane la etapa anterior.
+(RB-07) o cuando un participante gane la etapa anterior.
 
 El  operador  debe  poder  liberar  pistas  de  forma  manual  para  equipos
 específicos o para todos.
@@ -323,11 +323,11 @@ específicos o para todos.
 El sistema debe mostrar un ranking actualizado automáticamente, aplicando
 criterios de desempate si es necesario (RB-08).
 
-El sistema debe notificar en tiempo real a los equipos cuando se habilite una
+El sistema debe notificar en tiempo real a los participantes cuando se habilite una
 nueva pista o cambie el estado de la sesión.
 
 Debe  reflejar  el  historial  de  eventos,  cambios  de  estado  y  actividad  de  los
-equipos en tiempo real.
+participantes en tiempo real.
 
 La  aplicación  debe  publicar  eventos  de  dominio  en  RabbitMQ  al  registrar
 evidencias o cambios significativos de estado (RNF-05).
@@ -350,7 +350,7 @@ respuesta, indicando cuál es la correcta.
 El  sistema  debe  permitir  configurar  el  tiempo  máximo  de  respuesta  (timer)
 por cada pregunta de forma independiente.
 
-El  sistema  debe  registrar  las  respuestas  de  los  equipos  en  tiempo  real  y
+El  sistema  debe  registrar  las  respuestas  de  los  participantes  en  tiempo  real  y
 validar su veracidad inmediatamente al expirar el tiempo de la pregunta.
 
 UCAB - 2026
@@ -367,13 +367,13 @@ El  sistema  debe  realizar el lanzamiento automático de la siguiente pregunta
 tras agotarse el tiempo de feedback de la ronda anterior.
 
 La aplicación debe calcular el puntaje de trivia basado en la corrección de la
-respuesta y, opcionalmente, la velocidad de respuesta del equipo.
+respuesta y, opcionalmente, la velocidad de respuesta del participante.
 
 La  aplicación  debe  publicar  eventos  en  RabbitMQ  específicos  para  la  trivia
 (Pregunta iniciada, Respuesta recibida, Tiempo agotado).
 
 El frontend debe bloquear la posibilidad de cambiar la respuesta una vez que
-el equipo ha confirmado su selección o el tiempo ha expirado.
+el participante ha confirmado su selección o el tiempo ha expirado.
 
 7. Requerimientos no funcionales
 
@@ -449,7 +449,7 @@ cuando
 
 todos
 
-los  equipos  envían
+los  participantes  envían
 
 respuestas  de
 
@@ -462,8 +462,8 @@ Ver tabla canónica completa en **`docs/TRAZABILIDAD.md`** (RB-01 … RB-32). Re
 | Código | Regla (resumen) | Modo |
 |--------|-----------------|------|
 | RB-01 | Sesión BT solo desde misión `Activa`. | BT |
-| RB-02 | Nombre de equipo único por sesión. | Ambos |
-| RB-03 | No registrar equipo en sesión terminal. | Ambos |
+| RB-02 | Nombre de participante único por sesión. | Ambos |
+| RB-03 | No registrar participante en sesión terminal. | Ambos |
 | RB-04 | Primer evidencia válida: único que puntúa en la etapa. | BT |
 | RB-05 | Al resolver nodo, todos avanzan de etapa. | BT |
 | RB-06 | Evidencias solo para etapa activa. | BT |
@@ -473,7 +473,7 @@ Ver tabla canónica completa en **`docs/TRAZABILIDAD.md`** (RB-01 … RB-32). Re
 | RB-10 | Nombre de misión único. | BT |
 | RB-11 | `MisionSnapshot` inmutable en sesión. | BT |
 | RB-12–17 | Reglas de trivia (timer, categorías, puntaje). | Trivia |
-| RB-18 | Sesión no inicia sin ≥1 equipo. | Ambos |
+| RB-18 | Sesión no inicia sin ≥1 participante. | Ambos |
 | RB-19 | Sin evidencias si sesión pausada/finalizada/cancelada. | BT |
 | RB-20 | Penalización con motivo obligatorio. | Ambos |
 | RB-21–23 | Pistas y QR por nodo activo. | BT |
@@ -751,7 +751,7 @@ UCAB - 2026
 
 sin un ganador (RF-25).
 
-notificar a los equipos.
+notificar a los participantes.
 
 HU-10:  Liberación
 por Ganador.
@@ -759,7 +759,7 @@ por Ganador.
 Como  Sistema, quiero liberar una
 pista  del  "Siguiente  Nodo"  para
 todos
-los  equipos  cuando  se
+los  participantes  cuando  se
 registre  el  primer  ganador  de  la
 fase actual.
 
@@ -847,10 +847,10 @@ listado
 el
 
 HU-13:  Inscripción
-de equipos.
+de participantes.
 
 Como  Operador,  quiero  registrar
-equipos y asociarlos a una sesión
+participantes y asociarlos a una sesión
 programada
 
 Generar  un código único
@@ -861,13 +861,13 @@ inicio de sesión.
 
 Como  Operador,  quiero  cambiar
 el  estado  de  la  sesión  a  "Activa"
-para que los equipos empiecen.
+para que los participantes empiecen.
 
 El  sistema  bloquea  el
 inicio  si  hay  0  equipos
 registrados (RB-18)
 
-Si  el  equipo  ya  está
+Si  el  participante  ya  está
 en
 registrado
 la
@@ -895,7 +895,7 @@ los
 sesión
 cronómetros
 los
-equipos.
+participantes.
 
 detener
 todos
@@ -916,7 +916,7 @@ a
 
 UCAB - 2026
 
-Los  equipos  deben  ver
+Los  participantes  deben  ver
 un bloqueo en su interfaz
 vía
 WebSockets
@@ -1021,7 +1021,7 @@ de  ganador  único
 de etapa.
 
 Como  Sistema,  quiero  identificar
-al  primer  equipo  con  evidencia
+al  primer  participante  con  evidencia
 válida  para  asignar  los  puntos
 exclusivos (RF-20, RB-22).
 
@@ -1029,7 +1029,7 @@ envíos
 Bloquear
 posteriores
 otros
-equipos  para  el  mismo
+participantes  para  el  mismo
 nodo (RB-04).
 
 de
@@ -1041,7 +1041,7 @@ Fase.
 
 Como  Sistema,  quiero  mover  a
 todos
-los  equipos  al  siguiente
+los  participantes  al  siguiente
 nodo  cuando  el  actual  sea
 resuelto (RF-21).
 
@@ -1098,7 +1098,7 @@ RabbitMQ
 
 el
 
-Si  dos  equipos envían
+Si  dos  participantes envían
 en
 mismo
 la  base
@@ -1422,7 +1422,7 @@ a
 
 Debe  generar  un  código
 de  acceso  único  para
-que  los  equipos se unan
+que  los  participantes se unan
 a la sala de espera.
 
 Si  no  hay  categorías,
@@ -1466,7 +1466,7 @@ HU-33:  Control  de
 sala de espera.
 
 Como  Operador,  quiero  ver  en
-tiempo  real  qué  equipos  se  han
+tiempo  real  qué  participantes  se  han
 conectado  antes  de
 la
 trivia.
@@ -1478,7 +1478,7 @@ vía
 equipos
 de
 WebSockets.  2.  Permitir
-expulsar  equipos  si  el
+expulsar  participantes  si  el
 nombre es inapropiado.
 
 falla,
@@ -1519,7 +1519,7 @@ Sincronización
 vía
 WebSockets.
 
-Si  el  equipo  entra  con
+Si  el  participante  entra  con
 la  secuencia  iniciada,
 lo
 sistema
@@ -1586,7 +1586,7 @@ validarlos
 contra
 
 El  suscriptor  de  la  cola
-debe extraer el EquipoId,
+debe extraer el ParticipanteId,
 PreguntaId  y  la  opción
 seleccionada.
 la
@@ -1620,7 +1620,7 @@ de
 
 Como Sistema, quiero asignar los
 puntos  correspondientes  a  cada
-equipo basándome en la exactitud
+participante basándome en la exactitud
 de  la  respuesta  y  el  tiempo  de
 envío.
 
@@ -1629,7 +1629,7 @@ de  ranking  parcial
 y feedback.
 
 Como  Sistema,  quiero  notificar  a
-todos  los  equipos  los  resultados
+todos  los  participantes  los  resultados
 ranking
 de
 ronda  y  el
@@ -1655,7 +1655,7 @@ velocidad.
 
 al
 
-Si un equipo envió una
+Si un participante envió una
 respuesta  pero  esta
 servidor
 llegó
@@ -1748,7 +1748,7 @@ de
 
 Como  Sistema, quiero registrar el
 momento  preciso  en  que  cada
-equipo  confirma  su
+participante  confirma  su
 respuesta
 para  utilizarlo  como  criterio  de
 ranking,
@@ -1787,7 +1787,7 @@ genere una diferencia.
 
 UCAB - 2026
 
-los  equipos  de
+los  participantes  de
 forma
 ascendente  basándose
 la  suma  de  sus

@@ -1,4 +1,4 @@
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Shared;
 
 namespace Umbral.Domain.Sesion.Events;
@@ -8,7 +8,7 @@ namespace Umbral.Domain.Sesion.Events;
 /// </summary>
 public sealed record EvidenciaRegistrada(
     SesionId             SesionId,
-    EquipoId             EquipoId,
+    ParticipanteId             ParticipanteId,
     EtapaId              EtapaId,
     ResultadoValidacion  Resultado,
     string               CodigoQR) : IDomainEvent

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Shared;
 using Umbral.Domain.Tests.Sesion.Builders;
@@ -21,7 +22,7 @@ public sealed class ContextoBusquedaTesoroTests
         var sesion = SesionBuilder.BusquedaTesoro().Build();
 
         // Act
-        var etapa = sesion.ContextoBT!.ObtenerEtapaActual();
+        var etapa = sesion.ContextoMision!.ObtenerEtapaBusquedaTesoroActual();
 
         // Assert
         etapa.CodigoQRSolucion.Should().Be(QrEtapa1);
@@ -35,7 +36,7 @@ public sealed class ContextoBusquedaTesoroTests
         var sesion = SesionBuilder.BusquedaTesoro().Build();
 
         // Act & Assert
-        sesion.ContextoBT!.EsUltimaEtapa().Should().BeFalse();
+        sesion.ContextoMision!.EsUltimaEtapa().Should().BeFalse();
     }
 
     [Fact]
@@ -44,10 +45,10 @@ public sealed class ContextoBusquedaTesoroTests
         // Arrange — misión fake tiene 2 etapas; avanzamos manualmente vía reflexión no,
         // verificamos que la segunda etapa es la última comparando códigos.
         var sesion = SesionBuilder.BusquedaTesoro().Build();
-        var etapas = sesion.ContextoBT!.MisionSnapshot.Etapas;
+        var etapas = sesion.ContextoMision!.MisionSnapshot.Etapas;
 
         // Assert
         etapas.Should().HaveCount(2);
-        etapas[1].CodigoQRSolucion.Should().Be(QrEtapa2);
+        ((EtapaBusquedaTesoroSnapshot)etapas[1]).CodigoQRSolucion.Should().Be(QrEtapa2);
     }
 }

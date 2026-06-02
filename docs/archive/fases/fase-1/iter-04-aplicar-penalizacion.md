@@ -8,7 +8,7 @@
 
 ## Caso de uso
 
-El operador aplica una penalización de puntaje a un equipo durante una sesión activa.
+El operador aplica una penalización de puntaje a un participante durante una sesión activa.
 
 ---
 
@@ -17,9 +17,9 @@ El operador aplica una penalización de puntaje a un equipo durante una sesión 
 | ID | Regla |
 |----|-------|
 | RB-16-01 | `AplicarPenalizacion` solo válido en estado `Activa` |
-| RB-16-02 | El equipo debe pertenecer a la sesión (por `EquipoId`) |
+| RB-16-02 | El participante debe pertenecer a la sesión (por `ParticipanteId`) |
 | RB-16-03 | El puntaje no baja de cero (`Math.Max(0, valor - cantidad)`) → regla global **RB-24** |
-| RB-16-04 | Emite `PenalizacionAplicada(SesionId, EquipoId, Puntos, Motivo, OperadorId)` |
+| RB-16-04 | Emite `PenalizacionAplicada(SesionId, ParticipanteId, Puntos, Motivo, OperadorId)` |
 | RB-16-05 | Registra entrada en `HistorialEventos` con tipo `PenalizacionAplicada` |
 | RB-16-P1 | `Penalizacion.Puntos` debe ser `> 0` |
 | RB-16-P2 | `Penalizacion.Motivo` no puede estar vacío ni solo espacios → **RB-20** |
@@ -30,7 +30,7 @@ El operador aplica una penalización de puntaje a un equipo durante una sesión 
 
 | Archivo | Cambio |
 |---------|--------|
-| `Sesion/Events/PenalizacionAplicada.cs` | **Nuevo** — domain event con SesionId, EquipoId, Puntos, Motivo, OperadorId |
+| `Sesion/Events/PenalizacionAplicada.cs` | **Nuevo** — domain event con SesionId, ParticipanteId, Puntos, Motivo, OperadorId |
 | `Sesion/Sesion.cs` | `AplicarPenalizacion`: emit `PenalizacionAplicada` + registra historial |
 | `tests/.../PuntajeTests.cs` | **Nuevo** — 13 tests del VO `Puntaje` (umbral-quality-spec §4.2) |
 | `tests/.../SesionAplicarPenalizacionTests.cs` | **Nuevo** — 17 tests HU-16 |
@@ -67,10 +67,10 @@ El operador aplica una penalización de puntaje a un equipo durante una sesión 
 | `AplicarPenalizacion_CuandoSesionActiva_EventoContieneDatosCorrectos` | Payload evento |
 | `AplicarPenalizacion_CuandoSesionActiva_RegistraEventoEnHistorial` | Historial |
 | `AplicarPenalizacion_CuandoPuntajeMenorQuePenalizacion_ResultaCero` | Floor |
-| `AplicarPenalizacion_CuandoEquipoConPuntajeCero_PermaneceCero` | Floor |
+| `AplicarPenalizacion_CuandoParticipanteConPuntajeCero_PermaneceCero` | Floor |
 | `AplicarPenalizacion_VariasPenalizaciones_AcumulanCorrectamente` | Acumulado |
 | `AplicarPenalizacion_CuandoSesionNoActiva_LanzaDomainException` | Theory×5 estados |
-| `AplicarPenalizacion_CuandoEquipoNoPerteneceSesion_LanzaDomainException` | Guard equipo |
+| `AplicarPenalizacion_CuandoParticipanteNoPerteneceSesion_LanzaDomainException` | Guard participante |
 | `AplicarPenalizacion_CuandoPuntosInvalidos_LanzaDomainException` | Theory×2 (0, -5) |
 | `AplicarPenalizacion_CuandoMotivoVacio_LanzaDomainException` | Theory×2 ("", "   ") |
 
@@ -80,10 +80,10 @@ El operador aplica una penalización de puntaje a un equipo durante una sesión 
 
 | HU | Título | Estado |
 |----|--------|--------|
-| **HU-16** | Aplicar penalización a equipo | ✅ |
+| **HU-16** | Aplicar penalización a participante | ✅ |
 | HU-15 | Pausar / reanudar sesión | ✅ (iter-03) |
 | HU-14 | Iniciar sesión | ✅ (iter-03) |
-| HU-13 | Registrar equipos | ✅ (iter-02) |
+| HU-13 | Registrar participantes | ✅ (iter-02) |
 | HU-12 | Crear sesión BT | ✅ (iter-01) |
 
 **Tests:** 107/107  

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from 'react-oidc-context'
 import { getHomePathForRol } from '@/auth/authPaths'
-import { isEquipoWebEnabled } from '@/auth/equipoWebAccess'
+import { isParticipanteWebEnabled } from '@/auth/participanteWebAccess'
 import { syncOidcSession } from '@/auth/syncOidcSession'
 import { SessionEndActions } from '@/components/shared/SessionEndActions'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -27,16 +27,16 @@ export function LoginPage() {
     )
   }
 
-  if (auth.isAuthenticated && rol === 'EquipoParticipante') {
-    if (!isEquipoWebEnabled()) {
+  if (auth.isAuthenticated && rol === 'Participante') {
+    if (!isParticipanteWebEnabled()) {
       return (
-        <SessionEndActions message="El rol equipo está deshabilitado en web. Usa la app mobile cuando esté disponible." />
+        <SessionEndActions message="El rol participante está deshabilitado en web. Usa la app mobile cuando esté disponible." />
       )
     }
-    return <Navigate to="/equipo" replace />
+    return <Navigate to="/participante" replace />
   }
 
-  if (auth.isAuthenticated && rol && rol !== 'EquipoParticipante') {
+  if (auth.isAuthenticated && rol && rol !== 'Participante') {
     return <Navigate to={getHomePathForRol(rol)} replace />
   }
 
@@ -56,9 +56,9 @@ export function LoginPage() {
         <h1 className="text-2xl font-bold text-indigo-700">UMBRAL</h1>
         <p className="mt-2 text-sm text-slate-600">
           Inicia sesión con el realm <code className="text-xs">umbral</code> en Keycloak.
-          Usuarios demo: <strong>admin</strong> / <strong>operador</strong> / <strong>equipo</strong> — contraseña{' '}
+          Usuarios demo: <strong>admin</strong> / <strong>operador</strong> / <strong>participante</strong> — contraseña{' '}
           <code className="text-xs">Umbral123!</code>
-          {' '}(jugador: panel <code className="text-xs">/equipo</code> en web durante E1)
+          {' '}(jugador: panel <code className="text-xs">/participante</code> en web durante E1)
         </p>
 
         <p className="mt-2 text-xs text-slate-500">

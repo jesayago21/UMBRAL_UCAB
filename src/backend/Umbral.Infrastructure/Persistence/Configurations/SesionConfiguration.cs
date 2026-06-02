@@ -21,6 +21,9 @@ public sealed class SesionConfiguration : IEntityTypeConfiguration<Sesion>
             .HasMaxLength(50)
             .IsRequired();
 
+        builder.Property(x => x.MisionId)
+            .HasColumnName("mision_id");
+
         builder.Property(x => x.OperadorId)
             .HasColumnName("operador_id")
             .IsRequired();
@@ -44,19 +47,16 @@ public sealed class SesionConfiguration : IEntityTypeConfiguration<Sesion>
         builder.Property(x => x.FinalizadaEn)
             .HasColumnName("finalizada_en");
 
-        builder.OwnsOne(
-            x => x.ContextoBT,
-            ContextoBusquedaTesoroConfiguration.Configure);
+        builder.OwnsOne(x => x.ContextoMision, ContextoMisionConfiguration.Configure);
+        builder.Navigation(x => x.ContextoMision).IsRequired(false);
 
+        builder.OwnsOne(x => x.ContextoBT, ContextoBusquedaTesoroConfiguration.Configure);
         builder.Navigation(x => x.ContextoBT).IsRequired(false);
 
-        builder.OwnsOne(
-            x => x.ContextoTrivia,
-            ContextoTriviaConfiguration.Configure);
-
+        builder.OwnsOne(x => x.ContextoTrivia, ContextoTriviaConfiguration.Configure);
         builder.Navigation(x => x.ContextoTrivia).IsRequired(false);
 
-        builder.Ignore(x => x.Equipos);
+        builder.Ignore(x => x.Participantes);
         builder.Ignore(x => x.HistorialEventos);
         builder.Ignore(x => x.Evidencias);
         builder.Ignore(x => x.DomainEvents);

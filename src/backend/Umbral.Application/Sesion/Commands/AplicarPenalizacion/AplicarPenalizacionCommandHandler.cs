@@ -35,7 +35,7 @@ internal sealed class AplicarPenalizacionCommandHandler
             command.Motivo,
             new UsuarioId(command.OperadorId));
 
-        sesion.AplicarPenalizacion(new EquipoId(command.EquipoId), penalizacion);
+        sesion.AplicarPenalizacion(new ParticipanteId(command.ParticipanteId), penalizacion);
 
         await _sesionRepository.SaveAsync(sesion, cancellationToken);
         await _eventPublisher.PublishBatchAsync(

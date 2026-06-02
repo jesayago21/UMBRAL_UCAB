@@ -8,7 +8,7 @@
 
 ## Caso de uso
 
-Cuando un equipo envía la primera evidencia QR **válida** en una etapa:
+Cuando un participante envía la primera evidencia QR **válida** en una etapa:
 
 1. Recibe **100 puntos** (`CalculoPuntajeBusquedaService`, RB-04)
 2. Se emite `EvidenciaValidada`
@@ -16,7 +16,7 @@ Cuando un equipo envía la primera evidencia QR **válida** en una etapa:
 4. Si no es la última etapa → `ContextoBT.AvanzarEtapa()` (RB-05, HU-20)
 5. Si es la última etapa → `Sesion.Finalizar()` automático
 
-Equipos posteriores con QR válido para etapa ya ganada reciben `Invalida` (sin puntaje).
+Participantes posteriores con QR válido para etapa ya ganada reciben `Invalida` (sin puntaje).
 
 ---
 
@@ -24,7 +24,7 @@ Equipos posteriores con QR válido para etapa ya ganada reciben `Invalida` (sin 
 
 | ID | Regla |
 |----|-------|
-| RB-04 | Primer equipo válido gana la etapa; demás no puntúan |
+| RB-04 | Primer participante válido gana la etapa; demás no puntúan |
 | RB-05 | Al completar nodo, todos avanzan al siguiente (via `AvanzarEtapa`) |
 | RF-09 | Puntaje asignado al ganador (100 pts/etapa) |
 | RF-21 | Transición automática al siguiente nodo |
@@ -43,7 +43,7 @@ Equipos posteriores con QR válido para etapa ya ganada reciben `Invalida` (sin 
 | `Sesion/Sesion.cs` | `ProcesarEvidenciaGanadora`, check `YaHayGanadorEnEtapaActual` |
 | `tests/.../CalculoPuntajeBusquedaServiceTests.cs` | **Nuevo** — 2 tests |
 | `tests/.../SesionGanadorTransicionTests.cs` | **Nuevo** — 10 tests |
-| `tests/.../SesionRegistrarEvidenciaTests.cs` | Actualizado test 2 equipos (RB-04) |
+| `tests/.../SesionRegistrarEvidenciaTests.cs` | Actualizado test 2 participantes (RB-04) |
 
 ---
 
@@ -53,7 +53,7 @@ Equipos posteriores con QR válido para etapa ya ganada reciben `Invalida` (sin 
 |-------|-------|-------|
 | `CalculoPuntajeBusquedaServiceTests` | 2 | 100 pts ganador, 0 no ganador |
 | `SesionGanadorTransicionTests` | 10 | puntaje, events, avance, RB-04, auto-finalizar, 200 pts 2 etapas |
-| `SesionRegistrarEvidenciaTests` | 1 actualizado | 2 equipos: solo primero puntúa |
+| `SesionRegistrarEvidenciaTests` | 1 actualizado | 2 participantes: solo primero puntúa |
 
 ---
 

@@ -68,7 +68,7 @@ public sealed class UnirseSesionValidatorTests
     }
 
     [Fact]
-    public void Validar_NombreEquipoVacio_TieneError()
+    public void Validar_NombreParticipanteVacio_TieneError()
     {
         var command = new UnirseSesionCommand(
             Guid.NewGuid(),
@@ -79,6 +79,6 @@ public sealed class UnirseSesionValidatorTests
         var result = _validator.Validate(command);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.NombreEquipo));
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.NombreParticipante));
     }
 }

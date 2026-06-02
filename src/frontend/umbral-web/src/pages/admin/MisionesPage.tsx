@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { LoadingState } from '@/components/shared/LoadingState'
 import { SuccessAlert } from '@/components/shared/SuccessAlert'
+import { useCategorias } from '@/hooks/useCategorias'
 import {
   useActualizarMision,
   useCrearMision,
@@ -30,7 +31,8 @@ export function MisionesPage() {
   const [nombreFiltro, setNombreFiltro] = useState('')
   const [estadoFiltro, setEstadoFiltro] = useState('')
   const [showCreate, setShowCreate] = useState(false)
-  const [createEtapas, setCreateEtapas] = useState<CrearEtapaRequest[]>([emptyEtapa()])
+  const [createEtapas, setCreateEtapas] = useState<CrearEtapaRequest[]>([emptyEtapa(1)])
+  const { data: categorias } = useCategorias()
   const [editTarget, setEditTarget] = useState<MisionDto | null>(null)
   const [detailTarget, setDetailTarget] = useState<MisionDto | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -53,21 +55,25 @@ export function MisionesPage() {
     event.preventDefault()
     setFormError(null)
     const form = new FormData(event.currentTarget)
-    const etapasValidas = createEtapas.filter(
-      (e) => e.descripcion.trim() && e.codigoQrSolucion.trim(),
-    )
+    const etapasValidas = createEtapas.filter((e) => {
+      if (e.tipoEtapa === 'Trivia') return (e.categoriaIds?.length ?? 0) > 0
+      return Boolean(e.descripcion?.trim() && e.codigoQrSolucion?.trim())
+    })
     if (etapasValidas.length === 0) {
-      setFormError('Agrega al menos una etapa con descripción y código QR.')
+      setFormError('Agrega al menos una etapa válida (BT: QR; Trivia: categorías).')
       return
     }
     try {
       await crear.mutateAsync({
         nombre: String(form.get('nombre')),
         activar: form.get('activar') === 'on',
-        etapas: etapasValidas.map((e) => ({
-          descripcion: e.descripcion.trim(),
-          codigoQrSolucion: e.codigoQrSolucion.trim(),
-          pistas: e.pistas
+        etapas: etapasValidas.map((e, i) => ({
+          tipoEtapa: e.tipoEtapa,
+          orden: i + 1,
+          descripcion: e.descripcion?.trim(),
+          codigoQrSolucion: e.codigoQrSolucion?.trim(),
+          categoriaIds: e.categoriaIds,
+          pistas: (e.pistas ?? [])
             .filter((p) => p.contenido.trim())
             .map((p) => ({
               contenido: p.contenido.trim(),
@@ -78,7 +84,7 @@ export function MisionesPage() {
         })),
       })
       setShowCreate(false)
-      setCreateEtapas([emptyEtapa()])
+      setCreateEtapas([emptyEtapa(1)])
       showSuccess('Misión creada correctamente.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
@@ -141,7 +147,7 @@ export function MisionesPage() {
               setShowCreate(true)
               setEditTarget(null)
               setDetailTarget(null)
-              setCreateEtapas([emptyEtapa()])
+              setCreateEtapas([emptyEtapa(1)])
               setFormError(null)
             }}
             className={btnPrimary}
@@ -189,12 +195,13 @@ export function MisionesPage() {
           <h3 className="font-medium text-slate-900">Crear misión</h3>
           <p className="text-xs text-slate-600">
             La misión es la plantilla del recorrido. Las etapas son los puntos con QR que los
-            equipos completan en orden durante la sesión.
+            participantes completan en orden durante la sesión.
           </p>
           <input name="nombre" required placeholder="Nombre de la misión" className={inputClass} />
           <EtapasEditor
             etapas={createEtapas}
             onChange={setCreateEtapas}
+            categoriaOptions={(categorias ?? []).map((c) => ({ id: c.id, nombre: c.nombre }))}
             disabled={isSaving}
           />
           <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -210,7 +217,7 @@ export function MisionesPage() {
               disabled={isSaving}
               onClick={() => {
                 setShowCreate(false)
-                setCreateEtapas([emptyEtapa()])
+                setCreateEtapas([emptyEtapa(1)])
               }}
               className={btnSecondary}
             >

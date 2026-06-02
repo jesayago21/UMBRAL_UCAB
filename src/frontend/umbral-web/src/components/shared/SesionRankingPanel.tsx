@@ -7,12 +7,12 @@ import type { PosicionRankingDto } from '@/types/sesion.types'
 
 export interface SesionRankingPanelProps {
   sesionId: string
-  /** Si false, no consulta la API (p. ej. sin equipos). */
+  /** Si false, no consulta la API (p. ej. sin participantes). */
   enabled?: boolean
-  /** Mensaje cuando aún no hay equipos inscritos. */
-  emptyEquiposMessage?: string
-  /** Resalta la fila del equipo del jugador. */
-  equipoIdDestacado?: string
+  /** Mensaje cuando aún no hay participantes inscritos. */
+  emptyParticipantesMessage?: string
+  /** Resalta la fila del participante del jugador. */
+  participanteIdDestacado?: string
   /** Título de la sección (default: Ranking). */
   title?: string
   className?: string
@@ -20,10 +20,10 @@ export interface SesionRankingPanelProps {
 
 function RankingTable({
   ranking,
-  equipoIdDestacado,
+  participanteIdDestacado,
 }: {
   ranking: PosicionRankingDto[]
-  equipoIdDestacado?: string
+  participanteIdDestacado?: string
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200">
@@ -31,25 +31,25 @@ function RankingTable({
         <thead className="bg-slate-50 text-left text-slate-600">
           <tr>
             <th className="px-4 py-2 font-medium">#</th>
-            <th className="px-4 py-2 font-medium">Equipo</th>
+            <th className="px-4 py-2 font-medium">Participante</th>
             <th className="px-4 py-2 font-medium">Puntaje</th>
           </tr>
         </thead>
         <tbody>
           {ranking.map((row) => {
-            const esMiEquipo = equipoIdDestacado === row.equipoId
+            const esMiParticipante = participanteIdDestacado === row.participanteId
             return (
               <tr
-                key={row.equipoId}
+                key={row.participanteId}
                 className={[
                   'border-t border-slate-100',
-                  esMiEquipo ? 'bg-indigo-50/80' : '',
+                  esMiParticipante ? 'bg-indigo-50/80' : '',
                 ].join(' ')}
               >
                 <td className="px-4 py-2">{row.posicion}</td>
                 <td className="px-4 py-2 font-medium text-slate-900">
-                  {row.nombreEquipo}
-                  {esMiEquipo && (
+                  {row.nombreParticipante}
+                  {esMiParticipante && (
                     <span className="ml-2 text-xs font-normal text-indigo-700">(tú)</span>
                   )}
                 </td>
@@ -67,8 +67,8 @@ function RankingTable({
 export function SesionRankingPanel({
   sesionId,
   enabled = true,
-  emptyEquiposMessage = 'Aún no hay equipos inscritos.',
-  equipoIdDestacado,
+  emptyParticipantesMessage = 'Aún no hay participantes inscritos.',
+  participanteIdDestacado,
   title = 'Ranking',
   className = '',
 }: SesionRankingPanelProps) {
@@ -97,7 +97,7 @@ export function SesionRankingPanel({
       </div>
 
       {!queryEnabled && (
-        <p className="text-sm text-slate-600">{emptyEquiposMessage}</p>
+        <p className="text-sm text-slate-600">{emptyParticipantesMessage}</p>
       )}
 
       {queryEnabled && isLoading && <LoadingState label="Cargando ranking…" />}
@@ -109,7 +109,7 @@ export function SesionRankingPanel({
       )}
 
       {queryEnabled && ranking && ranking.length > 0 && (
-        <RankingTable ranking={ranking} equipoIdDestacado={equipoIdDestacado} />
+        <RankingTable ranking={ranking} participanteIdDestacado={participanteIdDestacado} />
       )}
 
       {queryEnabled && ranking && ranking.length === 0 && !isLoading && !isError && (

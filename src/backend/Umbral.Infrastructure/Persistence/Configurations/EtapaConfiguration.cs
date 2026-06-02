@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
+using Umbral.Infrastructure.Persistence.ValueConverters;
 
 namespace Umbral.Infrastructure.Persistence.Configurations;
 
@@ -9,6 +10,10 @@ public sealed class EtapaConfiguration : IEntityTypeConfiguration<Etapa>
     public void Configure(EntityTypeBuilder<Etapa> builder)
     {
         builder.ToTable("etapas");
+
+        builder.HasDiscriminator<string>("tipo_etapa")
+            .HasValue<EtapaBusquedaTesoro>(nameof(TipoEtapa.BusquedaTesoro))
+            .HasValue<EtapaTrivia>(nameof(TipoEtapa.Trivia));
 
         builder.HasKey(x => x.EtapaId);
 
@@ -23,6 +28,17 @@ public sealed class EtapaConfiguration : IEntityTypeConfiguration<Etapa>
             .HasColumnName("orden")
             .IsRequired();
 
+        builder.HasIndex(x => new { x.MisionId, x.Orden })
+            .IsUnique();
+
+        builder.Ignore(x => x.Tipo);
+    }
+}
+
+public sealed class EtapaBusquedaTesoroConfiguration : IEntityTypeConfiguration<EtapaBusquedaTesoro>
+{
+    public void Configure(EntityTypeBuilder<EtapaBusquedaTesoro> builder)
+    {
         builder.Property(x => x.Descripcion)
             .HasColumnName("descripcion")
             .HasMaxLength(500)
@@ -39,8 +55,18 @@ public sealed class EtapaConfiguration : IEntityTypeConfiguration<Etapa>
             .WithOne()
             .HasForeignKey(x => x.EtapaId)
             .OnDelete(DeleteBehavior.Cascade);
+    }
+}
 
-        builder.HasIndex(x => new { x.MisionId, x.Orden })
-            .IsUnique();
+public sealed class EtapaTriviaConfiguration : IEntityTypeConfiguration<EtapaTrivia>
+{
+    public void Configure(EntityTypeBuilder<EtapaTrivia> builder)
+    {
+        builder.Property(x => x.CategoriaIdsStorage)
+            .HasColumnName("categoria_ids_json")
+            .HasColumnType("jsonb")
+            .HasConversion(new CategoriaIdsJsonValueConverter());
+
+        builder.Ignore(x => x.CategoriaIds);
     }
 }

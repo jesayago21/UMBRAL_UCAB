@@ -39,7 +39,7 @@ VITE_KEYCLOAK_CLIENT_ID=umbral-web
 |-----|----------------|
 | `Administrador` | `/admin/misiones` |
 | `Operador` | `/operador/sesiones` |
-| `EquipoParticipante` | `/equipo` (web si `VITE_EQUIPO_WEB_ENABLED=true`; bloqueado si `false` para mobile) |
+| `Participante` | `/participante` (web si `VITE_PARTICIPANTE_WEB_ENABLED=true`; bloqueado si `false` para mobile) |
 
 **403 demo:** `operador` en `/admin/*` → pantalla acceso denegado.
 

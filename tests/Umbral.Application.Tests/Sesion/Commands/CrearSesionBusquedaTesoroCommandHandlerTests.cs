@@ -3,7 +3,9 @@ using NSubstitute;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Sesion.Commands.CrearSesionBusquedaTesoro;
 using Umbral.Application.Tests.Builders;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
+using Umbral.Domain.CatalogoTrivia.Categoria;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Sesion.Events;
@@ -21,6 +23,8 @@ public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
 {
     private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
     private readonly IMisionRepository _misionRepo = Substitute.For<IMisionRepository>();
+    private readonly IPreguntaRepository _preguntaRepo = Substitute.For<IPreguntaRepository>();
+    private readonly ICategoriaRepository _categoriaRepo = Substitute.For<ICategoriaRepository>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
     private readonly CrearSesionBusquedaTesoroCommandHandler _sut;
 
@@ -29,6 +33,8 @@ public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
         _sut = new CrearSesionBusquedaTesoroCommandHandler(
             _sesionRepo,
             _misionRepo,
+            _preguntaRepo,
+            _categoriaRepo,
             _publisher);
     }
 

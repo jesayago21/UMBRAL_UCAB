@@ -63,7 +63,7 @@ export function SesionesOperativasList({ sesiones, isLoading }: SesionesOperativ
                       {s.tipoSesion === 'Trivia' ? 'Trivia' : 'Búsqueda'}
                     </span>
                     {' · '}
-                    {s.equiposCount} equipo{s.equiposCount === 1 ? '' : 's'}
+                    {s.participantesCount} participante{s.participantesCount === 1 ? '' : 's'}
                     {s.totalEtapas > 0 && (
                       <>
                         {' · '}

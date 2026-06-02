@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Xunit;
 
 namespace Umbral.Domain.Tests.Shared;
@@ -13,7 +13,7 @@ public sealed class EntityTests
     private static Mision MisionConEtapa()
     {
         var mision = Mision.Crear("Misión entidad");
-        mision.AgregarEtapa("Etapa 1", "QR-ENT-001");
+        mision.AgregarEtapaBusquedaTesoro("Etapa 1", "QR-ENT-001");
         return mision;
     }
 

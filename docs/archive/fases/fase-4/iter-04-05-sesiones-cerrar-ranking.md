@@ -4,7 +4,7 @@
 
 Cerrar el ciclo de vida de la sesión en la API REST (HU-23) y exponer la consulta de ranking en vivo (HU-21), reutilizando la lógica ya implementada en Application y Domain en Fase 2.
 
-Con esta iteración, el `SesionesController` cubre el flujo operador completo: crear → equipos → iniciar → juego (pausa, penalización, evidencias) → **finalizar o cancelar** → consultar **ranking**.
+Con esta iteración, el `SesionesController` cubre el flujo operador completo: crear → participantes → iniciar → juego (pausa, penalización, evidencias) → **finalizar o cancelar** → consultar **ranking**.
 
 ---
 
@@ -42,20 +42,20 @@ La capa Application **no duplica** esas reglas: los handlers cargan el agregado,
 [
   {
     "posicion": 1,
-    "equipoId": "a1b2c3d4-...",
-    "nombreEquipo": "Beta",
+    "participanteId": "a1b2c3d4-...",
+    "nombreParticipante": "Beta",
     "puntajeTotal": 100
   },
   {
     "posicion": 2,
-    "equipoId": "e5f6g7h8-...",
-    "nombreEquipo": "Alpha",
+    "participanteId": "e5f6g7h8-...",
+    "nombreParticipante": "Alpha",
     "puntajeTotal": 0
   }
 ]
 ```
 
-Tras una evidencia **válida** que gana la etapa, el equipo suma **100 puntos** (`CalculoPuntajeBusquedaService`, ganador de etapa).
+Tras una evidencia **válida** que gana la etapa, el participante suma **100 puntos** (`CalculoPuntajeBusquedaService`, ganador de etapa).
 
 ---
 
@@ -85,7 +85,7 @@ sequenceDiagram
     C->>M: GetRankingSesionQuery
     M->>H: Handle
     H->>DB: FindByIdAsync
-    H->>D: RankingService.Calcular(equipos)
+    H->>D: RankingService.Calcular(participantes)
     H-->>C: List PosicionRankingDto
     C-->>Op: 200 JSON
 ```
@@ -110,15 +110,15 @@ El middleware `ExceptionHandlingMiddleware` traduce las excepciones; el controll
 | `Contracts/Sesiones/CancelarSesionRequest.cs` | DTO entrada cancelar |
 | `Contracts/Sesiones/PosicionRankingResponse.cs` | DTO salida ranking |
 | `tests/.../SesionesControllerTests.cs` | 9 tests de integración |
-| `SesionRepository.cs` | `SyncEquiposPuntajeAsync`: actualiza `puntaje_total` al guardar (necesario para ranking tras evidencia/penalización) |
+| `SesionRepository.cs` | `SyncParticipantesPuntajeAsync`: actualiza `puntaje_total` al guardar (necesario para ranking tras evidencia/penalización) |
 
 Application y Domain sin cambios: los commands/queries ya existían desde Fase 2.
 
 ### Ajuste de persistencia (ranking real)
 
-El repositorio ya actualizaba estado de sesión, `ContextoBT` e hijos nuevos, pero **no** el puntaje de equipos existentes. Al probar `GET ranking` tras una evidencia válida, ambos equipos seguían en 0 en BD.
+El repositorio ya actualizaba estado de sesión, `ContextoBT` e hijos nuevos, pero **no** el puntaje de participantes existentes. Al probar `GET ranking` tras una evidencia válida, ambos participantes seguían en 0 en BD.
 
-Se añadió sincronización con `ExecuteUpdate` por cada `EquipoSesion`, alineada al patrón híbrido del repositorio (misma razón que `SyncContextoBtAsync`).
+Se añadió sincronización con `ExecuteUpdate` por cada `ParticipanteSesion`, alineada al patrón híbrido del repositorio (misma razón que `SyncContextoBtAsync`).
 
 ---
 
@@ -126,7 +126,7 @@ Se añadió sincronización con `ExecuteUpdate` por cada `EquipoSesion`, alinead
 
 | Test | Qué verifica |
 |------|----------------|
-| `POST_finalizar_CuandoSesionActiva_Retorna204` | Happy path tras crear → equipo → iniciar |
+| `POST_finalizar_CuandoSesionActiva_Retorna204` | Happy path tras crear → participante → iniciar |
 | `POST_finalizar_CuandoSesionNoIniciada_Retorna400` | Dominio: no se finaliza en `EnPreparacion` |
 | `POST_finalizar_CuandoSesionNoExiste_Retorna404` | Sesión inexistente |
 | `POST_cancelar_CuandoMotivoValido_Retorna204` | Cancelación en sesión activa |

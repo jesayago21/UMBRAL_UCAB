@@ -5,7 +5,7 @@ interface SessionEndActionsProps {
   message?: string
 }
 
-/** Pantalla auxiliar cuando el rol no aplica a la web (p. ej. equipo). */
+/** Pantalla auxiliar cuando el rol no aplica a la web (p. ej. participante). */
 export function SessionEndActions({
   message = 'Esta cuenta no puede usar el panel web.',
 }: SessionEndActionsProps) {
@@ -18,7 +18,7 @@ export function SessionEndActions({
         <p className="mt-2 text-sm text-amber-800">{message}</p>
         <p className="mt-2 text-xs text-amber-700">
           Para pruebas de Entrega 1, activa el panel web con{' '}
-          <code className="text-xs">VITE_EQUIPO_WEB_ENABLED=true</code> en{' '}
+          <code className="text-xs">VITE_PARTICIPANTE_WEB_ENABLED=true</code> en{' '}
           <code className="text-xs">umbral-web/.env</code>. Cuando exista la app mobile, ponlo en{' '}
           <code className="text-xs">false</code>.
         </p>

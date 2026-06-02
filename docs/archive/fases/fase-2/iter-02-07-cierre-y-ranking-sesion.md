@@ -25,7 +25,7 @@ Completar los casos de uso de cierre de sesión y consulta de ranking desde Appl
 
 - **Finalizar:** buscar sesión -> `sesion.Finalizar()` -> persistir -> `PublishBatchAsync` -> `ClearDomainEvents`.
 - **Cancelar:** buscar sesión -> `sesion.Cancelar(motivo)` -> persistir -> `PublishBatchAsync` -> `ClearDomainEvents`.
-- **Ranking:** buscar sesión -> `RankingService.Calcular(sesion.Equipos)` -> map a `PosicionRankingDto`.
+- **Ranking:** buscar sesión -> `RankingService.Calcular(sesion.Participantes)` -> map a `PosicionRankingDto`.
 
 ---
 

@@ -28,7 +28,7 @@ elimina por completo el JWT propio.
 
 | Elemento | Detalle |
 |----------|---------|
-| Roles realm | `Administrador`, `Operador`, `EquipoParticipante` |
+| Roles realm | `Administrador`, `Operador`, `Participante` |
 | Client `umbral-web` | público, Auth Code + **PKCE (S256)**, `redirectUris` a `localhost:5173/3000`, Direct Access Grants on (para smoke), **audience mapper → `umbral-api`** |
 | Client `umbral-api` | `bearerOnly` (resource server) |
 | Usuarios demo | `admin` / `operador` / `equipo` — password `Umbral123!` (no temporal) con su rol |

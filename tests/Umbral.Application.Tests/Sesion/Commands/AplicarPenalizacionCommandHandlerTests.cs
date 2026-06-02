@@ -28,8 +28,8 @@ public sealed class AplicarPenalizacionCommandHandlerTests
     public async Task Handle_CuandoSesionActiva_AplicaPenalizacionYPublicaEvento()
     {
         var sesion = SesionTestBuilder.Activa("Alpha");
-        var equipo = sesion.Equipos.First();
-        equipo.SumarPuntaje(100);
+        var participante = sesion.Participantes.First();
+        participante.SumarPuntaje(100);
         sesion.ClearDomainEvents();
 
         _sesionRepo
@@ -51,14 +51,14 @@ public sealed class AplicarPenalizacionCommandHandlerTests
         var result = await _sut.Handle(
             new AplicarPenalizacionCommand(
                 sesion.SesionId.Valor,
-                equipo.EquipoId.Valor,
+                participante.ParticipanteId.Valor,
                 20,
                 "Trampa detectada",
                 Guid.NewGuid()),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        equipo.PuntajeTotal.Valor.Should().Be(80);
+        participante.PuntajeTotal.Valor.Should().Be(80);
         eventos.Should().ContainSingle().Which.Should().BeOfType<PenalizacionAplicada>();
         sesion.DomainEvents.Should().BeEmpty();
     }
@@ -80,8 +80,8 @@ public sealed class AplicarPenalizacionCommandHandlerTests
     [Fact]
     public async Task Handle_CuandoSesionNoActiva_LanzaDomainException()
     {
-        var sesion = SesionTestBuilder.ConEquipo("Alpha");
-        var equipo = sesion.Equipos.First();
+        var sesion = SesionTestBuilder.ConParticipante("Alpha");
+        var participante = sesion.Participantes.First();
 
         _sesionRepo
             .FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>())
@@ -90,7 +90,7 @@ public sealed class AplicarPenalizacionCommandHandlerTests
         var act = () => _sut.Handle(
             new AplicarPenalizacionCommand(
                 sesion.SesionId.Valor,
-                equipo.EquipoId.Valor,
+                participante.ParticipanteId.Valor,
                 5,
                 "Fuera de reglas",
                 Guid.NewGuid()),

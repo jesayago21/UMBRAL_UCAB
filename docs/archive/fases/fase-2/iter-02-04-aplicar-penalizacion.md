@@ -27,7 +27,7 @@ Retorno: `Result<Guid>` con el `SesionId`.
 
 1. Buscar sesión por id (`NotFoundException` si no existe).  
 2. Construir `Penalizacion(puntos, motivo, operadorId)`.  
-3. Ejecutar `sesion.AplicarPenalizacion(equipoId, penalizacion)`.  
+3. Ejecutar `sesion.AplicarPenalizacion(participanteId, penalizacion)`.  
 4. Persistir y publicar eventos (`PublishBatchAsync`) y limpiar (`ClearDomainEvents`).
 
 ---

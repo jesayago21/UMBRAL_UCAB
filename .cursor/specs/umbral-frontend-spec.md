@@ -1,6 +1,6 @@
 # UMBRAL — Especificación Técnica Frontend
 
-> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **RNF-12**, **RNF-14** · mobile equipo en alcance.
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · **RNF-12**, **RNF-14** · mobile participante en alcance.
 
 ## 1. Visión general
 
@@ -81,7 +81,7 @@ export interface SesionDto {
   operadorId: string;
   iniciadaEn: string | null;
   finalizadaEn: string | null;
-  totalEquipos: number;
+  totalParticipantes: number;
 }
 
 export interface EstadoSesionDetalleDto {
@@ -90,13 +90,13 @@ export interface EstadoSesionDetalleDto {
   estado: EstadoSesion;
   etapaActualIndex?: number;       // solo BusquedaTesoro
   preguntaActualIndex?: number;    // solo Trivia
-  equipos: EquipoResumenDto[];
+  participantes: EquipoResumenDto[];
   ranking: PosicionRankingDto[];
 }
 
-// types/equipo.types.ts
+// types/participante.types.ts
 export interface EquipoResumenDto {
-  equipoId: string;
+  participanteId: string;
   nombre: string;
   puntajeTotal: number;
   tiempoAcumuladoMs: number;
@@ -105,7 +105,7 @@ export interface EquipoResumenDto {
 
 export interface PosicionRankingDto {
   posicion: number;
-  nombreEquipo: string;
+  nombreParticipante: string;
   puntajeTotal: number;
   tiempoAcumuladoMs: number;
 }
@@ -504,14 +504,14 @@ export const useRanking = (sesionId: string) => {
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-type Rol = 'Administrador' | 'Operador' | 'EquipoParticipante';
+type Rol = 'Administrador' | 'Operador' | 'Participante';
 
 interface AuthState {
   token: string | null;
   userId: string | null;
   rol: Rol | null;
   sesionId: string | null;
-  equipoId: string | null;
+  participanteId: string | null;
   login: (params: LoginParams) => void;
   logout: () => void;
   estaAutenticado: () => boolean;
@@ -522,14 +522,14 @@ export const authStore = create<AuthState>()(
   persist(
     (set, get) => ({
       token: null, userId: null, rol: null,
-      sesionId: null, equipoId: null,
-      login: ({ token, userId, rol, sesionId, equipoId }) =>
+      sesionId: null, participanteId: null,
+      login: ({ token, userId, rol, sesionId, participanteId }) =>
         set({ token, userId, rol,
               sesionId: sesionId ?? null,
-              equipoId: equipoId ?? null }),
+              participanteId: participanteId ?? null }),
       logout: () => set({
         token: null, userId: null, rol: null,
-        sesionId: null, equipoId: null }),
+        sesionId: null, participanteId: null }),
       estaAutenticado: () => !!get().token,
     }),
     { name: 'umbral-auth',
@@ -707,7 +707,7 @@ export const OperatorDashboardPage = () => {
 
       {/* Col 3: Panel específico por tipo */}
       {sesionActiva.tipoSesion === 'BusquedaTesoro'
-        ? <HintReleasePanel sesionId={sesionId!} equipos={sesionActiva.equipos} />
+        ? <HintReleasePanel sesionId={sesionId!} participantes={sesionActiva.equipos} />
         : <TriviaOperatorPanel sesionId={sesionId!} />
       }
     </div>
@@ -803,13 +803,13 @@ export const AppNavigator = () => {
 };
 ```
 
-### 9.3 JoinScreen — autenticación del equipo
+### 9.3 JoinScreen — autenticación del participante
 
 ```typescript
 // screens/auth/JoinScreen.tsx
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { equipoService } from '@/services/equipoService';
+import { equipoService } from '@/services/participanteService';
 import { authStore } from '@/store/authStore';
 
 export const JoinScreen = () => {
@@ -823,15 +823,15 @@ export const JoinScreen = () => {
     setError(null);
 
     try {
-      const { token, equipoId, sesionId, tipoSesion } =
+      const { token, participanteId, sesionId, tipoSesion } =
         await equipoService.unirse(codigo.trim());
 
       authStore.getState().login({
         token,
-        userId: equipoId,
-        rol: 'EquipoParticipante',
+        userId: participanteId,
+        rol: 'Participante',
         sesionId,
-        equipoId,
+        participanteId,
         tipoSesion,
       });
     } catch {
@@ -938,7 +938,7 @@ import { useBusquedaTesoro } from '@/hooks/useBusquedaTesoro';
 import { authStore } from '@/store/authStore';
 
 export const BusquedaDashboardScreen = () => {
-  const { sesionId, equipoId } = authStore();
+  const { sesionId, participanteId } = authStore();
   const {
     pistas,
     puntaje,
@@ -947,7 +947,7 @@ export const BusquedaDashboardScreen = () => {
     enviarEvidencia,
     enviando,
     resultadoUltimaEvidencia,
-  } = useBusquedaTesoro(sesionId!, equipoId!);
+  } = useBusquedaTesoro(sesionId!, participanteId!);
 
   return (
     <ScrollView className="flex-1 p-6">
@@ -957,7 +957,7 @@ export const BusquedaDashboardScreen = () => {
       {/* Estado de etapa */}
       {bloqueado && (
         <Text className="text-center text-orange-500 font-semibold my-3">
-          Otro equipo encontró el tesoro primero. ¡Sigue en la próxima etapa!
+          Otro participante encontró el tesoro primero. ¡Sigue en la próxima etapa!
         </Text>
       )}
 
@@ -1009,4 +1009,4 @@ EXPO_PUBLIC_APP_NAME=UMBRAL
 | Estilos con Tailwind CSS | ✅ | ❌ |
 | Estilos con NativeWind | ❌ | ✅ |
 | Fallback REST si SignalR falla | ✅ | ✅ |
-| Roles permitidos | Admin, Operador | EquipoParticipante |
+| Roles permitidos | Admin, Operador | Participante |

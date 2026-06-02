@@ -13,9 +13,11 @@ public sealed record MisionDto(
 public sealed record EtapaMisionDto(
     Guid EtapaId,
     int Orden,
-    string Descripcion,
-    string CodigoQrSolucion,
-    IReadOnlyList<PistaMisionDto> Pistas);
+    string TipoEtapa,
+    string? Descripcion,
+    string? CodigoQrSolucion,
+    IReadOnlyList<PistaMisionDto>? Pistas,
+    IReadOnlyList<Guid>? CategoriaIds);
 
 public sealed record PistaMisionDto(
     Guid PistaId,

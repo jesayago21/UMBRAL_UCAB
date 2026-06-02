@@ -14,7 +14,7 @@ UMBRAL gestiona sesiones de Búsqueda del Tesoro y Trivia con tres roles:
 
 - `Administrador`: catálogo (misiones, etapas, pistas, categorías, preguntas)
 - `Operador`: creación y orquestación de sesiones
-- `EquipoParticipante`: unión a sesión y vista de partida (web temporal en E1)
+- `Participante`: unión a sesión y vista de partida (web temporal en E1)
 
 Arquitectura y stack:
 
@@ -56,7 +56,7 @@ Arquitectura y stack:
 | E1-03 | CI con gate de cobertura | Completada |
 | E1-07..10 | Trivia backend (dominio -> API) | Completada |
 | E1-K1..K4 | Keycloak (infra + backend + web OIDC) | Completada |
-| E1-M1 | Mobile login opcional | No ejecutada (reemplazada por web equipo temporal) |
+| E1-M1 | Mobile login opcional | No ejecutada (reemplazada por web participante temporal) |
 
 ---
 
@@ -68,14 +68,14 @@ Fuente de códigos: `docs/TRAZABILIDAD.md` y `docs/ERS_Proyecto_UMBRAL_UCAB.md`.
 |---|---|
 | HU-01..HU-04 (CRUD misiones) | Cubiertas |
 | HU-05..HU-10 (etapas/pistas de misión) | Cubiertas en administración base |
-| HU-12..HU-16 (crear sesión, unir equipos, iniciar/pausar/reanudar, penalización) | Cubiertas en backend y operador |
+| HU-12..HU-16 (crear sesión, unir participantes, iniciar/pausar/reanudar, penalización) | Cubiertas en backend y operador |
 | HU-18..HU-23 (evidencia, ranking, cierre/auditoría) | Backend cubierto; UI parcial según alcance E1 |
 | HU-24..HU-31 (CRUD trivia banco) | Cubiertas |
 | HU-32..HU-40 (trivia jugable en vivo) | Pendientes (E2) |
 
 Notas:
 
-- En E1 se incorporó sesión de trivia en operador y flujo de equipo web para unión/visualización de preguntas.
+- En E1 se incorporó sesión de trivia en operador y flujo de participante web para unión/visualización de preguntas.
 - La interacción en vivo (rounds/respuesta sincronizada) queda en E2.
 
 ---
@@ -114,7 +114,7 @@ Notas:
 3. Operador web:
    - Crear sesiones BT y Trivia
    - Abrir inscripción, iniciar/pausar/reanudar/finalizar/cancelar
-   - Ver equipos y ranking por refresco manual
+   - Ver participantes y ranking por refresco manual
 4. Equipo web (temporal):
    - Ver sesiones abiertas BT/Trivia
    - Unirse con código de sesión

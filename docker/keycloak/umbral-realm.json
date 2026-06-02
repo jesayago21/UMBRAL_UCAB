@@ -10,7 +10,7 @@
     "realm": [
       { "name": "Administrador", "description": "Gestiona catálogo (misiones, banco de trivia) y usuarios" },
       { "name": "Operador", "description": "Gestiona y ejecuta sesiones" },
-      { "name": "EquipoParticipante", "description": "Acceso solo a su sesión activa" }
+      { "name": "Participante", "description": "Acceso solo a su sesión activa" }
     ]
   },
   "clients": [
@@ -81,16 +81,16 @@
       "realmRoles": ["Operador"]
     },
     {
-      "username": "equipo",
+      "username": "participante",
       "enabled": true,
       "emailVerified": true,
-      "email": "equipo@umbral.local",
-      "firstName": "Equipo",
+      "email": "participante@umbral.local",
+      "firstName": "Participante",
       "lastName": "UMBRAL",
       "credentials": [
         { "type": "password", "value": "Umbral123!", "temporary": false }
       ],
-      "realmRoles": ["EquipoParticipante"]
+      "realmRoles": ["Participante"]
     }
   ]
 }

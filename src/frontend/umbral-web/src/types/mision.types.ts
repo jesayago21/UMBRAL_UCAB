@@ -1,4 +1,5 @@
 export type EstadoMision = 'Activa' | 'Inactiva'
+export type TipoEtapaApi = 'BusquedaTesoro' | 'Trivia'
 
 export interface PistaDto {
   pistaId: string
@@ -10,9 +11,11 @@ export interface PistaDto {
 export interface EtapaDto {
   etapaId: string
   orden: number
-  descripcion: string
-  codigoQrSolucion: string
-  pistas: PistaDto[]
+  tipoEtapa: TipoEtapaApi
+  descripcion?: string | null
+  codigoQrSolucion?: string | null
+  pistas?: PistaDto[] | null
+  categoriaIds?: string[] | null
 }
 
 export interface MisionDto {
@@ -33,9 +36,12 @@ export interface CrearPistaRequest {
 }
 
 export interface CrearEtapaRequest {
-  descripcion: string
-  codigoQrSolucion: string
-  pistas: CrearPistaRequest[]
+  tipoEtapa: TipoEtapaApi
+  orden: number
+  descripcion?: string
+  codigoQrSolucion?: string
+  pistas?: CrearPistaRequest[]
+  categoriaIds?: string[]
 }
 
 export interface CrearMisionRequest {

@@ -6,7 +6,7 @@ export function getHomePathForRol(rol: RolUsuario): string {
       return '/admin/misiones'
     case 'Operador':
       return '/operador/sesiones'
-    case 'EquipoParticipante':
-      return '/equipo'
+    case 'Participante':
+      return '/participante'
   }
 }

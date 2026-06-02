@@ -52,7 +52,7 @@ export function HomeRedirect() {
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (rol === 'Administrador') return <Navigate to="/admin/misiones" replace />
   if (rol === 'Operador') return <Navigate to="/operador/sesiones" replace />
-  if (rol === 'EquipoParticipante') return <Navigate to="/equipo" replace />
+  if (rol === 'Participante') return <Navigate to="/participante" replace />
 
   return <AccessDenied message="Rol no reconocido. Cierra sesión e intenta de nuevo." />
 }
