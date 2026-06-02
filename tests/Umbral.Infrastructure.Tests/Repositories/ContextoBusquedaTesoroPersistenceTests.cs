@@ -13,7 +13,7 @@ public sealed class ContextoBusquedaTesoroPersistenceTests(PostgresFixture fixtu
     public async Task SaveAsync_Y_FindByIdAsync_PersisteContextoMisionConSnapshot()
     {
         var snapshot = DomainTestData.MisionSnapshotActiva("Misión contexto BT");
-        var sesion     = Sesion.CrearBusquedaTesoro(snapshot, UsuarioId.Nuevo());
+        var sesion     = Sesion.CrearDesdeMision(snapshot, UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
 
         await using (var db = fixture.CreateDbContext())
@@ -64,7 +64,7 @@ public sealed class ContextoBusquedaTesoroPersistenceTests(PostgresFixture fixtu
         mision.AgregarPistaAEtapa(etapaId, "Busca cerca del árbol", TipoLiberacion.PorGanador, null);
         mision.Activar();
         var snapshot = MisionSnapshot.DesdeSoloBusquedaTesoro(mision);
-        var sesion     = Sesion.CrearBusquedaTesoro(snapshot, UsuarioId.Nuevo());
+        var sesion     = Sesion.CrearDesdeMision(snapshot, UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
 
         await using (var db = fixture.CreateDbContext())

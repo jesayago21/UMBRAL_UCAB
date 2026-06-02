@@ -190,7 +190,7 @@ public sealed class SesionGanadorTransicionTests
         mision.ClearDomainEvents();
 
         var snapshot = MisionSnapshot.DesdeSoloBusquedaTesoro(mision);
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, UsuarioId.Nuevo());
+        var sesion = SesionAR.CrearDesdeMision(snapshot, UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
         sesion.AbrirParaRegistro();
         foreach (var nombre in participantes)

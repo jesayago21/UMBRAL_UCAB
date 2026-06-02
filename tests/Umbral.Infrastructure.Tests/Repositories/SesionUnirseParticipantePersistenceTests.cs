@@ -12,7 +12,7 @@ public sealed class SesionUnirseParticipantePersistenceTests(PostgresFixture fix
     [Fact]
     public async Task CrearSesionYUnirseParticipante_EnDosPasos_PersisteParticipante()
     {
-        var sesion = Sesion.CrearBusquedaTesoro(
+        var sesion = Sesion.CrearDesdeMision(
             DomainTestData.MisionSnapshotActiva(),
             UsuarioId.Nuevo());
         sesion.ClearDomainEvents();

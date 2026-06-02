@@ -1,6 +1,7 @@
 using MediatR;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.CatalogoTrivia.Categoria;
 using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Ports;
@@ -65,10 +66,12 @@ internal sealed class CrearSesionTriviaCommandHandler
             throw new DomainException(
                 "Las categorías seleccionadas no tienen preguntas activas con categoría asignada.");
 
-        var sesion = SesionAR.CrearTrivia(
+        var snapshot = MisionSnapshot.SoloTrivia(
             preguntasOrdenadas,
-            new UsuarioId(command.OperadorId),
             string.Join(", ", nombresCategorias));
+        var sesion = SesionAR.CrearDesdeMision(
+            snapshot,
+            new UsuarioId(command.OperadorId));
 
         await _sesionRepository.SaveAsync(sesion, cancellationToken);
         await _eventPublisher.PublishBatchAsync(

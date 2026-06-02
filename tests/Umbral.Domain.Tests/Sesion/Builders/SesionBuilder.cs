@@ -67,7 +67,7 @@ public sealed class SesionBuilder
         var operadorId = _operadorId ?? UsuarioId.Nuevo();
         var snapshot   = _snapshot ?? MisionSnapshotFake();
 
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
         sesion.ClearDomainEvents();
 
         // Forzar estado usando la maquina real hasta el punto requerido,

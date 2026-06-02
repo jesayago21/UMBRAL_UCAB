@@ -20,7 +20,7 @@ internal static class DomainTestData
 
     public static Sesion SesionBusquedaTesoroActiva(string participante = "Alpha")
     {
-        var sesion = Sesion.CrearBusquedaTesoro(MisionSnapshotActiva(), UsuarioId.Nuevo());
+        var sesion = Sesion.CrearDesdeMision(MisionSnapshotActiva(), UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
         sesion.AbrirParaRegistro();
         sesion.UnirseParticipante(UsuarioId.Nuevo(), participante, sesion.CodigoAcceso.Valor);

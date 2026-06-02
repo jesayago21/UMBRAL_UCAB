@@ -9,7 +9,7 @@ internal static class SesionTestBuilder
 {
     public static SesionAR EnPreparacionSinParticipantes()
     {
-        var sesion = SesionAR.CrearBusquedaTesoro(
+        var sesion = SesionAR.CrearDesdeMision(
             MisionSnapshot.DesdeSoloBusquedaTesoro(MisionTestBuilder.Activa()),
             UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
@@ -68,7 +68,7 @@ internal static class SesionTestBuilder
 
     public static SesionAR ActivaConParticipantesDosEtapas(params string[] nombresParticipantes)
     {
-        var sesion = SesionAR.CrearBusquedaTesoro(
+        var sesion = SesionAR.CrearDesdeMision(
             MisionSnapshot.DesdeSoloBusquedaTesoro(MisionTestBuilder.ActivaConDosEtapas()),
             UsuarioId.Nuevo());
         sesion.ClearDomainEvents();

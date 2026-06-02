@@ -28,7 +28,7 @@ public sealed class SesionRepositoryTests(PostgresFixture fixture)
     public async Task FindActivasAsync_RetornaSoloSesionesActivas()
     {
         var activa = DomainTestData.SesionBusquedaTesoroActiva("Activos");
-        var programada = Sesion.CrearBusquedaTesoro(
+        var programada = Sesion.CrearDesdeMision(
             DomainTestData.MisionSnapshotActiva("Otra misión"),
             UsuarioId.Nuevo());
         programada.ClearDomainEvents();

@@ -3,6 +3,7 @@ using NSubstitute;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Sesion.Queries.GetPreguntasTriviaSesionParticipante;
 using Umbral.Application.Tests.Builders;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Shared;
@@ -29,10 +30,9 @@ public sealed class GetPreguntasTriviaSesionParticipanteQueryHandlerTests
         var pregunta = TriviaTestBuilder.PreguntaConCategoria(categoria.CategoriaId);
         var operadorId = UsuarioId.Nuevo();
         var jugadorId = UsuarioId.Nuevo();
-        var sesion = SesionAR.CrearTrivia(
-            [pregunta.PreguntaId],
-            operadorId,
-            categoria.Nombre);
+        var sesion = SesionAR.CrearDesdeMision(
+            MisionSnapshot.SoloTrivia([pregunta.PreguntaId], categoria.Nombre),
+            operadorId);
         sesion.UnirseParticipante(jugadorId, "Alpha", sesion.CodigoAcceso.Valor);
 
         _sesionRepo
@@ -58,10 +58,9 @@ public sealed class GetPreguntasTriviaSesionParticipanteQueryHandlerTests
     {
         var categoria = TriviaTestBuilder.UnaCategoria();
         var pregunta = TriviaTestBuilder.PreguntaConCategoria(categoria.CategoriaId);
-        var sesion = SesionAR.CrearTrivia(
-            [pregunta.PreguntaId],
-            UsuarioId.Nuevo(),
-            categoria.Nombre);
+        var sesion = SesionAR.CrearDesdeMision(
+            MisionSnapshot.SoloTrivia([pregunta.PreguntaId], categoria.Nombre),
+            UsuarioId.Nuevo());
 
         _sesionRepo
             .FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>())

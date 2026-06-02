@@ -63,7 +63,7 @@ public sealed class UnirseSesionCommandHandlerTests
     [Fact]
     public async Task Handle_CuandoSesionProgramada_AbreRegistroYUneEquipo()
     {
-        var sesion = SesionAR.CrearBusquedaTesoro(
+        var sesion = SesionAR.CrearDesdeMision(
             MisionSnapshot.DesdeSoloBusquedaTesoro(MisionTestBuilder.Activa()),
             UsuarioId.Nuevo());
         sesion.ClearDomainEvents();

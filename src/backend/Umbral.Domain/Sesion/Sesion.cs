@@ -1,5 +1,4 @@
 using Umbral.Domain.CatalogoMision.Mision;
-using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Sesion.Events;
 using Umbral.Domain.Sesion.Validacion;
 using Umbral.Domain.Shared;
@@ -22,10 +21,10 @@ public sealed class Sesion : AggregateRoot
 
     public ContextoMision? ContextoMision { get; private set; }
 
-    [Obsolete("Usar ContextoMision. Mantenido para migración de datos legacy.")]
+    /// <summary>Contexto legacy en BD (<c>contextos_bt</c>). Preferir <see cref="ContextoMision"/>.</summary>
     public ContextoBusquedaTesoro? ContextoBT { get; private set; }
 
-    [Obsolete("Usar ContextoMision. Mantenido para migración de datos legacy.")]
+    /// <summary>Contexto legacy en BD (<c>contextos_trivia</c>). Preferir <see cref="ContextoMision"/>.</summary>
     public ContextoTrivia? ContextoTrivia { get; private set; }
 
     private readonly List<ParticipanteSesion> _participantes = [];
@@ -56,38 +55,6 @@ public sealed class Sesion : AggregateRoot
         sesion.RaiseDomainEvent(
             new SesionCreada(sesion.SesionId, TipoSesion.Mision, operadorId));
         return sesion;
-    }
-
-    [Obsolete("Usar CrearDesdeMision")]
-    public static Sesion CrearBusquedaTesoro(MisionSnapshot snapshot, UsuarioId operadorId) =>
-        CrearDesdeMision(snapshot, operadorId);
-
-    [Obsolete("Usar CrearDesdeMision con misión que incluya etapas trivia")]
-    public static Sesion CrearTrivia(
-        IReadOnlyList<PreguntaId> preguntasOrdenadas,
-        UsuarioId operadorId,
-        string categoriasTitulo)
-    {
-        ArgumentNullException.ThrowIfNull(preguntasOrdenadas);
-        ArgumentNullException.ThrowIfNull(operadorId);
-
-        if (preguntasOrdenadas.Count == 0)
-            throw new DomainException(
-                "La sesión trivia requiere al menos una pregunta.");
-
-        var etapaTrivia = EtapaTriviaSnapshot.Rehydrate(
-            EtapaId.Nuevo(),
-            1,
-            [],
-            preguntasOrdenadas,
-            categoriasTitulo);
-
-        var snapshot = MisionSnapshot.Rehydrate(
-            MisionId.Nuevo(),
-            categoriasTitulo,
-            [etapaTrivia]);
-
-        return CrearDesdeMision(snapshot, operadorId);
     }
 
     public void AbrirParaRegistro()

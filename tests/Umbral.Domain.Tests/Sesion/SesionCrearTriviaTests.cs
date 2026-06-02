@@ -12,7 +12,7 @@ namespace Umbral.Domain.Tests.Sesion;
 public sealed class SesionCrearTriviaTests
 {
     [Fact]
-    public void CrearTrivia_ConPreguntasValidas_RetornaSesionProgramada()
+    public void CrearDesdeMision_SoloTrivia_RetornaSesionProgramada()
     {
         var operadorId = UsuarioId.Nuevo();
         var preguntas = new List<PreguntaId>
@@ -20,8 +20,9 @@ public sealed class SesionCrearTriviaTests
             PreguntaId.Nuevo(),
             PreguntaId.Nuevo()
         };
+        var snapshot = MisionSnapshot.SoloTrivia(preguntas, "Historia, Ciencia");
 
-        var sesion = SesionAR.CrearTrivia(preguntas, operadorId, "Historia, Ciencia");
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         sesion.Estado.Should().Be(EstadoSesion.Programada);
         sesion.TipoSesion.Should().Be(TipoSesion.Mision);
@@ -36,12 +37,13 @@ public sealed class SesionCrearTriviaTests
     }
 
     [Fact]
-    public void CrearTrivia_ConPreguntasValidas_EmiteSesionCreada()
+    public void CrearDesdeMision_SoloTrivia_EmiteSesionCreada()
     {
         var operadorId = UsuarioId.Nuevo();
         var preguntas = new List<PreguntaId> { PreguntaId.Nuevo() };
+        var snapshot = MisionSnapshot.SoloTrivia(preguntas, "Historia, Ciencia");
 
-        var sesion = SesionAR.CrearTrivia(preguntas, operadorId, "Historia, Ciencia");
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         var evento = sesion.DomainEvents.Should().ContainSingle()
             .Which.Should().BeOfType<SesionCreada>().Subject;
@@ -51,11 +53,9 @@ public sealed class SesionCrearTriviaTests
     }
 
     [Fact]
-    public void CrearTrivia_SinPreguntas_LanzaDomainException()
+    public void SoloTrivia_SinPreguntas_LanzaDomainException()
     {
-        var operadorId = UsuarioId.Nuevo();
-
-        var act = () => SesionAR.CrearTrivia([], operadorId, "Vacía");
+        var act = () => MisionSnapshot.SoloTrivia([], "Vacía");
 
         act.Should().Throw<DomainException>();
     }

@@ -1,3 +1,4 @@
+using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Shared;
 
 namespace Umbral.Domain.CatalogoMision.Mision;
@@ -23,6 +24,32 @@ public sealed class MisionSnapshot : ValueObject
 
     public static MisionSnapshot DesdeSoloBusquedaTesoro(Mision mision) =>
         Desde(mision, new Dictionary<EtapaId, EtapaTriviaSnapshot>());
+
+    /// <summary>
+    /// Snapshot de misión con una sola etapa trivia (sesiones trivia legacy / ad-hoc).
+    /// </summary>
+    public static MisionSnapshot SoloTrivia(
+        IReadOnlyList<PreguntaId> preguntasOrdenadas,
+        string categoriasTitulo)
+    {
+        ArgumentNullException.ThrowIfNull(preguntasOrdenadas);
+
+        if (preguntasOrdenadas.Count == 0)
+            throw new DomainException(
+                "La sesión trivia requiere al menos una pregunta.");
+
+        var etapaTrivia = EtapaTriviaSnapshot.Rehydrate(
+            EtapaId.Nuevo(),
+            1,
+            [],
+            preguntasOrdenadas,
+            categoriasTitulo);
+
+        return Rehydrate(
+            MisionId.Nuevo(),
+            categoriasTitulo,
+            [etapaTrivia]);
+    }
 
     public static MisionSnapshot Desde(Mision mision, IReadOnlyDictionary<EtapaId, EtapaTriviaSnapshot> triviaResueltas)
     {
