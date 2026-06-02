@@ -7,6 +7,8 @@
 
 **Documento académico base:** `docs/ERS_Proyecto_UMBRAL_UCAB.md` (historias HU-01…HU-40; sección §8–§7 alineadas con esta tabla).
 
+**Historias TO-BE (formato académico):** `docs/HU-TO-BE-UMBRAL.md` (misiones polimórficas, Participante, Identidad).
+
 **Seguimiento de implementación dominio:** `docs/fase-1/TRACKER.md` (usa numeración **HU del ERS**, no la antigua tabla comprimida de entregas).
 
 > Los códigos `RB-13-01`, `RB-16-01`, etc. en iteraciones de Fase 1 son **criterios de aceptación locales** de esa iteración, no la regla global `RB-13` / `RB-16`.
