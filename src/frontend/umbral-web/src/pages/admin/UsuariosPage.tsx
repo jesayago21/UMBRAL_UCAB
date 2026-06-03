@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
@@ -21,51 +21,70 @@ import {
   cardClass,
   cardHighlightClass,
   inputClass,
+  selectClass,
 } from '@/styles/ui'
-import { ROLES_USUARIO, type RolUsuarioAdmin, type UsuarioDto } from '@/types/usuario.types'
-import type { CrearUsuarioResponse } from '@/types/usuario.types'
+import {
+  ROLES_USUARIO,
+  type CrearUsuarioResponse,
+  type RolUsuarioAdmin,
+  type UsuarioDto,
+} from '@/types/usuario.types'
 
 function puedeEliminar(usuario: UsuarioDto): boolean {
   return !usuario.roles.some((r) => r.toLowerCase() === 'administrador')
 }
 
-function rolFromForm(form: FormData): RolUsuarioAdmin | null {
-  const value = String(form.get('rol') ?? '').trim()
-  if (!value) return null
-  return value as RolUsuarioAdmin
+function rolUnicoDesdeUsuario(usuario: UsuarioDto): RolUsuarioAdmin | '' {
+  if (usuario.roles.length === 0) return ''
+  const primero = usuario.roles[0] as RolUsuarioAdmin
+  if (ROLES_USUARIO.includes(primero)) return primero
+  return ''
 }
 
-function RolesFieldset({
-  defaultRol,
-  name = 'rol',
+function RolSelect({
+  id,
+  value,
+  onChange,
+  disabled,
 }: {
-  defaultRol?: string
-  name?: string
+  id: string
+  value: RolUsuarioAdmin | ''
+  onChange: (rol: RolUsuarioAdmin) => void
+  disabled?: boolean
 }) {
   return (
-    <fieldset className="sm:col-span-2">
-      <legend className="text-sm font-medium text-slate-700">Rol (uno solo)</legend>
-      <div className="mt-1 flex flex-wrap gap-4">
+    <div className="flex flex-col gap-2 sm:col-span-2">
+      <label htmlFor={id} className="text-sm font-medium text-slate-700">
+        Rol
+      </label>
+      <select
+        id={id}
+        required
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value as RolUsuarioAdmin)}
+        className={selectClass}
+      >
+        <option value="" disabled>
+          Selecciona un rol…
+        </option>
         {ROLES_USUARIO.map((rol) => (
-          <label key={rol} className="text-sm">
-            <input
-              type="radio"
-              name={name}
-              value={rol}
-              required
-              defaultChecked={defaultRol === rol}
-              className="mr-1"
-            />
+          <option key={rol} value={rol}>
             {rol}
-          </label>
+          </option>
         ))}
-      </div>
-    </fieldset>
+      </select>
+      <p className="text-xs text-slate-500">
+        Un solo rol por usuario (Administrador, Operador o Participante).
+      </p>
+    </div>
   )
 }
 
 export function UsuariosPage() {
   const [editTarget, setEditTarget] = useState<UsuarioDto | null>(null)
+  const [rolCrear, setRolCrear] = useState<RolUsuarioAdmin | ''>('')
+  const [rolEditar, setRolEditar] = useState<RolUsuarioAdmin | ''>('')
   const [formError, setFormError] = useState<string | null>(null)
   const { successMessage, showSuccess, clearSuccess } = useSuccessMessage()
 
@@ -78,14 +97,21 @@ export function UsuariosPage() {
   const isSaving =
     crear.isPending || actualizar.isPending || cambiarEstado.isPending || eliminar.isPending
 
+  useEffect(() => {
+    if (!editTarget) {
+      setRolEditar('')
+      return
+    }
+    setRolEditar(rolUnicoDesdeUsuario(editTarget))
+  }, [editTarget])
+
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError(null)
     const formEl = event.currentTarget
     const form = new FormData(formEl)
-    const rol = rolFromForm(form)
-    if (!rol) {
-      setFormError('Selecciona un rol.')
+    if (!rolCrear) {
+      setFormError('Selecciona exactamente un rol.')
       return
     }
     const username = String(form.get('username')).trim()
@@ -98,9 +124,10 @@ export function UsuariosPage() {
         nombre: String(form.get('nombre')),
         apellido: String(form.get('apellido')),
         passwordTemporal: password,
-        roles: [rol],
+        roles: [rolCrear],
       })
       formEl.reset()
+      setRolCrear('')
       showSuccess(
         `Usuario registrado. Entregar a «${username}» su contraseña: ${created.passwordTemporal}`,
       )
@@ -114,9 +141,8 @@ export function UsuariosPage() {
     if (!editTarget) return
     setFormError(null)
     const form = new FormData(event.currentTarget)
-    const rol = rolFromForm(form)
-    if (!rol) {
-      setFormError('Selecciona un rol.')
+    if (!rolEditar) {
+      setFormError('Selecciona exactamente un rol.')
       return
     }
     const nuevaPassword = String(form.get('nuevaPassword') ?? '').trim()
@@ -126,7 +152,7 @@ export function UsuariosPage() {
         body: {
           nombre: String(form.get('nombre')),
           apellido: String(form.get('apellido')),
-          rol,
+          rol: rolEditar,
           nuevaPassword: nuevaPassword || null,
         },
       })
@@ -169,11 +195,6 @@ export function UsuariosPage() {
     }
   }
 
-  const rolActualEdicion =
-    editTarget?.roles.length === 1
-      ? editTarget.roles[0]
-      : editTarget?.roles[0]
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -198,8 +219,13 @@ export function UsuariosPage() {
             placeholder="Contraseña"
             className={`${inputClass} sm:col-span-2`}
           />
-          <RolesFieldset />
-          <button type="submit" disabled={isSaving} className={`${btnPrimary} sm:col-span-2`}>
+          <RolSelect
+            id="rol-crear"
+            value={rolCrear}
+            onChange={setRolCrear}
+            disabled={isSaving}
+          />
+          <button type="submit" disabled={isSaving || !rolCrear} className={`${btnPrimary} sm:col-span-2`}>
             Crear usuario
           </button>
         </form>
@@ -215,7 +241,7 @@ export function UsuariosPage() {
             Editando: {editTarget.username} ({editTarget.email})
             {editTarget.roles.length > 1 && (
               <span className="mt-1 block text-xs font-normal text-amber-700">
-                Este usuario tiene varios roles guardados; al guardar quedará solo el rol seleccionado.
+                Este usuario tenía varios roles en BD; al guardar quedará solo el rol del desplegable.
               </span>
             )}
           </p>
@@ -240,12 +266,21 @@ export function UsuariosPage() {
             placeholder="Nueva contraseña (opcional)"
             className={`${inputClass} sm:col-span-2`}
           />
-          <RolesFieldset defaultRol={rolActualEdicion} />
+          <RolSelect
+            id="rol-editar"
+            value={rolEditar}
+            onChange={setRolEditar}
+            disabled={isSaving}
+          />
           <div className="flex gap-2 sm:col-span-2">
-            <button type="submit" disabled={isSaving} className={btnPrimary}>
+            <button type="submit" disabled={isSaving || !rolEditar} className={btnPrimary}>
               Guardar cambios
             </button>
-            <button type="button" className={btnSecondary} onClick={() => setEditTarget(null)}>
+            <button
+              type="button"
+              className={btnSecondary}
+              onClick={() => setEditTarget(null)}
+            >
               Cancelar
             </button>
           </div>
@@ -255,7 +290,7 @@ export function UsuariosPage() {
       {isLoading && <LoadingState />}
       {isError && <ErrorState message={getApiErrorMessage(error)} />}
       {data && data.length === 0 && !isLoading && (
-        <EmptyState message="No hay usuarios registrados." />
+        <EmptyState title="Sin usuarios" description="No hay usuarios registrados." />
       )}
       {data && data.length > 0 && (
         <ul className={`${cardClass} divide-y divide-slate-100`}>
