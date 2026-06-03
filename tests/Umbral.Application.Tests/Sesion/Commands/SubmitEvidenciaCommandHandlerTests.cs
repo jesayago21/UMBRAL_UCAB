@@ -9,6 +9,7 @@ using Umbral.Domain.Sesion.Events;
 using Umbral.Domain.Shared;
 using Xunit;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
+// ResultadoValidacion no se importa aquí; el resultado se compara como string (V1 auditoría).
 
 namespace Umbral.Application.Tests.Sesion.Commands;
 
@@ -63,7 +64,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.EvidenciaId.Should().NotBeEmpty();
-        result.Value.Resultado.Should().Be(ResultadoValidacion.Valida);
+        result.Value.Resultado.Should().Be("Valida");
         eventos.Should().Contain(e => e is EvidenciaRegistrada);
         sesion.DomainEvents.Should().BeEmpty();
     }
@@ -141,7 +142,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
             CancellationToken.None);
 
         // Assert
-        result.Value.Resultado.Should().Be(ResultadoValidacion.Valida);
+        result.Value.Resultado.Should().Be("Valida");
         sesion.ContextoMision!.EtapaActualIndex.Should().Be(1);
         eventos.Should().Contain(e => e is EvidenciaRegistrada);
         eventos.Should().Contain(e => e is EvidenciaValidada);
@@ -190,7 +191,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
             CancellationToken.None);
 
         // Assert
-        segunda.Value.Resultado.Should().Be(ResultadoValidacion.Invalida);
+        segunda.Value.Resultado.Should().Be("Invalida");
         eventosSegunda.Should().ContainSingle(e => e is EvidenciaRegistrada);
     }
 }

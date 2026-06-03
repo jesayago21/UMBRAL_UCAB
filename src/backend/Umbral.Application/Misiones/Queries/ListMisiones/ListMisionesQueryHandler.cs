@@ -15,6 +15,7 @@ internal sealed class ListMisionesQueryHandler : IRequestHandler<ListMisionesQue
 
     public async Task<IReadOnlyList<MisionDto>> Handle(ListMisionesQuery query, CancellationToken cancellationToken)
     {
+        // TODO E2 (O5): mover filtros a predicado SQL en el repositorio para evitar carga completa en memoria.
         var misiones = await _misionRepository.FindAllAsync(cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(query.Nombre))

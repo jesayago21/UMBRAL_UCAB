@@ -28,6 +28,7 @@ internal sealed class AgregarPistaEtapaCommandHandler
             tipo,
             command.SegundosLiberacion);
 
+        // TODO E2 (O3): el AR debería devolver PistaId al agregar, en lugar de navegar .Last().
         var etapa = mision.Etapas.OfType<EtapaBusquedaTesoro>()
             .First(e => e.EtapaId.Valor == command.EtapaId);
         var pistaId = etapa.Pistas.Last().PistaId.Valor;

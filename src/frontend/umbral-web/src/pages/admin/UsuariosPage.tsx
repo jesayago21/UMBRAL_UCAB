@@ -23,6 +23,7 @@ import {
   inputClass,
 } from '@/styles/ui'
 import { ROLES_USUARIO, type RolUsuarioAdmin, type UsuarioDto } from '@/types/usuario.types'
+import type { CrearUsuarioResponse } from '@/types/usuario.types'
 
 function puedeEliminar(usuario: UsuarioDto): boolean {
   return !usuario.roles.some((r) => r.toLowerCase() === 'administrador')
@@ -88,18 +89,20 @@ export function UsuariosPage() {
       return
     }
     const username = String(form.get('username')).trim()
+    const password = String(form.get('password'))
+    let created: CrearUsuarioResponse | undefined
     try {
-      await crear.mutateAsync({
+      created = await crear.mutateAsync({
         email: String(form.get('email')),
         username,
         nombre: String(form.get('nombre')),
         apellido: String(form.get('apellido')),
-        passwordTemporal: String(form.get('password')),
+        passwordTemporal: password,
         roles: [rol],
       })
       formEl.reset()
       showSuccess(
-        `Usuario registrado. Iniciar sesión en Keycloak con username «${username}» y la contraseña indicada.`,
+        `Usuario registrado. Entregar a «${username}» su contraseña: ${created.passwordTemporal}`,
       )
     } catch (err) {
       setFormError(getApiErrorMessage(err))
@@ -210,12 +213,6 @@ export function UsuariosPage() {
         >
           <p className="sm:col-span-2 text-sm font-medium text-indigo-800">
             Editando: {editTarget.username} ({editTarget.email})
-            {editTarget.passwordAsignada && (
-              <span className="mt-1 block text-xs font-normal text-slate-600">
-                Contraseña actual:{' '}
-                <code className="rounded bg-slate-100 px-1 font-mono">{editTarget.passwordAsignada}</code>
-              </span>
-            )}
             {editTarget.roles.length > 1 && (
               <span className="mt-1 block text-xs font-normal text-amber-700">
                 Este usuario tiene varios roles guardados; al guardar quedará solo el rol seleccionado.
@@ -272,18 +269,6 @@ export function UsuariosPage() {
                 <p className="text-slate-600">{u.email}</p>
                 <p className="text-xs text-slate-500">
                   {u.roles.join(', ')} · {u.estado}
-                </p>
-                <p className="mt-1 text-xs text-slate-600">
-                  Contraseña para entregar:{' '}
-                  {u.passwordAsignada ? (
-                    <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-slate-800">
-                      {u.passwordAsignada}
-                    </code>
-                  ) : (
-                    <span className="italic text-slate-400">
-                      no registrada (asigne una nueva al editar)
-                    </span>
-                  )}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

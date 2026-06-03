@@ -285,7 +285,7 @@ public sealed class SesionesController : ControllerBase
                 $"/api/v1/sesiones/{id}/evidencias/{value.EvidenciaId}",
                 new SubmitEvidenciaResponse(
                     value.EvidenciaId,
-                    value.Resultado.ToString())));
+                    value.Resultado)));
     }
 
     [HttpPost("{id:guid}/finalizar")]

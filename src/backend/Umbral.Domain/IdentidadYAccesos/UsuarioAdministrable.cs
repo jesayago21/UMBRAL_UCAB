@@ -65,6 +65,9 @@ public sealed class UsuarioAdministrable : AggregateRoot
 
     public void RevocarRol(RolSistema rol)
     {
+        if (_roles.Count <= 1 && _roles.Contains(rol))
+            throw new DomainException("El usuario debe conservar al menos un rol.");
+
         _roles.Remove(rol);
         RaiseDomainEvent(new RolesUsuarioModificados(Id, _roles.AsReadOnly()));
     }

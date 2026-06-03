@@ -21,9 +21,6 @@ export interface EtapaDto {
 export interface MisionDto {
   id: string
   nombre: string
-  descripcion: string
-  nivelDificultad: string
-  tiempoMaximoSeg: number
   estado: EstadoMision
   totalEtapas: number
   etapas: EtapaDto[]

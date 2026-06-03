@@ -3,6 +3,7 @@ import type {
   ActualizarUsuarioRequest,
   AsignarRolesRequest,
   CrearUsuarioRequest,
+  CrearUsuarioResponse,
   UsuarioDto,
 } from '@/types/usuario.types'
 
@@ -11,8 +12,8 @@ export async function listUsuarios(page = 1, pageSize = 50): Promise<UsuarioDto[
   return data
 }
 
-export async function crearUsuario(body: CrearUsuarioRequest): Promise<UsuarioDto> {
-  const { data } = await apiClient.post<UsuarioDto>('/usuarios', body)
+export async function crearUsuario(body: CrearUsuarioRequest): Promise<CrearUsuarioResponse> {
+  const { data } = await apiClient.post<CrearUsuarioResponse>('/usuarios', body)
   return data
 }
 

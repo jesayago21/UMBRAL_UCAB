@@ -26,9 +26,10 @@ public sealed class UsuariosControllerTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var body = await response.Content.ReadFromJsonAsync<UsuarioResponse>();
+        var body = await response.Content.ReadFromJsonAsync<CrearUsuarioResponse>();
         body!.Email.Should().Be("admin_crear@test.com");
         body.Roles.Should().Contain("Operador");
+        body.PasswordTemporal.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -73,7 +74,7 @@ public sealed class UsuariosControllerTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var body = await response.Content.ReadFromJsonAsync<UsuarioResponse>();
+        var body = await response.Content.ReadFromJsonAsync<CrearUsuarioResponse>();
         body!.Roles.Should().Contain("Participante");
     }
 
@@ -111,7 +112,7 @@ public sealed class UsuariosControllerTests
             "/api/v1/usuarios",
             BuildCrearRequest("roles@test.com", "roles_user"));
         create.EnsureSuccessStatusCode();
-        var usuario = (await create.Content.ReadFromJsonAsync<UsuarioResponse>())!;
+        var usuario = (await create.Content.ReadFromJsonAsync<CrearUsuarioResponse>())!;
 
         var response = await _client.PutAsJsonAsync(
             $"/api/v1/usuarios/{usuario.Id}/roles",
@@ -128,7 +129,7 @@ public sealed class UsuariosControllerTests
             "/api/v1/usuarios",
             BuildCrearRequest("estado@test.com", "estado_user"));
         create.EnsureSuccessStatusCode();
-        var usuario = (await create.Content.ReadFromJsonAsync<UsuarioResponse>())!;
+        var usuario = (await create.Content.ReadFromJsonAsync<CrearUsuarioResponse>())!;
 
         var response = await _client.PutAsJsonAsync(
             $"/api/v1/usuarios/{usuario.Id}/estado",

@@ -1,3 +1,4 @@
+/** Respuesta de GET /usuarios y GET /usuarios/{id}. No incluye contraseña. */
 export interface UsuarioDto {
   id: string
   keycloakUserId: string
@@ -7,7 +8,19 @@ export interface UsuarioDto {
   apellido: string
   estado: string
   roles: string[]
-  passwordAsignada: string | null
+}
+
+/** Respuesta exclusiva del POST 201. Incluye contraseña temporal para entrega inmediata. */
+export interface CrearUsuarioResponse {
+  id: string
+  keycloakUserId: string
+  email: string
+  username: string
+  nombre: string
+  apellido: string
+  estado: string
+  roles: string[]
+  passwordTemporal: string
 }
 
 export interface CrearUsuarioRequest {

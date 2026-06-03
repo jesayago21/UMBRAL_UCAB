@@ -6,6 +6,7 @@ public interface IMisionRepository
     Task<IReadOnlyList<Mision>> FindAllAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Mision>> FindActivasAsync(CancellationToken ct = default);
     Task<bool> ExistsByNombreAsync(string nombre, Guid? excludeId = null, CancellationToken ct = default);
+    // TODO E2: mover a ISesionRepository (cruza BC Sesion desde puerto CatalogoMision — O2 auditoría).
     Task<bool> HasSesionesActivasAsync(MisionId misionId, CancellationToken ct = default);
     Task SaveAsync(Mision mision, CancellationToken ct = default);
     Task DeleteAsync(Mision mision, CancellationToken ct = default);

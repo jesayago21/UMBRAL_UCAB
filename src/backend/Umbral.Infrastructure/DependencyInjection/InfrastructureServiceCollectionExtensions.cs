@@ -32,6 +32,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IPreguntaRepository, PreguntaRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IEventPublisher, NoOpEventPublisher>();
+        // E2: reemplazar con implementación SignalR real cuando se active notificaciones en tiempo real.
+        services.AddScoped<INotificacionRealTime, NoOpNotificacionRealTime>();
 
         services.AddOptions<KeycloakAdminOptions>()
             .Bind(configuration.GetSection(KeycloakAdminOptions.SectionName));

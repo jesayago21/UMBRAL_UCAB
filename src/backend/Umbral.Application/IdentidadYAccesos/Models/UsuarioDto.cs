@@ -1,5 +1,9 @@
 namespace Umbral.Application.IdentidadYAccesos.Models;
 
+/// <summary>
+/// DTO de lectura (GET /usuarios, GET /usuarios/{id}).
+/// No incluye contraseña: las credenciales se devuelven únicamente en la respuesta 201 de creación.
+/// </summary>
 public sealed record UsuarioDto(
     Guid Id,
     Guid KeycloakUserId,
@@ -8,8 +12,7 @@ public sealed record UsuarioDto(
     string Nombre,
     string Apellido,
     string Estado,
-    IReadOnlyList<string> Roles,
-    string? PasswordAsignada);
+    IReadOnlyList<string> Roles);
 
 public sealed record CrearUsuarioResult(
     Guid UsuarioId,

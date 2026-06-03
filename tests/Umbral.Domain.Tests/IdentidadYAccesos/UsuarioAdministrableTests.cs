@@ -120,4 +120,16 @@ public sealed class UsuarioAdministrableTests
         usuario.Estado.Should().Be(EstadoUsuario.Activo);
         usuario.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<UsuarioEstadoCambiado>();
     }
+
+    [Fact]
+    public void RevocarRol_CuandoEsElUnicoRol_LanzaDomainException()
+    {
+        var usuario = UsuarioAdministrable.Crear(
+            KcId, Email, "op_solo", "Op", "T", [RolSistema.Operador]);
+
+        var act = () => usuario.RevocarRol(RolSistema.Operador);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*al menos un rol*");
+    }
 }

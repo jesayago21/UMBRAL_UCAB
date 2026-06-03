@@ -23,7 +23,7 @@ public sealed class UsuariosController : ControllerBase
     public UsuariosController(IMediator mediator) => _mediator = mediator;
 
     [HttpPost]
-    [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(CrearUsuarioResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> Crear(
         [FromBody] CrearUsuarioRequest request,
         CancellationToken cancellationToken)
@@ -42,7 +42,7 @@ public sealed class UsuariosController : ControllerBase
             HttpContext,
             created => new CreatedResult(
                 $"/api/v1/usuarios/{created.UsuarioId}",
-                new UsuarioResponse(
+                new CrearUsuarioResponse(
                     created.UsuarioId,
                     created.KeycloakUserId,
                     created.Email,
@@ -136,6 +136,5 @@ public sealed class UsuariosController : ControllerBase
             dto.Nombre,
             dto.Apellido,
             dto.Estado,
-            dto.Roles,
-            dto.PasswordAsignada);
+            dto.Roles);
 }

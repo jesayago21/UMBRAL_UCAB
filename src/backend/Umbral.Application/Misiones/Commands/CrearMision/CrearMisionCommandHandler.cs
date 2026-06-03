@@ -37,6 +37,7 @@ internal sealed class CrearMisionCommandHandler : IRequestHandler<CrearMisionCom
                     etapa.Descripcion ?? string.Empty,
                     etapa.CodigoQrSolucion ?? string.Empty);
 
+                // TODO E2 (O3): el AR debería devolver EtapaId al agregar, en lugar de navegar .Last().
                 var etapaBt = mision.Etapas.OfType<EtapaBusquedaTesoro>().Last();
                 foreach (var pista in etapa.Pistas ?? [])
                 {

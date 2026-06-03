@@ -141,9 +141,6 @@ public sealed class MisionesController : ControllerBase
         new(
             mision.Id,
             mision.Nombre,
-            mision.Descripcion,
-            mision.NivelDificultad,
-            mision.TiempoMaximoSeg,
             mision.Estado,
             mision.TotalEtapas,
             mision.Etapas.Select(etapa => new EtapaMisionResponse(

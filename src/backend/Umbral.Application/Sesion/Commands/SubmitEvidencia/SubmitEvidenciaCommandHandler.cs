@@ -43,6 +43,6 @@ internal sealed class SubmitEvidenciaCommandHandler
         return Result<SubmitEvidenciaResult>.Ok(
             new SubmitEvidenciaResult(
                 evidencia.EvidenciaId.Valor,
-                evidencia.Resultado));
+                evidencia.Resultado.ToString()));
     }
 }
