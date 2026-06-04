@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Umbral.Infrastructure" />
+    <InternalsVisibleTo Include="Umbral.Domain.Tests" />
+    <InternalsVisibleTo Include="Umbral.Application.Tests" />
   </ItemGroup>
 
 </Project>

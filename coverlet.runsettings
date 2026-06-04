@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configuracion del recolector de cobertura (E1-1 / E1-4).
+  "dotnet test (XPlat Code Coverage)" usa ESTE archivo (no las props de
+  tests/Directory.Build.props). Exclusiones alineadas con umbral-quality-spec §11 y §13:
+    Migraciones EF Core y ModelSnapshot: codigo generado por la CLI.
+    Tipos marcados [ExcludeFromCodeCoverage]: factoria de diseno y wiring no probado.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <ExcludeByFile>**/Migrations/**/*.cs</ExcludeByFile>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

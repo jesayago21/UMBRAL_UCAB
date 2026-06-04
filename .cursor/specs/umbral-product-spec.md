@@ -7,14 +7,15 @@
 UMBRAL es una plataforma web para diseñar y operar experiencias de investigación
 inmersiva en tiempo real. Soporta dos modos de juego independientes:
 
-- **Búsqueda del Tesoro**: equipos compiten encontrando y escaneando códigos QR
+- **Búsqueda del Tesoro**: participantes compiten encontrando y escaneando códigos QR
   por etapas. Gana quien complete cada etapa primero.
-- **Trivia**: equipos responden preguntas sincronizadas con timer. Gana quien
+- **Trivia**: participantes responden preguntas sincronizadas con timer. Gana quien
   acumule más puntos por exactitud y velocidad.
 
-Ambos modos comparten la infraestructura de sesión, equipos, ranking y
-notificaciones en tiempo real. Una sesión es SIEMPRE de un único tipo; nunca
-se mezclan modos dentro de la misma sesión.
+Ambos modos comparten la infraestructura de sesión, participantes, ranking y
+notificaciones en tiempo real. Una **misión** puede combinar etapas de
+Búsqueda del Tesoro y Trivia en secuencia. Una **sesión de misión** recorre
+esas etapas en orden; el motor aplica las reglas del tipo de etapa activa.
 
 ---
 
@@ -23,34 +24,41 @@ se mezclan modos dentro de la misma sesión.
 | Actor               | Responsabilidades principales                                      |
 |---------------------|--------------------------------------------------------------------|
 | Administrador       | Configura misiones (BT), gestiona banco de preguntas (Trivia) y usuarios. |
-| Operador            | Crea y controla sesiones en vivo de cualquier tipo. Libera pistas, penaliza equipos y supervisa la ejecución. |
+| Operador            | Crea y controla sesiones en vivo de cualquier tipo. Libera pistas, penaliza participantes y supervisa la ejecución. |
 | Equipo Participante | Se conecta a su sesión, recibe pistas (BT) o responde preguntas (Trivia), ve su puntaje y ranking. |
 
 ---
 
 ## 3. Bounded Contexts
 
-### BC 1 — Catálogo de Misiones (solo BusquedaTesoro)
+### BC 1 — Catálogo de Misiones (polimórfico)
 
-Gestiona el diseño de misiones: estructura de etapas, pistas y códigos QR.
-Solo se usa cuando `TipoSesion = BusquedaTesoro`.
+Gestiona el diseño de misiones: etapas tipadas (`BusquedaTesoro` | `Trivia`),
+pistas/QR en etapas BT y `CategoriaId` en etapas Trivia.
 
-Lenguaje ubicuo: Mision, Etapa, Pista, CodigoQR, TipoLiberacion, MisionSnapshot.
+Lenguaje ubicuo: Mision, Etapa, TipoEtapa, EtapaBusquedaTesoro, EtapaTrivia,
+Pista, CodigoQR, TipoLiberacion, MisionSnapshot.
 
-### BC 2 — Catálogo de Trivia (solo Trivia)
+### BC 2 — Catálogo de Trivia (banco)
 
-Gestiona el banco de preguntas y categorías.
-Solo se usa cuando `TipoSesion = Trivia`.
+Gestiona el banco de preguntas y categorías (referenciadas por ID desde etapas).
 
 Lenguaje ubicuo: Pregunta, OpcionRespuesta, Categoria, Dificultad, Timer.
 
-### BC 3 — Ejecución de Sesión (compartido)
+### BC 3 — Ejecución de Sesión
 
-Gestiona el ciclo de vida de cualquier sesión, independientemente del modo.
-Contiene la máquina de estados, equipos, ranking, penalizaciones e historial.
+Gestiona el ciclo de vida de sesiones de misión, progresión secuencial de etapas,
+participantes, ranking, penalizaciones e historial.
 
-Lenguaje ubicuo: Sesion, TipoSesion, ContextoBusquedaTesoro, ContextoTrivia,
-EquipoSesion, Puntaje, Penalizacion, EventoSesion, RankingService.
+Lenguaje ubicuo: Sesion, ContextoMision, MisionId, ParticipanteSesion, Puntaje,
+Penalizacion, EventoSesion, RankingService.
+
+### BC 4 — Identidad y Accesos
+
+Sincronización sombra con Keycloak: usuarios administrables, roles y estado.
+
+Lenguaje ubicuo: UsuarioAdministrable, KeycloakUserId, EmailAddress, RolSistema,
+EstadoUsuario, IIdentityService.
 
 ---
 
@@ -59,20 +67,19 @@ EquipoSesion, Puntaje, Penalizacion, EventoSesion, RankingService.
 ### MÓDULO 1 — Gestión de Misiones (BC: Catálogo de Misiones)
 
 **Quién:** Administrador
-**Aplica a:** Sesiones tipo BusquedaTesoro únicamente
+**Aplica a:** Diseño de misiones (etapas BT y/o Trivia)
 
 Flujo principal:
-Crear misión → Agregar etapas → Configurar pistas por etapa →
-Asignar código QR por etapa → Activar misión
+Crear misión → Agregar etapas tipadas → Configurar pistas/QR (BT) o categorías (Trivia) → Activar misión
 
 Reglas de negocio:
 - Una misión necesita al menos una etapa para activarse (RB-09).
 - Solo las misiones en estado `Activa` pueden usarse para crear sesiones (RB-01).
 - El nombre de misión es único en el sistema (RB-10).
-- Cada etapa tiene su propio `CodigoQR` que los equipos deben encontrar y escanear.
+- Cada etapa tiene su propio `CodigoQR` que los participantes deben encontrar y escanear.
 - Las pistas de una etapa tienen orden y tipo de liberación:
   - `PorTiempo`: se libera automáticamente al transcurrir N segundos (RB-07).
-  - `PorGanador`: se libera cuando un equipo completa la etapa anterior.
+  - `PorGanador`: se libera cuando un participante completa la etapa anterior.
 - Al crear una sesión desde una misión se genera un `MisionSnapshot` inmutable.
   Los cambios posteriores a la misión no afectan sesiones en curso (RB-11).
 - Desactivar una misión no elimina ni afecta sesiones históricas.
@@ -101,9 +108,8 @@ Reglas de negocio:
 **Quién:** Operador
 **Aplica a:** Ambos modos
 
-El operador crea una sesión eligiendo el modo (`TipoSesion`) y la fuente de contenido:
-- `BusquedaTesoro` → selecciona una `Mision` activa.
-- `Trivia` → selecciona categorías y cantidad de preguntas del banco.
+El operador crea una **sesión de misión** seleccionando una `Mision` activa.
+La sesión ejecuta las etapas en orden según la plantilla del administrador.
 
 Estados válidos y transiciones:
 
@@ -114,24 +120,24 @@ Cancelada (desde cualquier estado no terminal)
 Reglas de negocio:
 - Solo se puede crear sesión BusquedaTesoro desde una misión `Activa` (RB-01).
 - Una sesión `Finalizada` o `Cancelada` no admite más operaciones.
-- Al crear la sesión se genera un código de acceso único para que los equipos
+- Al crear la sesión se genera un código de acceso único para que los participantes
   se unan a la sala de espera.
-- Una sesión no puede iniciarse sin al menos un equipo registrado (RB-18).
+- Una sesión no puede iniciarse sin al menos un participante registrado (RB-18).
 
 ---
 
-### MÓDULO 4 — Gestión de Equipos (BC: Ejecución de Sesión)
+### MÓDULO 4 — Gestión de Participantes (BC: Ejecución de Sesión)
 
 **Quién:** Operador (registra), Equipo Participante (se autentifica)
 **Aplica a:** Ambos modos
 
 Reglas de negocio:
-- El nombre de equipo es único dentro de la sesión (RB-02).
-- Al registrarse el equipo recibe un `CodigoAcceso` generado automáticamente.
-- El equipo usa ese código para autenticarse y acceder a su panel.
-- No se puede registrar un equipo en sesión `Finalizada` o `Cancelada` (RB-03).
-- El puntaje inicial de todo equipo es cero.
-- El operador puede expulsar equipos durante la sala de espera si el nombre
+- El nombre de participante es único dentro de la sesión (RB-02).
+- Al registrarse el participante recibe un `CodigoAcceso` generado automáticamente.
+- El participante usa ese código para autenticarse y acceder a su panel.
+- No se puede registrar un participante en sesión `Finalizada` o `Cancelada` (RB-03).
+- El puntaje inicial de todo participante es cero.
+- El operador puede expulsar participantes durante la sala de espera si el nombre
   es inapropiado (HU-33).
 
 ---
@@ -149,13 +155,13 @@ Capacidades compartidas:
 - Ver historial completo de eventos.
 
 Capacidades exclusivas BusquedaTesoro:
-- Ver etapa activa y progreso por equipo.
-- Liberar pistas manualmente para equipo específico o para todos (RF-15).
+- Ver etapa activa y progreso por participante.
+- Liberar pistas manualmente para participante específico o para todos (RF-15).
 
 Capacidades exclusivas Trivia:
 - Ver pregunta activa y timer en curso.
-- Ver respuestas recibidas por equipo en tiempo real.
-- Ver sala de espera con equipos conectados antes de iniciar (HU-33).
+- Ver respuestas recibidas por participante en tiempo real.
+- Ver sala de espera con participantes conectados antes de iniciar (HU-33).
 
 ---
 
@@ -180,7 +186,7 @@ Vista Trivia:
 Comportamiento compartido:
 - Notificaciones instantáneas vía WebSocket de cambios de estado.
 - Reconexión automática si se pierde la conexión durante la sesión.
-- Si el equipo entra con la sesión ya iniciada, se sincroniza al estado actual.
+- Si el participante entra con la sesión ya iniciada, se sincroniza al estado actual.
 
 ---
 
@@ -190,7 +196,7 @@ Comportamiento compartido:
 
 Flujo por etapa:
 
-Sesión inicia en Etapa 1 → Equipos buscan el QR físico →
+Sesión inicia en Etapa 1 → Participantes buscan el QR físico →
 Equipo escanea QR → Sistema valida evidencia →
 Si es el primero válido:
 → Equipo gana la etapa (puntaje completo)
@@ -207,10 +213,10 @@ Reglas de negocio:
   1. ValidarSesionActiva
   2. ValidarEtapaActiva
   3. ValidarQRCoincide
-  4. ValidarNoDuplicada (mismo equipo no puede ganar dos veces)
-- El primer equipo en validar correctamente es el ganador único de la etapa (RB-04).
+  4. ValidarNoDuplicada (mismo participante no puede ganar dos veces)
+- El primer participante en validar correctamente es el ganador único de la etapa (RB-04).
 - Al completar la última etapa, la sesión finaliza automáticamente.
-- Cada evidencia se registra con: timestamp servidor, equipo, sesión y resultado (RF-11).
+- Cada evidencia se registra con: timestamp servidor, participante, sesión y resultado (RF-11).
 - El puntaje se recalcula al validar (RF-12) vía evento de dominio → consumer RabbitMQ.
 
 ---
@@ -222,8 +228,8 @@ Reglas de negocio:
 Flujo por ronda:
 
 Sistema lanza pregunta (broadcast) →
-Equipos ven enunciado + opciones + timer en cuenta regresiva →
-Cada equipo confirma su respuesta (se bloquea al confirmar o al llegar a 0s) →
+Participantes ven enunciado + opciones + timer en cuenta regresiva →
+Cada participante confirma su respuesta (se bloquea al confirmar o al llegar a 0s) →
 Timer expira → Sistema cierra ventana de recepción (timerCerradoEn) →
 Sistema valida todas las respuestas recibidas antes del cierre →
 Broadcast: respuesta correcta + ranking actualizado →
@@ -237,7 +243,7 @@ Reglas de negocio:
 - Una respuesta que llega al servidor después del cierre del timer recibe 0 puntos,
   independientemente de si era correcta (RB-12).
 - El timestamp de llegada al servidor es el criterio de desempate en ranking (HU-40).
-- Si dos equipos tienen timestamp idéntico, comparten posición hasta la siguiente ronda.
+- Si dos participantes tienen timestamp idéntico, comparten posición hasta la siguiente ronda.
 - Los eventos publicados en RabbitMQ: `PreguntaLanzada`, `RespuestaTriviaRecibida`,
   `TiempoAgotado` (RF-29).
 - El puntaje de trivia se basa en corrección y opcionalmente en velocidad (RF-28).
@@ -274,7 +280,7 @@ Actualización en tiempo real:
 | `PenalizacionAplicada`    | Recálculo de puntaje, Auditoría              | Ambos     |
 | `EvidenciaValidada`       | Recálculo de puntaje, Auditoría              | BT        |
 | `EtapaCompletada`         | Transición de etapa, Notificaciones          | BT        |
-| `PistaLiberada`           | Notificaciones a equipos                     | BT        |
+| `PistaLiberada`           | Notificaciones a participantes                     | BT        |
 | `PreguntaLanzada`         | Auditoría de trivia                          | Trivia    |
 | `RespuestaTriviaRecibida` | Validación de respuesta, Puntaje             | Trivia    |
 | `TiempoAgotado`           | Cierre de ronda, lanzamiento siguiente       | Trivia    |
@@ -294,17 +300,17 @@ Resiliencia:
 | RF-02  | Registrar etapas, pistas y código QR por etapa en cada misión.                    | BT    |
 | RF-03  | Crear sesión BusquedaTesoro a partir de una misión activa.                        | BT    |
 | RF-04  | Manejar estados: Programada, EnPreparacion, Activa, Pausada, Finalizada, Cancelada.| Ambos |
-| RF-05  | Registrar equipos y asociarlos a una sesión.                                       | Ambos |
-| RF-06  | Cada equipo visualiza temporizador, puntaje y pistas habilitadas.                  | BT    |
-| RF-07  | Equipos envían evidencias QR vinculadas a la etapa activa.                        | BT    |
+| RF-05  | Registrar participantes y asociarlos a una sesión.                                       | Ambos |
+| RF-06  | Cada participante visualiza temporizador, puntaje y pistas habilitadas.                  | BT    |
+| RF-07  | Participantes envían evidencias QR vinculadas a la etapa activa.                        | BT    |
 | RF-08  | Restringir recepción de evidencias únicamente a la etapa activa.                  | BT    |
 | RF-09  | Al validar la primera evidencia correcta, asignar puntaje y bloquear a los demás. | BT    |
 | RF-10  | Al completar el nodo, avanzar automáticamente a la siguiente etapa para todos.    | BT    |
-| RF-11  | Registrar cada evidencia con fecha, hora, equipo, sesión y resultado.             | BT    |
+| RF-11  | Registrar cada evidencia con fecha, hora, participante, sesión y resultado.             | BT    |
 | RF-12  | Recalcular puntaje automáticamente al validar evidencia o aplicar penalización.   | Ambos |
 | RF-13  | El operador aplica penalizaciones justificadas que restan puntos.                 | Ambos |
 | RF-14  | Liberar pistas automáticamente por tiempo o al ganar etapa anterior.              | BT    |
-| RF-15  | El operador libera pistas manualmente para equipo específico o todos.             | BT    |
+| RF-15  | El operador libera pistas manualmente para participante específico o todos.             | BT    |
 | RF-16  | Mostrar ranking actualizado automáticamente con criterios de desempate.           | Ambos |
 | RF-17  | Notificar en tiempo real cuando se habilite pista o cambie estado.                | BT    |
 | RF-18  | Reflejar historial de eventos y actividad en tiempo real.                         | Ambos |
@@ -351,9 +357,9 @@ Tabla completa en `docs/TRAZABILIDAD.md`. Resumen:
 | Código | Regla                                                                               | Modo  |
 |--------|-------------------------------------------------------------------------------------|-------|
 | RB-01  | Solo se crea sesión BT desde una misión con estado Activa.                         | BT    |
-| RB-02  | El nombre de equipo es único dentro de la misma sesión.                            | Ambos |
-| RB-03  | Un equipo no puede registrarse en sesión Finalizada o Cancelada.                   | Ambos |
-| RB-04  | Al validar la primera evidencia correcta, los demás equipos no pueden puntuar en esa etapa. | BT |
+| RB-02  | El nombre de participante es único dentro de la misma sesión.                            | Ambos |
+| RB-03  | Un participante no puede registrarse en sesión Finalizada o Cancelada.                   | Ambos |
+| RB-04  | Al validar la primera evidencia correcta, los demás participantes no pueden puntuar en esa etapa. | BT |
 | RB-05  | Al completarse un nodo, la sesión avanza a la siguiente etapa para todos a la vez. | BT    |
 | RB-06  | Solo se aceptan evidencias para la etapa marcada como activa.                      | BT    |
 | RB-07  | Las pistas PorTiempo se liberan automáticamente al transcurrir el tiempo configurado.| BT  |
@@ -367,20 +373,20 @@ Tabla completa en `docs/TRAZABILIDAD.md`. Resumen:
 | RB-15  | Los nombres de categoría son únicos. No se pueden duplicar.                        | Trivia|
 | RB-16  | Las preguntas se eliminan lógicamente, nunca físicamente.                          | Trivia|
 | RB-17  | El puntaje de trivia se otorga solo si la respuesta es correcta y llegó antes del cierre del timer. | Trivia|
-| RB-18  | Una sesión no puede iniciarse sin al menos un equipo registrado.                   | Ambos |
+| RB-18  | Una sesión no puede iniciarse sin al menos un participante registrado.                   | Ambos |
 | RB-19  | No se aceptan evidencias si la sesión está Pausada, Finalizada o Cancelada.      | BT    |
 | RB-20  | Toda penalización exige motivo de texto obligatorio.                               | Ambos |
-| RB-21  | Una misma pista no se entrega dos veces al mismo equipo en la misma etapa.        | BT    |
+| RB-21  | Una misma pista no se entrega dos veces al mismo participante en la misma etapa.        | BT    |
 | RB-22  | QR válido solo si coincide con el código del nodo activo.                          | BT    |
-| RB-23  | Una pista solo se libera si el equipo está en el nodo correspondiente.             | BT    |
-| RB-24  | El puntaje total del equipo nunca es inferior a cero.                              | Ambos |
+| RB-23  | Una pista solo se libera si el participante está en el nodo correspondiente.             | BT    |
+| RB-24  | El puntaje total del participante nunca es inferior a cero.                              | Ambos |
 | RB-25  | Todo cambio de puntaje registra OperadorId o evento de sistema.                  | Ambos |
 | RB-26  | Sesión Finalizada o Cancelada → solo lectura (auditoría).                          | Ambos |
 | RB-27  | El operador solo administra sesiones que tiene asignadas.                          | Ambos |
 | RB-28  | Pregunta de trivia: ≥1 correcta y ≥2 incorrectas.                                  | Trivia|
 | RB-29  | Puntos de trivia se suman al puntaje global de la sesión.                          | Trivia|
-| RB-30  | No respuestas trivia si el timer ya inició al conectar el equipo.                  | Trivia|
-| RB-31  | En trivia, todos los equipos pueden puntuar si responden correctamente.             | Trivia|
+| RB-30  | No respuestas trivia si el timer ya inició al conectar el participante.                  | Trivia|
+| RB-31  | En trivia, todos los participantes pueden puntuar si responden correctamente.             | Trivia|
 | RB-32  | Pregunta lanzada no cancelable hasta expirar timer o que todos respondan.          | Trivia|
 
 ---
@@ -392,7 +398,7 @@ Tabla completa en `docs/TRAZABILIDAD.md`. Resumen:
 | Strategy                | `ICalculoPuntajeStrategy` con `BusquedaTesoroStrategy` y `TriviaStrategy`. El modo de la sesión determina cuál se usa. |
 | Composite               | `Mision` contiene `List<Etapa>`, cada `Etapa` contiene `List<Pista>`.      |
 | Facade                  | `SessionOperationFacade`: coordina cambio de estado + publicación de evento + notificación SignalR. |
-| Proxy                   | `PistaAccessProxy`: verifica que el equipo tiene permiso antes de exponer el contenido de una pista. |
+| Proxy                   | `PistaAccessProxy`: verifica que el participante tiene permiso antes de exponer el contenido de una pista. |
 | Template Method         | `EvidenciaProcessorBase`: Recibir → Validar → CalcularPuntaje → Persistir → Notificar. Cada paso es sobreescribible. |
 | State                   | Métodos `Iniciar/Pausar/Reanudar/Finalizar/Cancelar` en `Sesion` validan la transición según el estado actual. |
 | Chain of Responsibility | `EvidenciaValidationChain`: ValidarSesionActiva → ValidarEtapaActiva → ValidarQRCoincide → ValidarNoDuplicada. |

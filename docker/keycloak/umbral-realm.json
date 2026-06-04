@@ -1,0 +1,96 @@
+{
+  "realm": "umbral",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "accessTokenLifespan": 1800,
+  "roles": {
+    "realm": [
+      { "name": "Administrador", "description": "Gestiona catálogo (misiones, banco de trivia) y usuarios" },
+      { "name": "Operador", "description": "Gestiona y ejecuta sesiones" },
+      { "name": "Participante", "description": "Acceso solo a su sesión activa" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "umbral-web",
+      "name": "UMBRAL Web (Admin + Operador)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:3000/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-umbral-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "umbral-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "umbral-api",
+      "name": "UMBRAL API (resource server)",
+      "enabled": true,
+      "bearerOnly": true,
+      "publicClient": false
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@umbral.local",
+      "firstName": "Admin",
+      "lastName": "UMBRAL",
+      "credentials": [
+        { "type": "password", "value": "Umbral123!", "temporary": false }
+      ],
+      "realmRoles": ["Administrador"]
+    },
+    {
+      "username": "operador",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "operador@umbral.local",
+      "firstName": "Operador",
+      "lastName": "UMBRAL",
+      "credentials": [
+        { "type": "password", "value": "Umbral123!", "temporary": false }
+      ],
+      "realmRoles": ["Operador"]
+    },
+    {
+      "username": "participante",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "participante@umbral.local",
+      "firstName": "Participante",
+      "lastName": "UMBRAL",
+      "credentials": [
+        { "type": "password", "value": "Umbral123!", "temporary": false }
+      ],
+      "realmRoles": ["Participante"]
+    }
+  ]
+}

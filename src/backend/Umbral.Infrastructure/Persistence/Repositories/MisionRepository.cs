@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 
 namespace Umbral.Infrastructure.Persistence.Repositories;
 
@@ -52,9 +52,13 @@ public sealed class MisionRepository : IMisionRepository
                            SELECT EXISTS(
                                SELECT 1
                                FROM sesiones s
-                               INNER JOIN contextos_bt c ON c."SesionId" = s.id
+                               LEFT JOIN contextos_mision cm ON cm."SesionId" = s.id
+                               LEFT JOIN contextos_bt c ON c."SesionId" = s.id
                                WHERE s.estado = 'Activa'
-                                 AND c.mision_snapshot_json ->> 'misionId' = {0}) AS "Value"
+                                 AND (
+                                   cm.mision_snapshot_json ->> 'misionId' = {0}
+                                   OR c.mision_snapshot_json ->> 'misionId' = {0}
+                                 )) AS "Value"
                            """;
 
         return await _db.Database.SqlQueryRaw<bool>(sql, missionIdValue).SingleAsync(ct);
@@ -65,6 +69,12 @@ public sealed class MisionRepository : IMisionRepository
         if (_db.Entry(mision).State == EntityState.Detached)
             await _db.Misiones.AddAsync(mision, ct);
 
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task DeleteAsync(Mision mision, CancellationToken ct = default)
+    {
+        _db.Misiones.Remove(mision);
         await _db.SaveChangesAsync(ct);
     }
 }

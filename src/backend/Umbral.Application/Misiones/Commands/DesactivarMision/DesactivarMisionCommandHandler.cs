@@ -1,7 +1,7 @@
 using MediatR;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 
 namespace Umbral.Application.Misiones.Commands.DesactivarMision;
 

@@ -65,7 +65,7 @@ public sealed class PausarSesionCommandHandlerTests
     [Fact]
     public async Task Handle_CuandoNoEstaActiva_LanzaDomainException()
     {
-        var sesion = SesionTestBuilder.ConEquipo("Alpha");
+        var sesion = SesionTestBuilder.ConParticipante("Alpha");
         ConfigurarSesion(sesion);
 
         var act = () => _sut.Handle(

@@ -25,7 +25,7 @@ public sealed class SubmitEvidenciaValidatorTests
     }
 
     [Fact]
-    public void Validar_EquipoIdVacio_TieneError()
+    public void Validar_ParticipanteIdVacio_TieneError()
     {
         // Arrange
         var command = new SubmitEvidenciaCommand(
@@ -38,7 +38,7 @@ public sealed class SubmitEvidenciaValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(SubmitEvidenciaCommand.EquipoId));
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(SubmitEvidenciaCommand.ParticipanteId));
     }
 
     [Fact]

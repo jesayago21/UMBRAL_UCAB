@@ -1,53 +1,103 @@
 # UMBRAL — Modelo de Dominio
 
-> **Trazabilidad:** reglas **RB-01…RB-32** y HUs en [`TRAZABILIDAD.md`](TRAZABILIDAD.md). Progreso dominio Fase 1: [`fase-1/TRACKER.md`](fase-1/TRACKER.md).
+> **Trazabilidad:** reglas **RB-01…RB-37** y HUs en [`TRAZABILIDAD.md`](TRAZABILIDAD.md). Matriz normativa E1/E2: [`ERS_UMBRAL_UCAB_Sayago.md`](ERS_UMBRAL_UCAB_Sayago.md) §4.1 y §6.1.  
+> **TO-BE (2026):** misión polimórfica (`CatalogoMision`), sesión unificada (`ContextoMision`), BC `IdentidadYAccesos`.  
+> **Cliente participante:** aplicación web (`umbral-web`); no hay app móvil nativa (fuera de alcance ERS §4).
+
+## Alcance del modelo respecto al código
+
+| Leyenda | Significado |
+|---------|-------------|
+| **Implementado** | Existe en `Umbral.Domain` y está cableado en Application/Infrastructure |
+| **Parcial** | Existe en dominio o BD pero falta API, UI o regla completa |
+| **E2** | Diseñado en este documento; pendiente de implementación (Entrega 2) |
+| **Legacy** | Mantenido solo por datos o endpoints antiguos; no es el flujo TO-BE |
 
 ```mermaid
 classDiagram
 
     %% ══════════════════════════════════════════════════
-    %% BC: CATÁLOGO DE MISIONES — solo BúsquedaTesoro
+    %% BC: CATÁLOGO DE MISIONES — etapas polimórficas
     %% ══════════════════════════════════════════════════
 
     class Mision {
         <<AggregateRoot>>
         +MisionId misionId
-        +NombreMision nombre
-        +string descripcion
-        +NivelDificultad nivelDificultad
-        +Duracion tiempoMaximo
+        +string nombre
         +EstadoMision estado
         +List~Etapa~ etapas
         +Activar() void
         +Desactivar() void
-        +AgregarEtapa(orden, duracion) void
-        +EliminarEtapa(etapaId) void
+        +AgregarEtapaBusquedaTesoro(desc, qr) void
+        +AgregarEtapaTrivia(categoriaIds) void
+        +AgregarPistaAEtapa(etapaId, ...) void
         +PuedeUsarseParaSesion() bool
     }
 
     class Etapa {
-        <<Entity>>
+        <<abstract Entity>>
         +EtapaId etapaId
-        +OrdenEtapa orden
-        +Duracion tiempoMaximo
-        +Duracion tiempoSinGanador
-        +CodigoQR codigoQRSolucion
+        +MisionId misionId
+        +int orden
+        +TipoEtapa Tipo*
+    }
+
+    class EtapaBusquedaTesoro {
+        <<Entity>>
+        +string descripcion
+        +string codigoQRSolucion
         +List~Pista~ pistas
-        +AgregarPista(contenido, orden, tipo) void
-        +ValidarCompletitud() bool
-        +ObtenerPistaPorOrden(n) Pista
+        +AgregarPista(...) void
+    }
+
+    class EtapaTrivia {
+        <<Entity>>
+        +List~CategoriaId~ categoriaIds
+        +AsignarCategorias(ids) void
     }
 
     class Pista {
         <<Entity>>
         +PistaId pistaId
         +string contenido
-        +OrdenAparicion orden
         +TipoLiberacion tipoLiberacion
+        +int segundosLiberacion
+    }
+
+    class MisionSnapshot {
+        <<ValueObject>>
+        +MisionId misionId
+        +string nombre
+        +List~EtapaSnapshotBase~ etapas
+    }
+
+    class EtapaSnapshotBase {
+        <<abstract>>
+        +EtapaId id
+        +int orden
+        +TipoEtapa tipo
+    }
+
+    class EtapaBusquedaTesoroSnapshot {
+        +string descripcion
+        +string codigoQRSolucion
+        +List~PistaSnapshot~ pistas
+    }
+
+    class EtapaTriviaSnapshot {
+        +List~CategoriaId~ categoriaIds
+        +List~PreguntaId~ preguntasOrdenadas
+        +string categoriasTitulo
+    }
+
+    class TipoEtapa {
+        <<Enumeration>>
+        BusquedaTesoro
+        Trivia
     }
 
     %% ══════════════════════════════════════════════════
-    %% BC: CATÁLOGO DE TRIVIA — solo Trivia
+    %% BC: CATÁLOGO DE TRIVIA — banco (referenciado por etapas)
     %% ══════════════════════════════════════════════════
 
     class Pregunta {
@@ -57,9 +107,8 @@ classDiagram
         +List~OpcionRespuesta~ opciones
         +CategoriaId categoriaId
         +Dificultad dificultad
-        +int tiempoRespuestaMs
-        +bool isDeleted
-        +EsValida() bool
+        +bool eliminada
+        +int segundosRespuesta
         +DesactivarLogicamente() void
     }
 
@@ -74,91 +123,133 @@ classDiagram
         <<AggregateRoot>>
         +CategoriaId categoriaId
         +string nombre
-        +string descripcion
-        +int totalPreguntas
         +RenombrarA(nombre) void
     }
 
     %% ══════════════════════════════════════════════════
-    %% BC: EJECUCIÓN DE SESIÓN — compartido ambos modos
+    %% BC: IDENTIDAD Y ACCESOS
+    %% ══════════════════════════════════════════════════
+
+    class UsuarioAdministrable {
+        <<AggregateRoot>>
+        +UsuarioAdministrableId id
+        +EmailAddress email
+        +string username
+        +string nombre
+        +string apellido
+        +KeycloakUserId keycloakUserId
+        +EstadoUsuario estado
+        +string passwordAsignada
+        +List~RolSistema~ roles
+        +Crear(...) UsuarioAdministrable$
+        +AsignarRoles(roles) void
+        +Activar() void
+        +Bloquear() void
+    }
+
+    class EmailAddress {
+        <<ValueObject>>
+        +string valor
+    }
+
+    class KeycloakUserId {
+        <<ValueObject>>
+        +string valor
+    }
+
+    class RolSistema {
+        <<Enumeration>>
+        Administrador
+        Operador
+        Participante
+    }
+
+    class EstadoUsuario {
+        <<Enumeration>>
+        Pendiente
+        Activo
+        Bloqueado
+    }
+
+    %% ══════════════════════════════════════════════════
+    %% BC: EJECUCIÓN DE SESIÓN — sesión de misión unificada
     %% ══════════════════════════════════════════════════
 
     class Sesion {
         <<AggregateRoot>>
         +SesionId sesionId
+        +string nombre
         +TipoSesion tipoSesion
+        +MisionId misionId
         +UsuarioId operadorId
         +EstadoSesion estado
-        +List~EquipoSesion~ equipos
-        +List~EventoSesion~ historialEventos
-        +DateTime iniciadaEn
-        +DateTime finalizadaEn
+        +CodigoAcceso codigoAcceso
+        +ContextoMision contextoMision
+        +List~ParticipanteSesion~ participantes
+        +CrearDesdeMision(snapshot, operadorId, nombreSesion)$ Sesion
+        +UnirseParticipante(jugadorId, nombre, codigo) ParticipanteSesion
+        +AbandonarParticipante(jugadorId) ParticipanteId
+        +RegistrarEvidencia(participanteId, qr) Evidencia
+        +AplicarPenalizacion(participanteId, penalizacion) void
         +Iniciar() void
         +Pausar() void
-        +Reanudar() void
         +Finalizar() void
-        +Cancelar(motivo) void
-        +RegistrarEquipo(nombre) EquipoSesion
-        +AplicarPenalizacion(equipoId, penalizacion) void
-        +EstaEnEstadoActivo() bool
+    }
+
+    class ContextoMision {
+        <<Entity>>
+        +MisionId misionId
+        +MisionSnapshot misionSnapshot
+        +int etapaActualIndex
+        +ParticipanteId ganadorEtapaActualId
+        +int preguntaTriviaActualIndex
+        +ObtenerEtapaActual() EtapaSnapshotBase
+        +ObtenerEtapaBusquedaTesoroActual() EtapaBusquedaTesoroSnapshot
+        +EsUltimaEtapa() bool
+        +AvanzarEtapa() void
     }
 
     class ContextoBusquedaTesoro {
-        <<Entity>>
+        <<Entity - legacy>>
         +MisionSnapshot misionSnapshot
         +int etapaActualIndex
-        +List~PistaId~ pistasLiberadas
-        +AvanzarEtapa() void
-        +LiberarPista(equipoId, pistaId) void
-        +ObtenerEtapaActual() EtapaSnapshot
-        +EsUltimaEtapa() bool
+        +ObtenerEtapaActual() EtapaBusquedaTesoroSnapshot
     }
 
     class ContextoTrivia {
-        <<Entity>>
+        <<Entity - legacy>>
         +List~PreguntaId~ preguntasOrdenadas
         +int preguntaActualIndex
-        +DateTime timerCerradoEn
-        +LanzarPregunta() PreguntaId
-        +CerrarTimer(momento) void
-        +EsUltimaPregunta() bool
+        +string categoriasTitulo
     }
 
-    class EquipoSesion {
+    class ParticipanteSesion {
         <<Entity>>
-        +EquipoId equipoId
-        +NombreEquipo nombre
-        +CodigoAcceso codigoAcceso
-        +Puntaje puntajeTotal
-        +long tiempoAcumuladoMs
-        +bool bloqueadoParaRondaActual
+        +ParticipanteId participanteId
+        +UsuarioId jugadorId
+        +NombreParticipante nombre
+        +int puntajeTotal
         +SumarPuntaje(puntos) void
         +AplicarPenalizacion(penalizacion) void
-        +BloquearParaRonda() void
     }
 
     class Evidencia {
         <<Entity>>
         +EvidenciaId evidenciaId
-        +EquipoId equipoId
+        +ParticipanteId participanteId
         +EtapaId etapaId
         +CodigoQR codigoQR
-        +DateTime timestampServidor
         +ResultadoValidacion resultado
-        +Validar(codigoEsperado) ResultadoValidacion
     }
 
     class RespuestaTrivia {
-        <<Entity>>
+        <<Entity - E2>>
         +RespuestaId respuestaId
-        +EquipoId equipoId
+        +ParticipanteId participanteId
         +PreguntaId preguntaId
-        +OpcionId opcionSeleccionada
-        +DateTime timestampServidor
         +bool esCorrecta
         +Puntaje puntosObtenidos
-        +EstadoRespuesta estado
-        +Procesar(opcionCorrecta, timerCerradoEn) Puntaje
+        +DateTime respondidoEn
     }
 
     class Penalizacion {
@@ -166,7 +257,6 @@ classDiagram
         +int puntos
         +string motivo
         +UsuarioId operadorId
-        +DateTime aplicadaEn
     }
 
     class EventoSesion {
@@ -175,15 +265,15 @@ classDiagram
         +string tipo
         +string payload
         +DateTime ocurridoEn
-        +UsuarioId originadoPor
     }
 
     %% ══════════════════════════════════════════════════
-    %% VALUE OBJECTS / ENUMERACIONES
+    %% ENUMERACIONES SESIÓN
     %% ══════════════════════════════════════════════════
 
     class TipoSesion {
         <<Enumeration>>
+        Mision
         BusquedaTesoro
         Trivia
     }
@@ -200,8 +290,9 @@ classDiagram
 
     class EstadoMision {
         <<Enumeration>>
-        Inactiva
+        Borrador
         Activa
+        Inactiva
     }
 
     class TipoLiberacion {
@@ -217,26 +308,14 @@ classDiagram
         Rechazada
     }
 
-    class EstadoRespuesta {
-        <<Enumeration>>
-        Pendiente
-        Correcta
-        Incorrecta
-        FueraDeTiempo
-    }
-
     class Puntaje {
         <<ValueObject>>
         +int valor
-        +Sumar(cantidad) Puntaje
-        +Restar(cantidad) Puntaje
-        +Zero() Puntaje$
     }
 
     class CodigoQR {
         <<ValueObject>>
         +string valor
-        +CoincideCon(otro) bool
     }
 
     class CodigoAcceso {
@@ -245,84 +324,30 @@ classDiagram
         +Generar() CodigoAcceso$
     }
 
-    class Duracion {
-        <<ValueObject>>
-        +int segundos
-        +HaExpirado(inicio) bool
-        +DesdMinutos(min) Duracion$
-    }
-
-    class NombreMision {
-        <<ValueObject>>
-        +string valor
-        +Crear(nombre) NombreMision$
-    }
-
     %% ══════════════════════════════════════════════════
-    %% DOMAIN SERVICES — BúsquedaTesoro
+    %% DOMAIN SERVICES
     %% ══════════════════════════════════════════════════
 
     class ValidacionEvidenciaService {
-        <<DomainService - BusquedaTesoro>>
-        +Validar(contexto, equipoId, codigoQR) ResultadoValidacion
-        +EsGanadorUnico(contexto, etapaId) bool
+        <<DomainService>>
+        +Validar(sesion, participanteId, codigoQR) ResultadoValidacion
     }
-
-    class CalculoPuntajeBusquedaService {
-        <<DomainService - BusquedaTesoro>>
-        +Calcular(etapa, esGanador) Puntaje
-        +AplicarPenalizacion(equipo, penalizacion) Puntaje
-    }
-
-    class LiberacionPistasService {
-        <<DomainService - BusquedaTesoro>>
-        +LiberarPorTiempo(contexto, etapaId) void
-        +LiberarPorGanador(contexto, etapaGanada) void
-        +LiberarManual(contexto, operadorId, pistaId, equipoId) void
-        +PuedeLiberar(equipo, pista) bool
-    }
-
-    class TransicionEtapaService {
-        <<DomainService - BusquedaTesoro>>
-        +AvanzarSesion(sesion, contexto) void
-        +EsUltimaEtapa(contexto) bool
-    }
-
-    %% ══════════════════════════════════════════════════
-    %% DOMAIN SERVICES — Trivia
-    %% ══════════════════════════════════════════════════
-
-    class ValidacionRespuestaTriviaService {
-        <<DomainService - Trivia>>
-        +Validar(respuesta, pregunta, timerCerradoEn) bool
-        +EsFueraDeTiempo(timestampRespuesta, timerCerradoEn) bool
-    }
-
-    class CalculoPuntajeTriviaService {
-        <<DomainService - Trivia>>
-        +Calcular(pregunta, esCorrecta, tiempoMs) Puntaje
-        +AplicarPenalizacion(equipo, penalizacion) Puntaje
-    }
-
-    class TransicionPreguntaService {
-        <<DomainService - Trivia>>
-        +LanzarSiguientePregunta(sesion, contexto) void
-        +EsUltimaPregunta(contexto) bool
-        +IniciarTransicion(duracionMs) void
-    }
-
-    %% ══════════════════════════════════════════════════
-    %% DOMAIN SERVICES — Compartidos
-    %% ══════════════════════════════════════════════════
 
     class RankingService {
-        <<DomainService - Compartido>>
-        +Calcular(sesion) List~PosicionRanking~
-        +Ordenar(equipos) List~PosicionRanking~
+        <<DomainService>>
+        +Calcular(participantes) List~PosicionRanking~
+    }
+
+    class PistaEntregada {
+        <<Entity - E2>>
+        +ParticipanteId participanteId
+        +PistaId pistaId
+        +EtapaId etapaId
+        +DateTime entregadaEn
     }
 
     %% ══════════════════════════════════════════════════
-    %% DOMAIN EVENTS — Compartidos
+    %% DOMAIN EVENTS (muestra)
     %% ══════════════════════════════════════════════════
 
     class SesionCreada {
@@ -330,134 +355,59 @@ classDiagram
         +SesionId sesionId
         +TipoSesion tipoSesion
         +UsuarioId operadorId
-        +DateTime ocurridoEn
     }
 
-    class SesionIniciada {
+    class UsuarioCreadoEnDominio {
         <<DomainEvent>>
-        +SesionId sesionId
-        +TipoSesion tipoSesion
-        +DateTime ocurridoEn
+        +UsuarioAdministrableId id
+        +EmailAddress email
     }
-
-    class SesionPausada {
-        <<DomainEvent>>
-        +SesionId sesionId
-        +DateTime pausadaEn
-    }
-
-    class SesionFinalizada {
-        <<DomainEvent>>
-        +SesionId sesionId
-        +List~PosicionRanking~ rankingFinal
-        +DateTime finalizadaEn
-    }
-
-    class PenalizacionAplicada {
-        <<DomainEvent>>
-        +SesionId sesionId
-        +EquipoId equipoId
-        +int puntos
-        +string motivo
-        +DateTime ocurridoEn
-    }
-
-    %% ══════════════════════════════════════════════════
-    %% DOMAIN EVENTS — BúsquedaTesoro
-    %% ══════════════════════════════════════════════════
 
     class EvidenciaValidada {
-        <<DomainEvent - BusquedaTesoro>>
+        <<DomainEvent>>
         +SesionId sesionId
-        +EquipoId equipoGanadorId
+        +ParticipanteId participanteGanadorId
         +EtapaId etapaId
-        +Puntaje puntosOtorgados
-        +DateTime ocurridoEn
-    }
-
-    class EtapaCompletada {
-        <<DomainEvent - BusquedaTesoro>>
-        +SesionId sesionId
-        +int etapaCompletadaIndex
-        +EquipoId equipoGanadorId
-        +DateTime ocurridoEn
-    }
-
-    class PistaLiberada {
-        <<DomainEvent - BusquedaTesoro>>
-        +SesionId sesionId
-        +EquipoId equipoId
-        +PistaId pistaId
-        +TipoLiberacion tipoLiberacion
-        +DateTime ocurridoEn
     }
 
     %% ══════════════════════════════════════════════════
-    %% DOMAIN EVENTS — Trivia
-    %% ══════════════════════════════════════════════════
-
-    class PreguntaLanzada {
-        <<DomainEvent - Trivia>>
-        +SesionId sesionId
-        +PreguntaId preguntaId
-        +int timerMs
-        +DateTime ocurridoEn
-    }
-
-    class RespuestaTriviaRecibida {
-        <<DomainEvent - Trivia>>
-        +SesionId sesionId
-        +PreguntaId preguntaId
-        +EquipoId equipoId
-        +OpcionId opcionId
-        +DateTime timestampServidor
-    }
-
-    class TiempoAgotado {
-        <<DomainEvent - Trivia>>
-        +SesionId sesionId
-        +PreguntaId preguntaId
-        +DateTime ocurridoEn
-    }
-
-    %% ══════════════════════════════════════════════════
-    %% PUERTOS — Arquitectura Hexagonal
+    %% PUERTOS
     %% ══════════════════════════════════════════════════
 
     class IMisionRepository {
         <<Port_Driven>>
-        +Save(mision) Task
-        +FindById(id) Task~Mision~
-        +FindActivas() Task~List~
-        +ExisteNombre(nombre) Task~bool~
+        +SaveAsync(mision) Task
+        +FindByIdAsync(id) Task
+        +FindActivasAsync() Task
     }
 
     class ISesionRepository {
         <<Port_Driven>>
-        +Save(sesion) Task
-        +FindById(id) Task~Sesion~
-        +FindByOperador(operadorId) Task~List~
+        +SaveAsync(sesion) Task
+        +FindByIdAsync(id) Task
+        +FindDisponiblesParaParticipanteAsync(tipo) Task
+    }
+
+    class IUsuarioRepository {
+        <<Port_Driven>>
+        +SaveAsync(usuario) Task
+        +FindByEmailAsync(email) Task
+    }
+
+    class IIdentityService {
+        <<Port_Driven>>
+        +RegistrarUsuarioAsync(...) Task~KeycloakUserId~
+        +EliminarEnIdentityServerAsync(id) Task
     }
 
     class IPreguntaRepository {
         <<Port_Driven>>
-        +Save(pregunta) Task
-        +FindById(id) Task~Pregunta~
-        +FindByCategoria(catId) Task~List~
-        +FindActivas() Task~List~
+        +FindByCategoriaAsync(catId) Task
     }
 
     class IEventPublisher {
         <<Port_Driven>>
-        +Publish~T~(evento) Task
-        +PublishBatch~T~(eventos) Task
-    }
-
-    class INotificacionRealTime {
-        <<Port_Driven>>
-        +NotificarEquipo(equipoId, payload) Task
-        +BroadcastSesion(sesionId, payload) Task
-        +NotificarOperador(operadorId, payload) Task
+        +PublishBatchAsync(eventos) Task
     }
 
     %% ══════════════════════════════════════════════════
@@ -465,58 +415,71 @@ classDiagram
     %% ══════════════════════════════════════════════════
 
     Mision "1" *-- "1..*" Etapa : contiene
-    Etapa "1" *-- "0..*" Pista : tiene
-    Etapa "1" --> "1" CodigoQR : solución
-    Pista "1" --> "1" TipoLiberacion : tipo
-    Mision "1" --> "1" EstadoMision : estado
-    Mision "1" --> "1" NombreMision : identificado por
-    Mision "1" --> "1" Duracion : tiempoMaximo
+    Etapa <|-- EtapaBusquedaTesoro
+    Etapa <|-- EtapaTrivia
+    EtapaBusquedaTesoro "1" *-- "0..*" Pista : tiene
+    EtapaTrivia --> "1..*" Categoria : referencia por id
+    Pregunta --> Categoria : clasificada en
 
-    Pregunta "1" *-- "2..*" OpcionRespuesta : compone
-    Pregunta "1" --> "1" Categoria : clasificada en
+    MisionSnapshot *-- EtapaSnapshotBase : congela
+    EtapaSnapshotBase <|-- EtapaBusquedaTesoroSnapshot
+    EtapaSnapshotBase <|-- EtapaTriviaSnapshot
 
-    Sesion "1" --> "1" TipoSesion : determina modo
-    Sesion "1" --> "1" EstadoSesion : estado
-    Sesion "1" *-- "1..*" EquipoSesion : agrupa
-    Sesion "1" *-- "0..*" EventoSesion : historial
-    Sesion "1" o-- "0..1" ContextoBusquedaTesoro : contexto si BT
-    Sesion "1" o-- "0..1" ContextoTrivia : contexto si Trivia
-    Sesion "1" *-- "0..*" Evidencia : registra si BT
-    Sesion "1" *-- "0..*" RespuestaTrivia : registra si Trivia
-    EquipoSesion "1" --> "1" Puntaje : acumula
-    EquipoSesion "1" --> "1" CodigoAcceso : identificado por
-    EquipoSesion "1" *-- "0..*" Penalizacion : recibe
-    Evidencia "1" --> "1" CodigoQR : contiene
-    Evidencia "1" --> "1" ResultadoValidacion : resultado
-    RespuestaTrivia "1" --> "1" EstadoRespuesta : estado
+    Sesion "1" --> "1" TipoSesion
+    Sesion "1" --> "0..1" MisionId
+    Sesion "1" o-- "0..1" ContextoMision : contexto TO-BE
+    Sesion "1" o-- "0..1" ContextoBusquedaTesoro : legacy
+    Sesion "1" o-- "0..1" ContextoTrivia : legacy
+    Sesion "1" *-- "1..*" ParticipanteSesion
+    Sesion "1" *-- "0..*" Evidencia
+    Sesion "1" *-- "0..*" RespuestaTrivia : E2
+    Sesion "1" *-- "0..*" PistaEntregada : E2
+    ContextoMision --> MisionSnapshot
 
-    ValidacionEvidenciaService ..> ContextoBusquedaTesoro : opera sobre
-    ValidacionEvidenciaService ..> Evidencia : valida
-    CalculoPuntajeBusquedaService ..> Puntaje : calcula
-    LiberacionPistasService ..> ContextoBusquedaTesoro : opera sobre
-    TransicionEtapaService ..> ContextoBusquedaTesoro : avanza
-    ValidacionRespuestaTriviaService ..> RespuestaTrivia : valida
-    ValidacionRespuestaTriviaService ..> ContextoTrivia : contra timer
-    CalculoPuntajeTriviaService ..> Puntaje : calcula
-    TransicionPreguntaService ..> ContextoTrivia : avanza
-    RankingService ..> EquipoSesion : ordena
-    RankingService ..> Puntaje : criterio
+    UsuarioAdministrable --> EmailAddress
+    UsuarioAdministrable --> KeycloakUserId
+    UsuarioAdministrable --> RolSistema
 
-    Sesion ..> SesionCreada : emite
-    Sesion ..> SesionIniciada : emite
-    Sesion ..> SesionPausada : emite
-    Sesion ..> SesionFinalizada : emite
-    Sesion ..> PenalizacionAplicada : emite
-    ValidacionEvidenciaService ..> EvidenciaValidada : emite
-    ContextoBusquedaTesoro ..> EtapaCompletada : emite
-    ContextoBusquedaTesoro ..> PistaLiberada : emite
-    ContextoTrivia ..> PreguntaLanzada : emite
-    RespuestaTrivia ..> RespuestaTriviaRecibida : emite
-    ContextoTrivia ..> TiempoAgotado : emite
+    ValidacionEvidenciaService ..> ContextoMision : etapa activa BT
+    RankingService ..> ParticipanteSesion : ordena
 
-    Sesion ..> ISesionRepository : persiste vía
-    Mision ..> IMisionRepository : persiste vía
-    Pregunta ..> IPreguntaRepository : persiste vía
-    Sesion ..> IEventPublisher : publica vía
-    Sesion ..> INotificacionRealTime : notifica vía
+    Mision ..> IMisionRepository
+    Sesion ..> ISesionRepository
+    UsuarioAdministrable ..> IUsuarioRepository
+    UsuarioAdministrable ..> IIdentityService
+    Pregunta ..> IPreguntaRepository
+    Sesion ..> IEventPublisher
 ```
+
+## Notas de alineación con el código
+
+| Concepto | Estado | Detalle |
+|----------|--------|---------|
+| **Misión polimórfica** | Implementado | `CatalogoMision`, `EtapaBusquedaTesoro`, `EtapaTrivia`, `Pista` en catálogo (HU-01..08, RF-01/02). |
+| **Sesión unificada** | Implementado | `Sesion.CrearDesdeMision` + `ContextoMision`; avance BT RB-04/05/34; trivia en sesión unificada → E2. |
+| **`Sesion.Nombre`** | Implementado | Nombre de instancia operativa; único entre sesiones no finalizadas/canceladas (extensión operativa, no sustituye código de acceso). |
+| **Legacy** | Legacy | `ContextoBusquedaTesoro`, `ContextoTrivia`, `TipoSesion.BusquedaTesoro`/`Trivia` y commands obsoletos solo por datos/API antiguos. |
+| **Banco trivia** | Implementado | `Categoria`, `Pregunta`, soft delete RB-16; RF-23/24. |
+| **`Pregunta.segundosRespuesta`** | E2 | RF-25; previsto en diagrama; aún no existe en `Umbral.Domain`. |
+| **Evidencia BT** | Implementado | `RegistrarEvidencia`, `ValidacionEvidenciaService`, RF-07..11, RF-20. |
+| **Penalización** | Implementado | `AplicarPenalizacion`, RB-20/24/25. |
+| **Ranking** | Parcial | `RankingService` por puntaje descendente; desempate RB-08 por tiempo acumulado → E2 (hoy desempata por nombre). |
+| **`EventoSesion`** | Parcial | Se persiste en dominio/BD; consulta API de auditoría HU-22 → E2. |
+| **Liberación de pistas** | E2 | Catálogo de `Pista` en misión ✅; runtime `PistaEntregada`, RF-14/15, HU-09/10/11 → pendiente. |
+| **`RespuestaTrivia` / trivia en vivo** | E2 | RF-26..30, RB-12/13/17/29..32, HU-33..38; UI participante en modo lectura en E1. |
+| **`IEventPublisher`** | Parcial | Puerto en dominio ✅; implementación `NoOpEventPublisher` en E1; RabbitMQ real RF-19/29, RNF-05 → E2. |
+| **Tiempo real (WebSockets)** | E2 | RF-17/18, RNF-03; clientes usan REST/polling en E1. |
+| **Identidad Keycloak** | Implementado | `UsuarioAdministrable`, doble commit, compensación RB-37, RF-31/33/34. |
+| **Roles en admin** | Implementado | Un rol por usuario (`Administrador`, `Operador` o `Participante` para cuentas demo); ver RB-35 actualizado en ERS. |
+| **Participación en juego** | Implementado | Inscripción con código de acceso + nombre único RB-02; rol Keycloak `Participante` no sustituye la inscripción a sesión. |
+| **RB-27 operador** | Implementado | Listado de sesiones filtrado por `operadorId`. |
+
+### Puertos e infraestructura
+
+| Puerto | E1 | E2 |
+|--------|----|----|
+| `IMisionRepository`, `ISesionRepository`, `IUsuarioRepository`, `IPreguntaRepository` | EF Core + PostgreSQL | — |
+| `IIdentityService` | Keycloak (admin API) | — |
+| `IEventPublisher` | `NoOpEventPublisher` (handlers llaman al puerto) | Publicador RabbitMQ + consumers |
+
+Referencia operativa: [`RESUMEN-COMPACTO-E1-E2.md`](RESUMEN-COMPACTO-E1-E2.md).

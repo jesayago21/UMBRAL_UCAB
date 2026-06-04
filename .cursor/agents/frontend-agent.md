@@ -1,6 +1,6 @@
 # Agent: Frontend — Proyecto UMBRAL
 
-> **Trazabilidad:** `docs/TRAZABILIDAD.md` · Web Admin/Operador + **mobile** equipo (`umbral-mobile`). **RNF-12**, **RNF-14**.
+> **Trazabilidad:** `docs/TRAZABILIDAD.md` · Web Admin/Operador + **mobile** participante (`umbral-mobile`). **RNF-12**, **RNF-14**.
 
 ## Identidad y rol
 Eres el **Frontend Agent** de UMBRAL. Tu especialidad abarca **dos clientes**:
@@ -41,7 +41,7 @@ POST   /api/sesiones/{id}/finalizar     → Finalizar sesión
 GET    /api/sesiones/{id}               → Detalle de sesión
 GET    /api/sesiones/activas            → Listar sesiones activas
 POST   /api/sesiones/{id}/etapas/{eid}/activar  → Activar etapa
-POST   /api/sesiones/{id}/equipos       → Agregar equipo
+POST   /api/sesiones/{id}/participantes       → Agregar equipo
 GET    /api/pistas-busqueda             → Listar pistas
 POST   /api/pistas-busqueda             → Crear pista
 GET    /api/preguntas-trivia            → Listar preguntas
@@ -145,7 +145,7 @@ export function SesionCard({ sesion, onIniciar }: SesionCardProps) {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">
-          {sesion.totalEquipos} equipos registrados
+          {sesion.totalParticipantes} participantes registrados
         </p>
         <Button
           onClick={() => onIniciar(sesion.id)}
@@ -244,9 +244,9 @@ export const useSesionStore = create<SesionState>((set) => ({
   setEtapaActual: (etapa) => set({ etapaActual: etapa }),
   actualizarPuntaje: (payload) =>
     set((state) => ({
-      puntajes: state.puntajes.some((p) => p.equipoId === payload.equipoId)
+      puntajes: state.puntajes.some((p) => p.participanteId === payload.participanteId)
         ? state.puntajes.map((p) =>
-            p.equipoId === payload.equipoId ? payload : p
+            p.participanteId === payload.participanteId ? payload : p
           )
         : [...state.puntajes, payload],
     })),
@@ -267,7 +267,7 @@ export interface SesionResumenDto {
   tipo: TipoSesion;
   estado: EstadoSesion;
   fechaInicio: string;
-  totalEquipos: number;
+  totalParticipantes: number;
 }
 
 export interface SesionDetalleDto extends SesionResumenDto {
@@ -308,8 +308,8 @@ export interface EtapaActivadaPayload {
 
 export interface PuntajeActualizadoPayload {
   sesionId: string;
-  equipoId: string;
-  nombreEquipo: string;
+  participanteId: string;
+  nombreParticipante: string;
   puntaje: number;
 }
 

@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
+using Umbral.Domain.CatalogoTrivia.Categoria;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
+using Umbral.Domain.IdentidadYAccesos.Ports;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
-using Umbral.Infrastructure.Auth;
+using Umbral.Infrastructure.Identidad;
 using Umbral.Infrastructure.Messaging.Publishers;
 using Umbral.Infrastructure.Persistence;
 using Umbral.Infrastructure.Persistence.Repositories;
@@ -25,9 +28,18 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddScoped<ISesionRepository, SesionRepository>();
         services.AddScoped<IMisionRepository, MisionRepository>();
+        services.AddScoped<ICategoriaRepository, CategoriaRepository>();
+        services.AddScoped<IPreguntaRepository, PreguntaRepository>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IEventPublisher, NoOpEventPublisher>();
-        services.AddScoped<IUsuarioAuthRepository, UsuarioAuthRepository>();
-        services.AddScoped<DemoUsersSeeder>();
+        // E2: reemplazar con implementación SignalR real cuando se active notificaciones en tiempo real.
+        services.AddScoped<INotificacionRealTime, NoOpNotificacionRealTime>();
+
+        services.AddOptions<KeycloakAdminOptions>()
+            .Bind(configuration.GetSection(KeycloakAdminOptions.SectionName));
+        services.AddHttpClient<KeycloakIdentityService>();
+        services.AddScoped<IIdentityService>(sp => sp.GetRequiredService<KeycloakIdentityService>());
+        services.AddScoped<UsuariosEspejoSeeder>();
 
         return services;
     }

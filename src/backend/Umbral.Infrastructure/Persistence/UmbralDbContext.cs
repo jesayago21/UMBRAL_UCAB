@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
+using Umbral.Domain.CatalogoTrivia.Categoria;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
+using Umbral.Domain.IdentidadYAccesos;
 using Umbral.Domain.Sesion;
-using Umbral.Infrastructure.Persistence.Entities;
 using Umbral.Infrastructure.Persistence.ValueConverters;
 
 namespace Umbral.Infrastructure.Persistence;
@@ -14,14 +16,17 @@ public sealed class UmbralDbContext : DbContext
     }
 
     public DbSet<Sesion> Sesiones => Set<Sesion>();
-    public DbSet<EquipoSesion> EquiposSesion => Set<EquipoSesion>();
+    public DbSet<ParticipanteSesion> ParticipantesSesion => Set<ParticipanteSesion>();
     public DbSet<EventoSesion> EventosSesion => Set<EventoSesion>();
     public DbSet<Evidencia> Evidencias => Set<Evidencia>();
 
     public DbSet<Mision> Misiones => Set<Mision>();
     public DbSet<Etapa> EtapasMision => Set<Etapa>();
     public DbSet<Pista> PistasMision => Set<Pista>();
-    public DbSet<Usuario> Usuarios => Set<Usuario>();
+
+    public DbSet<Categoria> Categorias => Set<Categoria>();
+    public DbSet<Pregunta> Preguntas => Set<Pregunta>();
+    public DbSet<UsuarioAdministrable> UsuariosAdministrables => Set<UsuarioAdministrable>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,11 +46,15 @@ public sealed class UmbralDbContext : DbContext
 
         configurationBuilder.Properties<SesionId>()
             .HaveConversion<SesionIdValueConverter>();
-        configurationBuilder.Properties<EquipoId>()
-            .HaveConversion<EquipoIdValueConverter>();
+        configurationBuilder.Properties<ParticipanteId>()
+            .HaveConversion<ParticipanteIdValueConverter>();
         configurationBuilder.Properties<EvidenciaId>()
             .HaveConversion<EvidenciaIdValueConverter>();
         configurationBuilder.Properties<UsuarioId>()
             .HaveConversion<UsuarioIdValueConverter>();
+        configurationBuilder.Properties<CategoriaId>()
+            .HaveConversion<CategoriaIdValueConverter>();
+        configurationBuilder.Properties<PreguntaId>()
+            .HaveConversion<PreguntaIdValueConverter>();
     }
 }

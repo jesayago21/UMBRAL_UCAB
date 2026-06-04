@@ -1,15 +1,16 @@
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Sesion;
+using Umbral.Domain.Shared;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Application.Tests.Builders;
 
 internal static class SesionTestBuilder
 {
-    public static SesionAR EnPreparacionSinEquipos()
+    public static SesionAR EnPreparacionSinParticipantes()
     {
-        var sesion = SesionAR.CrearBusquedaTesoro(
-            MisionSnapshot.Desde(MisionTestBuilder.Activa()),
+        var sesion = SesionAR.CrearDesdeMision(
+            MisionSnapshot.DesdeSoloBusquedaTesoro(MisionTestBuilder.Activa()),
             UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
         sesion.AbrirParaRegistro();
@@ -19,43 +20,51 @@ internal static class SesionTestBuilder
 
     public static SesionAR Finalizada()
     {
-        var sesion = EnPreparacionSinEquipos();
-        sesion.RegistrarEquipo("EquipoDefault");
+        var sesion = EnPreparacionSinParticipantes();
+        UnirParticipante(sesion, "Alpha");
         sesion.Iniciar();
         sesion.Finalizar();
         sesion.ClearDomainEvents();
         return sesion;
     }
 
-    public static SesionAR ConEquipo(string nombre)
+    public static SesionAR ConParticipante(string nombre)
     {
-        var sesion = EnPreparacionSinEquipos();
-        sesion.RegistrarEquipo(nombre);
+        var sesion = EnPreparacionSinParticipantes();
+        UnirParticipante(sesion, nombre);
         sesion.ClearDomainEvents();
         return sesion;
     }
 
-    public static SesionAR Activa(string nombreEquipo = "EquipoDefault")
+    public static SesionAR ConParticipante(string nombre, Guid jugadorId)
     {
-        var sesion = ConEquipo(nombreEquipo);
+        var sesion = EnPreparacionSinParticipantes();
+        UnirParticipante(sesion, nombre, new UsuarioId(jugadorId));
+        sesion.ClearDomainEvents();
+        return sesion;
+    }
+
+    public static SesionAR Activa(string nombreParticipante = "Alpha")
+    {
+        var sesion = ConParticipante(nombreParticipante);
         sesion.Iniciar();
         sesion.ClearDomainEvents();
         return sesion;
     }
 
-    public static SesionAR Pausada(string nombreEquipo = "EquipoDefault")
+    public static SesionAR Pausada(string nombreParticipante = "Alpha")
     {
-        var sesion = Activa(nombreEquipo);
+        var sesion = Activa(nombreParticipante);
         sesion.Pausar();
         sesion.ClearDomainEvents();
         return sesion;
     }
 
-    public static SesionAR ActivaConEquipos(params string[] nombresEquipos)
+    public static SesionAR ActivaConParticipantes(params string[] nombresParticipantes)
     {
-        var sesion = EnPreparacionSinEquipos();
-        foreach (var nombre in nombresEquipos)
-            sesion.RegistrarEquipo(nombre);
+        var sesion = EnPreparacionSinParticipantes();
+        foreach (var nombre in nombresParticipantes)
+            UnirParticipante(sesion, nombre);
 
         sesion.Iniciar();
         sesion.ClearDomainEvents();
@@ -63,20 +72,26 @@ internal static class SesionTestBuilder
     }
 
     public static string CodigoQrEtapaActual(SesionAR sesion)
-        => sesion.ContextoBT!.ObtenerEtapaActual().CodigoQRSolucion;
+        => sesion.ContextoMision!.ObtenerEtapaBusquedaTesoroActual().CodigoQRSolucion;
 
-    public static SesionAR ActivaConEquiposDosEtapas(params string[] nombresEquipos)
+    public static SesionAR ActivaConParticipantesDosEtapas(params string[] nombresParticipantes)
     {
-        var sesion = SesionAR.CrearBusquedaTesoro(
-            MisionSnapshot.Desde(MisionTestBuilder.ActivaConDosEtapas()),
+        var sesion = SesionAR.CrearDesdeMision(
+            MisionSnapshot.DesdeSoloBusquedaTesoro(MisionTestBuilder.ActivaConDosEtapas()),
             UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
         sesion.AbrirParaRegistro();
-        foreach (var nombre in nombresEquipos)
-            sesion.RegistrarEquipo(nombre);
+        foreach (var nombre in nombresParticipantes)
+            UnirParticipante(sesion, nombre);
 
         sesion.Iniciar();
         sesion.ClearDomainEvents();
         return sesion;
+    }
+
+    private static void UnirParticipante(SesionAR sesion, string nombre, UsuarioId? jugador = null)
+    {
+        var j = jugador ?? UsuarioId.Nuevo();
+        sesion.UnirseParticipante(j, nombre, sesion.CodigoAcceso.Valor);
     }
 }

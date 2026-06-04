@@ -76,7 +76,7 @@ Ninguna capa puede importar de una capa superior. El dominio es puro.
 │         │    Estado (enum)             │ ← 6 estados          │
 │         │    ContextoBT? (E)           │ ← solo BusquedaTesoro│
 │         │    ContextoTrivia? (E)       │ ← solo Trivia        │
-│         │    EquipoSesion (E)          │                      │
+│         │    ParticipanteSesion (E)          │                      │
 │         │    Evidencia (E)             │ ← solo BT            │
 │         │    RespuestaTrivia (E)       │ ← solo Trivia        │
 │         │    EventoSesion (E)          │                      │
@@ -94,7 +94,7 @@ Ninguna capa puede importar de una capa superior. El dominio es puro.
 | `Sesion` | `PenalizacionAplicada` | Recálculo de puntaje, Auditoría |
 | `Sesion` | `EvidenciaValidada` | Recálculo de puntaje (BT) |
 | `Sesion` | `EtapaCompletada` | Transición + Notificaciones (BT) |
-| `Sesion` | `PistaLiberada` | Notificaciones a equipos (BT) |
+| `Sesion` | `PistaLiberada` | Notificaciones a participantes (BT) |
 | `Sesion` | `PreguntaLanzada` | Auditoría trivia |
 | `Sesion` | `RespuestaTriviaRecibida` | Validación + Puntaje (Trivia) |
 | `Sesion` | `TiempoAgotado` | Cierre de ronda (Trivia) |
@@ -105,7 +105,7 @@ Ninguna capa puede importar de una capa superior. El dominio es puro.
 
 ### ADR-001: TipoSesion solo en Sesion (AR)
 **Decisión:** `TipoSesion` (BusquedaTesoro | Trivia) reside **únicamente** en el
-Aggregate Root `Sesion`. No se replica en `EquipoSesion`, `Evidencia` ni en los contextos.
+Aggregate Root `Sesion`. No se replica en `ParticipanteSesion`, `Evidencia` ni en los contextos.
 Una sesión es SIEMPRE de un único tipo; nunca mixta.
 
 **Motivo:** Evitar dispersión del discriminador de tipo. El tipo de sesión es
@@ -130,7 +130,7 @@ evolucionar cada contexto independientemente.
 ### ADR-003: Monolito hexagonal (no microservicios)
 **Decisión:** UMBRAL es un monolito modular. Los BCs son carpetas, no servicios.
 
-**Motivo:** Proyecto académico con equipo reducido; microservicios añadirían
+**Motivo:** Proyecto académico con participante reducido; microservicios añadirían
 complejidad operacional sin beneficio real en esta escala.
 
 **Estado:** VIGENTE para v1.0.
@@ -203,17 +203,17 @@ UMBRAL debe mantener:
 ## Anti-patrones arquitecturales críticos en UMBRAL
 
 ```
-❌ CRÍTICO: AR de CatalogoBusquedaTesoro es PistaBusqueda
+❌ CRÍTICO: AR de CatalogoMision es PistaBusqueda
    El AR correcto es Mision (Composite con Etapa→Pista) → RECHAZAR
 
 ❌ CRÍTICO: Referencia directa entre namespaces de BCs distintos
-   using Umbral.Domain.CatalogoBusquedaTesoro.Mision en namespace Sesion → RECHAZAR
+   using Umbral.Domain.CatalogoMision.Mision en namespace Sesion → RECHAZAR
    Usar MisionSnapshot (ACL) o solo el ID
 
 ❌ CRÍTICO: Setter público en entidad de dominio
    public TipoSesion Tipo { get; set; } → RECHAZAR
 
-❌ CRÍTICO: TipoSesion en EquipoSesion u otra entidad hija de Sesion → RECHAZAR
+❌ CRÍTICO: TipoSesion en ParticipanteSesion u otra entidad hija de Sesion → RECHAZAR
 
 ❌ CRÍTICO: Factory method genérico Sesion.Crear()
    Usar Sesion.CrearBusquedaTesoro(...) o Sesion.CrearTrivia(...) → RECHAZAR

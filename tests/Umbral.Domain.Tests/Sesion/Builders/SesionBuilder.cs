@@ -1,5 +1,6 @@
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Sesion;
+using Umbral.Domain.Tests.Sesion;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Domain.Tests.Sesion.Builders;
@@ -9,13 +10,13 @@ namespace Umbral.Domain.Tests.Sesion.Builders;
 /// sin pasar por la maquina de estados real (solo para tests).
 /// Patron: SesionBuilder.BusquedaTesoro()
 ///           .ConEstado(EstadoSesion.EnPreparacion)
-///           .ConEquipo("Alpha")
+///           .ConParticipante("Alpha")
 ///           .Build()
 /// </summary>
 public sealed class SesionBuilder
 {
     private EstadoSesion _estado = EstadoSesion.Programada;
-    private readonly List<string> _equipos = [];
+    private readonly List<string> _participantes = [];
     private MisionSnapshot? _snapshot;
     private UsuarioId? _operadorId;
 
@@ -40,20 +41,20 @@ public sealed class SesionBuilder
         return this;
     }
 
-    public SesionBuilder ConEquipo(string nombre)
+    public SesionBuilder ConParticipante(string nombre)
     {
-        _equipos.Add(nombre);
+        _participantes.Add(nombre);
         return this;
     }
 
     /// <summary>
-    /// Explícito: no pre-registrar equipos al construir (p. ej. Iniciar sin equipos).
+    /// Explícito: no pre-registrar participantes al construir (p. ej. Iniciar sin participantes).
     /// </summary>
-    public SesionBuilder SinEquipos() => this;
+    public SesionBuilder SinParticipantes() => this;
 
     /// <summary>
     /// Atajo: construye una sesion con estado Activa.
-    /// Si no se llama a ConEquipo(), Build() agrega un equipo por defecto.
+    /// Si no se llama a ConParticipante(), Build() agrega un participante por defecto.
     /// </summary>
     public SesionBuilder Activa()
     {
@@ -66,7 +67,7 @@ public sealed class SesionBuilder
         var operadorId = _operadorId ?? UsuarioId.Nuevo();
         var snapshot   = _snapshot ?? MisionSnapshotFake();
 
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
         sesion.ClearDomainEvents();
 
         // Forzar estado usando la maquina real hasta el punto requerido,
@@ -74,39 +75,41 @@ public sealed class SesionBuilder
         switch (_estado)
         {
             case EstadoSesion.Programada:
+                foreach (var nombre in _participantes)
+                    SesionTestHelpers.UnirParticipante(sesion, nombre);
                 break;
 
             case EstadoSesion.EnPreparacion:
                 sesion.AbrirParaRegistro();
-                foreach (var nombre in _equipos)
-                    sesion.RegistrarEquipo(nombre);
+                foreach (var nombre in _participantes)
+                    SesionTestHelpers.UnirParticipante(sesion, nombre);
                 break;
 
             case EstadoSesion.Activa:
                 sesion.AbrirParaRegistro();
-                foreach (var nombre in _equipos)
-                    sesion.RegistrarEquipo(nombre);
-                if (!sesion.Equipos.Any())
-                    sesion.RegistrarEquipo("EquipoDefault");
+                foreach (var nombre in _participantes)
+                    SesionTestHelpers.UnirParticipante(sesion, nombre);
+                if (!sesion.Participantes.Any())
+                    SesionTestHelpers.UnirParticipante(sesion, "Alpha");
                 sesion.Iniciar();
                 break;
 
             case EstadoSesion.Pausada:
                 sesion.AbrirParaRegistro();
-                if (_equipos.Count == 0)
-                    sesion.RegistrarEquipo("EquipoDefault");
-                foreach (var nombre in _equipos)
-                    sesion.RegistrarEquipo(nombre);
+                if (_participantes.Count == 0)
+                    SesionTestHelpers.UnirParticipante(sesion, "Alpha");
+                foreach (var nombre in _participantes)
+                    SesionTestHelpers.UnirParticipante(sesion, nombre);
                 sesion.Iniciar();
                 sesion.Pausar();
                 break;
 
             case EstadoSesion.Finalizada:
                 sesion.AbrirParaRegistro();
-                if (_equipos.Count == 0)
-                    sesion.RegistrarEquipo("EquipoDefault");
-                foreach (var nombre in _equipos)
-                    sesion.RegistrarEquipo(nombre);
+                if (_participantes.Count == 0)
+                    SesionTestHelpers.UnirParticipante(sesion, "Alpha");
+                foreach (var nombre in _participantes)
+                    SesionTestHelpers.UnirParticipante(sesion, nombre);
                 sesion.Iniciar();
                 sesion.Finalizar();
                 break;
@@ -125,10 +128,10 @@ public sealed class SesionBuilder
     public static MisionSnapshot MisionSnapshotFake(string nombre = "Misión Test")
     {
         var mision = Mision.Crear(nombre);
-        mision.AgregarEtapa("Busca el árbol rojo", "QR-ARBOL-001");
-        mision.AgregarEtapa("Encuentra la fuente", "QR-FUENTE-002");
+        mision.AgregarEtapaBusquedaTesoro("Busca el árbol rojo", "QR-ARBOL-001");
+        mision.AgregarEtapaBusquedaTesoro("Encuentra la fuente", "QR-FUENTE-002");
         mision.Activar();
         mision.ClearDomainEvents();
-        return MisionSnapshot.Desde(mision);
+        return MisionSnapshot.DesdeSoloBusquedaTesoro(mision);
     }
 }

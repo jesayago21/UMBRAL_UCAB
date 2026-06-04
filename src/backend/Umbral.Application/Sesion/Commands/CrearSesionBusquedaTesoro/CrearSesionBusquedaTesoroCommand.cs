@@ -8,4 +8,4 @@ namespace Umbral.Application.Sesion.Commands.CrearSesionBusquedaTesoro;
 /// </summary>
 public sealed record CrearSesionBusquedaTesoroCommand(
     Guid MisionId,
-    Guid OperadorId) : IRequest<Result<Guid>>;
+    Guid OperadorId) : IRequest<Result<CrearSesionBusquedaTesoroResult>>;

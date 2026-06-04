@@ -3,7 +3,9 @@ using NSubstitute;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Sesion.Commands.CrearSesionBusquedaTesoro;
 using Umbral.Application.Tests.Builders;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
+using Umbral.Domain.CatalogoTrivia.Categoria;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Sesion.Events;
@@ -21,6 +23,8 @@ public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
 {
     private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
     private readonly IMisionRepository _misionRepo = Substitute.For<IMisionRepository>();
+    private readonly IPreguntaRepository _preguntaRepo = Substitute.For<IPreguntaRepository>();
+    private readonly ICategoriaRepository _categoriaRepo = Substitute.For<ICategoriaRepository>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
     private readonly CrearSesionBusquedaTesoroCommandHandler _sut;
 
@@ -29,6 +33,8 @@ public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
         _sut = new CrearSesionBusquedaTesoroCommandHandler(
             _sesionRepo,
             _misionRepo,
+            _preguntaRepo,
+            _categoriaRepo,
             _publisher);
     }
 
@@ -67,7 +73,8 @@ public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().NotBeEmpty();
+        result.Value.Id.Should().NotBeEmpty();
+        result.Value.CodigoAcceso.Should().NotBeNullOrWhiteSpace();
 
         await _sesionRepo.Received(1).SaveAsync(
             Arg.Any<SesionAR>(),
@@ -85,6 +92,7 @@ public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
         sesionGuardada!.DomainEvents.Should().BeEmpty();
         sesionGuardada.OperadorId.Valor.Should().Be(operadorId);
         sesionGuardada.Estado.Should().Be(EstadoSesion.Programada);
+        sesionGuardada.CodigoAcceso.Valor.Should().Be(result.Value.CodigoAcceso);
     }
 
     [Fact]

@@ -1,6 +1,8 @@
 # UMBRAL — Especificación de Calidad y Pruebas
 
-> **HU canónicas:** numeración **HU-01…HU-40** del ERS (`docs/TRAZABILIDAD.md`). La §14 usa esa numeración; el seguimiento de Fase 1 está en `docs/fase-1/TRACKER.md`.
+> **HU canónicas:** numeración **HU-01…HU-40** del ERS (`docs/TRAZABILIDAD.md`).
+> **Entrega 1 (alcance vigente):** `docs/entrega-1/PLAN.md` (reemplaza el antiguo
+> "plan de 10 días" de esta spec). Seguimiento histórico por fases: `docs/fase-*/TRACKER.md`.
 
 ## 1. Estrategia general de pruebas
 
@@ -10,7 +12,7 @@ UMBRAL adopta una pirámide de pruebas con cuatro niveles:
                ┌┴─────────────┴┐
                │  Integración  │  ← Testcontainers (BD + API real)
               ┌┴───────────────┴┐
-              │    Aplicación   │  ← xUnit + Moq (handlers aislados)
+              │    Aplicación   │  ← xUnit + NSubstitute (handlers aislados)
              ┌┴─────────────────┴┐
              │      Dominio      │  ← xUnit puro (sin mocks)
              └───────────────────┘
@@ -18,7 +20,7 @@ UMBRAL adopta una pirámide de pruebas con cuatro niveles:
 | Nivel         | Herramienta               | Cobertura objetivo | Velocidad |
 |---------------|---------------------------|--------------------|-----------|
 | Dominio       | xUnit + FluentAssertions  | 100%               | < 1s      |
-| Aplicación    | xUnit + Moq               | ≥ 90%              | < 5s      |
+| Aplicación    | xUnit + NSubstitute       | ≥ 90%              | < 5s      |
 | Integración   | xUnit + Testcontainers    | Flujos críticos    | < 60s     |
 | E2E           | Playwright                | Flujo principal    | < 3 min   |
 
@@ -28,11 +30,17 @@ UMBRAL adopta una pirámide de pruebas con cuatro niveles:
 
 ## 2. Proyectos de prueba
 
+Estructura **implementada** en el repositorio (no renombrar sin consenso):
+
+```
 tests/
-├── Umbral.Domain.Tests/         → pruebas de agregados, VOs y domain services
-├── Umbral.Application.Tests/    → pruebas de handlers y behaviors
-├── Umbral.Integration.Tests/    → pruebas con PostgreSQL real (Testcontainers)
-└── Umbral.E2E.Tests/            → pruebas end-to-end con Playwright
+├── Umbral.Domain.Tests/          → dominio (sin mocks, sin BD)
+├── Umbral.Application.Tests/     → handlers y validators (NSubstitute)
+├── Umbral.Infrastructure.Tests/  → repositorios + EF + Testcontainers (PostgreSQL)
+└── Umbral.API.Tests/             → controllers + WebApplicationFactory + Testcontainers
+```
+
+**Entrega 2 (pendiente):** `Umbral.E2E.Tests` con Playwright (flujos web completos).
 
 Cada proyecto referencia solo lo que necesita:
 
@@ -46,17 +54,19 @@ Cada proyecto referencia solo lo que necesita:
 <ProjectReference Include="../src/backend/Umbral.Application/..." />
 <ProjectReference Include="../src/backend/Umbral.Domain/..." />
 <PackageReference Include="xunit" />
-<PackageReference Include="Moq" />
+<PackageReference Include="NSubstitute" />
 <PackageReference Include="FluentAssertions" />
 
-<!-- Umbral.Integration.Tests.csproj -->
+<!-- Umbral.Infrastructure.Tests.csproj -->
+<ProjectReference Include="../src/backend/Umbral.Infrastructure/..." />
+<PackageReference Include="Testcontainers.PostgreSql" />
+<PackageReference Include="FluentAssertions" />
+
+<!-- Umbral.API.Tests.csproj -->
 <ProjectReference Include="../src/backend/Umbral.API/..." />
 <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
 <PackageReference Include="Testcontainers.PostgreSql" />
 <PackageReference Include="FluentAssertions" />
-
-<!-- Umbral.E2E.Tests.csproj -->
-<PackageReference Include="Microsoft.Playwright" />
 ```
 
 ---
@@ -126,7 +136,7 @@ public class SesionTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .ConEquipo("Equipo Alpha")
+            .ConParticipante("Equipo Alpha")
             .Build();
 
         // Act
@@ -159,12 +169,12 @@ public class SesionTests
     }
 
     [Fact]
-    public void Iniciar_SinEquiposRegistrados_LanzaDomainException()
+    public void Iniciar_SinParticipantesRegistrados_LanzaDomainException()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .SinEquipos()
+            .SinParticipantes()
             .Build();
 
         // Act
@@ -172,7 +182,7 @@ public class SesionTests
 
         // Assert
         act.Should().Throw<DomainException>()
-            .WithMessage("*al menos un equipo*");
+            .WithMessage("*al menos un participante*");
     }
 
     [Fact]
@@ -205,22 +215,22 @@ public class SesionTests
         sesion.DomainEvents.Should().ContainSingle(e => e is SesionFinalizada);
     }
 
-    // ── Equipos ───────────────────────────────────────────────────
+    // ── Participantes ───────────────────────────────────────────────────
 
     [Fact]
-    public void RegistrarEquipo_CuandoNombreUnico_AgregaEquipo()
+    public void RegistrarEquipo_CuandoNombreUnico_AgregaParticipante()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion).Build();
 
         // Act
-        var equipo = sesion.RegistrarEquipo("Los Sabuesos");
+        var participante = sesion.RegistrarEquipo("Los Sabuesos");
 
         // Assert
-        sesion.Equipos.Should().ContainSingle();
-        equipo.Nombre.Valor.Should().Be("Los Sabuesos");
-        equipo.CodigoAcceso.Should().NotBeNull();
+        sesion.Participantes.Should().ContainSingle();
+        participante.Nombre.Valor.Should().Be("Los Sabuesos");
+        participante.CodigoAcceso.Should().NotBeNull();
     }
 
     [Fact]
@@ -229,7 +239,7 @@ public class SesionTests
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)
-            .ConEquipo("Los Sabuesos")
+            .ConParticipante("Los Sabuesos")
             .Build();
 
         // Act
@@ -263,18 +273,18 @@ public class SesionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
-            .Activa().ConEquipo("Alpha").Build();
-        var equipo     = sesion.Equipos.First();
+            .Activa().ConParticipante("Alpha").Build();
+        var participante     = sesion.Participantes.First();
         var penalizacion = new Penalizacion(
             10, "Trampa detectada", new UsuarioId(Guid.NewGuid()));
 
-        equipo.SumarPuntaje(50);
+        participante.SumarPuntaje(50);
 
         // Act
-        sesion.AplicarPenalizacion(equipo.EquipoId, penalizacion);
+        sesion.AplicarPenalizacion(participante.ParticipanteId, penalizacion);
 
         // Assert
-        equipo.PuntajeTotal.Valor.Should().Be(40);
+        participante.PuntajeTotal.Valor.Should().Be(40);
         sesion.DomainEvents.Should()
             .ContainSingle(e => e is PenalizacionAplicada);
     }
@@ -366,7 +376,7 @@ public class SesionBuilder
 {
     private TipoSesion     _tipo       = TipoSesion.BusquedaTesoro;
     private EstadoSesion   _estado     = EstadoSesion.Programada;
-    private List<string>   _equipos    = [];
+    private List<string>   _participantes    = [];
     private MisionSnapshot _snapshot   = MisionSnapshotFaker.Valido();
     private List<PreguntaId> _preguntas = [];
 
@@ -385,19 +395,19 @@ public class SesionBuilder
     public SesionBuilder Activa()
     {
         _estado = EstadoSesion.Activa;
-        _equipos.Add("Equipo Default");
+        _participantes.Add("Equipo Default");
         return this;
     }
 
-    public SesionBuilder ConEquipo(string nombre)
+    public SesionBuilder ConParticipante(string nombre)
     {
-        _equipos.Add(nombre);
+        _participantes.Add(nombre);
         return this;
     }
 
-    public SesionBuilder SinEquipos()
+    public SesionBuilder SinParticipantes()
     {
-        _equipos = [];
+        _participantes = [];
         return this;
     }
 
@@ -419,7 +429,7 @@ public class SesionBuilder
                 .GetProperty(nameof(Sesion.Estado))!
                 .SetValue(sesion, _estado);
 
-        foreach (var nombre in _equipos)
+        foreach (var nombre in _participantes)
             sesion.RegistrarEquipo(nombre);
 
         sesion.ClearDomainEvents();
@@ -432,61 +442,44 @@ public class SesionBuilder
 
 ## 6. Pruebas de Aplicación (Handlers)
 
-Los handlers se prueban con repositorios falsos (Moq).
+Los handlers se prueban con repositorios falsos (**NSubstitute**).
 Nunca con base de datos real.
 
 ```csharp
-public class CrearSesionBusquedaTesoroCommandHandlerTests
+public sealed class CrearSesionBusquedaTesoroCommandHandlerTests
 {
-    private readonly Mock<ISesionRepository>  _sesionRepo  = new();
-    private readonly Mock<IMisionRepository>  _misionRepo  = new();
-    private readonly Mock<IEventPublisher>    _publisher   = new();
+    private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
+    private readonly IMisionRepository _misionRepo = Substitute.For<IMisionRepository>();
+    private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
     private readonly CrearSesionBusquedaTesoroCommandHandler _sut;
 
     public CrearSesionBusquedaTesoroCommandHandlerTests()
     {
         _sut = new CrearSesionBusquedaTesoroCommandHandler(
-            _sesionRepo.Object,
-            _misionRepo.Object,
-            _publisher.Object);
+            _sesionRepo, _misionRepo, _publisher);
     }
 
     [Fact]
     public async Task Handle_CuandoMisionActiva_CreaSesionYPublicaEvento()
     {
         // Arrange
-        var misionId = Guid.NewGuid();
-        var mision   = MisionBuilder.Activa().Build();
-
+        var mision = MisionTestBuilder.Activa();
         _misionRepo
-            .Setup(r => r.FindByIdAsync(
-                It.Is<MisionId>(id => id.Valor == misionId),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mision);
-
-        _sesionRepo
-            .Setup(r => r.SaveAsync(
-                It.IsAny<Sesion>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .FindByIdAsync(Arg.Any<MisionId>(), Arg.Any<CancellationToken>())
+            .Returns(mision);
 
         var command = new CrearSesionBusquedaTesoroCommand(
-            misionId, Guid.NewGuid());
+            mision.MisionId.Valor, Guid.NewGuid());
 
         // Act
         var result = await _sut.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Value.Should().NotBeEmpty();
-
-        _sesionRepo.Verify(r => r.SaveAsync(
-            It.IsAny<Sesion>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-
-        _publisher.Verify(p => p.PublishBatchAsync(
-            It.Is<IReadOnlyList<IDomainEvent>>(
-                eventos => eventos.Any(e => e is SesionCreada)),
-            It.IsAny<CancellationToken>()), Times.Once);
+        result.IsSuccess.Should().BeTrue();
+        await _sesionRepo.Received(1).SaveAsync(
+            Arg.Any<Sesion>(), Arg.Any<CancellationToken>());
+        await _publisher.Received(1).PublishBatchAsync(
+            Arg.Any<IReadOnlyList<IDomainEvent>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -494,10 +487,8 @@ public class CrearSesionBusquedaTesoroCommandHandlerTests
     {
         // Arrange
         _misionRepo
-            .Setup(r => r.FindByIdAsync(
-                It.IsAny<MisionId>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Mision?)null);
+            .FindByIdAsync(Arg.Any<MisionId>(), Arg.Any<CancellationToken>())
+            .Returns((Mision?)null);
 
         var command = new CrearSesionBusquedaTesoroCommand(
             Guid.NewGuid(), Guid.NewGuid());
@@ -507,31 +498,27 @@ public class CrearSesionBusquedaTesoroCommandHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
-        _sesionRepo.Verify(r => r.SaveAsync(
-            It.IsAny<Sesion>(),
-            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task Handle_CuandoMisionInactiva_LanzaDomainException()
     {
         // Arrange
-        var mision = MisionBuilder.Inactiva().Build();
-
+        var mision = MisionTestBuilder.Inactiva();
         _misionRepo
-            .Setup(r => r.FindByIdAsync(
-                It.IsAny<MisionId>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mision);
+            .FindByIdAsync(Arg.Any<MisionId>(), Arg.Any<CancellationToken>())
+            .Returns(mision);
 
         var command = new CrearSesionBusquedaTesoroCommand(
-            Guid.NewGuid(), Guid.NewGuid());
+            mision.MisionId.Valor, Guid.NewGuid());
 
         // Act
         var act = async () => await _sut.Handle(command, CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<DomainException>();
+        await _sesionRepo.DidNotReceive().SaveAsync(
+            Arg.Any<Sesion>(), Arg.Any<CancellationToken>());
     }
 }
 ```
@@ -544,7 +531,7 @@ Usan una base de datos PostgreSQL real levantada con Testcontainers.
 Se ejecutan en CI dentro del job de backend.
 
 ```csharp
-// tests/Umbral.Integration.Tests/SesionIntegrationTests.cs
+// tests/Umbral.API.Tests/SesionIntegrationTests.cs
 public class SesionIntegrationTests : IAsyncLifetime
 {
     private PostgreSqlContainer _postgres = null!;
@@ -618,10 +605,10 @@ public class SesionIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetRanking_CuandoSesionConEquipos_RetornaOrdenCorrecto()
+    public async Task GetRanking_CuandoSesionConParticipantes_RetornaOrdenCorrecto()
     {
         // Arrange
-        var sesionId = await CrearSesionConEquiposAsync(
+        var sesionId = await CrearSesionConParticipantesAsync(
             ("Alpha", 150),
             ("Beta", 200),
             ("Gamma", 75));
@@ -636,14 +623,14 @@ public class SesionIntegrationTests : IAsyncLifetime
         var ranking = await response.Content
             .ReadFromJsonAsync<List<PosicionRankingDto>>();
 
-        ranking![0].NombreEquipo.Should().Be("Beta");
-        ranking[1].NombreEquipo.Should().Be("Alpha");
-        ranking[2].NombreEquipo.Should().Be("Gamma");
+        ranking![0].NombreParticipante.Should().Be("Beta");
+        ranking[1].NombreParticipante.Should().Be("Alpha");
+        ranking[2].NombreParticipante.Should().Be("Gamma");
     }
 
     private async Task<Guid> CrearMisionActivaAsync() { /* helper */ }
-    private async Task<Guid> CrearSesionConEquiposAsync(
-        params (string nombre, int puntaje)[] equipos) { /* helper */ }
+    private async Task<Guid> CrearSesionConParticipantesAsync(
+        params (string nombre, int puntaje)[] participantes) { /* helper */ }
 }
 ```
 
@@ -709,7 +696,7 @@ public class FlujoSesionBusquedaTesoroTests : PageTest
     public async Task RankingActualizaEnTiempoReal_CuandoSeAplicaPenalizacion()
     {
         // Arrange — sesión activa con dos equipos
-        var sesionId = await PrepararSesionActivaConDosEquipos();
+        var sesionId = await PrepararSesionActivaConDosParticipantes();
 
         await Page.GotoAsync($"{BaseUrl}/operador/sesiones/{sesionId}");
 
@@ -737,12 +724,12 @@ import { RankingList } from './RankingList';
 import type { PosicionRankingDto } from '@/types/sesion.types';
 
 const mockRanking: PosicionRankingDto[] = [
-  { posicion: 1, nombreEquipo: 'Alpha', puntajeTotal: 200, tiempoAcumuladoMs: 5000 },
-  { posicion: 2, nombreEquipo: 'Beta',  puntajeTotal: 150, tiempoAcumuladoMs: 6000 },
+  { posicion: 1, nombreParticipante: 'Alpha', puntajeTotal: 200, tiempoAcumuladoMs: 5000 },
+  { posicion: 2, nombreParticipante: 'Beta',  puntajeTotal: 150, tiempoAcumuladoMs: 6000 },
 ];
 
 describe('RankingList', () => {
-  it('renderiza todos los equipos en orden', () => {
+  it('renderiza todos los participantes en orden', () => {
     render(<RankingList ranking={mockRanking} />);
 
     expect(screen.getByText('Alpha')).toBeInTheDocument();
@@ -757,7 +744,7 @@ describe('RankingList', () => {
 
   it('muestra mensaje cuando ranking está vacío', () => {
     render(<RankingList ranking={[]} />);
-    expect(screen.getByText(/sin equipos/i)).toBeInTheDocument();
+    expect(screen.getByText(/sin participantes/i)).toBeInTheDocument();
   });
 });
 ```
@@ -891,6 +878,62 @@ describe('TriviaQuestion', () => {
 </PropertyGroup>
 ```
 
+> **Nota:** estas props aplican cuando coverlet corre vía MSBuild. La **medición
+> oficial del repo** (E1-1, E1-4, CI) usa el recolector VSTest — ver §11.1.b.
+
+### 11.1.b Ejecución de cobertura backend (vigente en Entrega 1)
+
+Artefactos en la raíz del repositorio:
+
+| Artefacto | Rol |
+|-----------|-----|
+| `coverlet.runsettings` | Exclusiones del recolector `--collect:"XPlat Code Coverage"` |
+| `tests/Directory.Build.props` | `coverlet.collector` compartido en los 4 proyectos de test |
+| `scripts/run-coverage.ps1` | Orquesta test → XML → reporte HTML + gate opcional |
+
+**Comando canónico (local y defensa):**
+
+```powershell
+.\scripts\run-coverage.ps1 -Threshold 90
+# Con navegador: .\scripts\run-coverage.ps1 -Open
+```
+
+**Requisitos:** Docker en marcha (Testcontainers en Infrastructure/API), .NET 8,
+`reportgenerator` (el script lo instala como dotnet global tool si falta).
+
+**Salida:** `coverage/report/index.html` (gitignored; se regenera en cada corrida).
+
+**Exclusiones en `coverlet.runsettings` (alineadas con §12):**
+
+- `ExcludeByFile`: `**/Migrations/**/*.cs` — migraciones EF y `ModelSnapshot`.
+- `ExcludeByAttribute`: `GeneratedCodeAttribute`, `CompilerGeneratedAttribute`,
+  `ExcludeFromCodeCoverageAttribute` — boilerplate de `record` y artefactos de diseño.
+
+**Convención `[ExcludeFromCodeCoverage]`:** factorías solo de CLI (p. ej.
+`UmbralDbContextFactory`, `IDesignTimeDbContextFactory`) y wiring puro no probado
+en runtime (p. ej. registro JWT Keycloak en producción — §13.1; los tests usan
+`TestAuthHandler` en entorno `Testing`).
+
+**Gate RNF-09:** line coverage **total** backend ≥ 90%. El script con
+`-Threshold 90` (PowerShell) o `--threshold 90` (bash) falla con exit code 1 si no
+se cumple. **CI:** `.github/workflows/ci.yml` ejecuta el gate en cada push/PR.
+Documentación operativa: `docs/entrega-1/iter-e1-01-cobertura-baseline.md`,
+`docs/entrega-1/iter-e1-03-ci-coverage.md`.
+
+**Comando manual equivalente:**
+
+```powershell
+dotnet test Umbral.sln -c Release `
+  --collect:"XPlat Code Coverage" `
+  --settings coverlet.runsettings `
+  --results-directory coverage
+
+reportgenerator `
+  -reports:"coverage/**/coverage.cobertura.xml" `
+  -targetdir:"coverage/report" `
+  -reporttypes:"Html;TextSummary"
+```
+
 ### 11.2 Configuración de cobertura (Vitest)
 
 ```typescript
@@ -936,6 +979,7 @@ El pipeline falla si se incumple cualquiera de estas condiciones:
 ## 12. Qué NO debe testearse
 
 - Migraciones de EF Core (excluidas de cobertura).
+- Factorías de diseño EF (`*DbContextFactory`) — marcar `[ExcludeFromCodeCoverage]`.
 - `Program.cs` y configuración de DI.
 - Clases generadas automáticamente.
 - DTOs y records sin lógica.
@@ -959,16 +1003,51 @@ El pipeline falla si se incumple cualquiera de estas condiciones:
 
 ### Entrega 1 — criterios transversales
 
-- [ ] Solución .NET con 4 proyectos y dependencias correctas verificadas
-      por compilación.
-- [ ] Pipeline CI corriendo y reportando cobertura.
-- [ ] **Cobertura backend ≥ 90%** sobre el código implementado.
-- [ ] Docker Compose levanta backend + PostgreSQL + RabbitMQ sin errores.
-- [ ] Flujo completo BusquedaTesoro demostrable de punta a punta.
-- [ ] WebSocket actualiza ranking sin recargar la página.
-- [ ] Al menos 2 consumers de RabbitMQ operativos.
-- [ ] React Native muestra flujo mínimo del equipo participante.
-- [ ] README con instrucciones para levantar el entorno local.
+> **Fuente única de alcance y orden de trabajo:** [`docs/entrega-1/PLAN.md`](../../docs/entrega-1/PLAN.md)
+> (§4 alcance, §6.1 orden recomendado, §8 Definition of Done).
+
+Resumen alineado al PLAN:
+
+- [ ] Solución .NET con capas Domain / Application / Infrastructure / API y
+      **4 proyectos de test** (`Domain`, `Application`, `Infrastructure`, `API`).
+- [ ] Pipeline CI corriendo y reportando cobertura (**E1-3**).
+- [ ] **Cobertura backend ≥ 90%** medida y cerrada (**E1-1**, **E1-4**).
+- [ ] Docker Compose levanta backend + PostgreSQL sin errores.
+- [ ] **Autenticación:** **Keycloak (OIDC)** — login real por rol vía realm
+      `umbral`. La API valida tokens (resource server). Ver §13.1.
+- [x] **Frontend web admin:** CRUD **Misiones** + CRUD **banco Trivia** (**E1-2**).
+- [x] **Login OIDC** web (**E1-K4**).
+- [ ] **Pantalla operador** mínima: sesión BT por REST, ranking poll (**E1-2b**).
+- [ ] Demostrable **403 por rol** (operador no administra catálogo).
+- [ ] *(Opcional)* **Mobile** solo login OIDC (**E1-M1**).
+- [ ] README y guion de demo (**E1-5**, **E1-6**).
+
+#### Reprogramado a Entrega 2
+
+- [ ] Gameplay completo BT (evidencia QR mobile, penalización UI avanzada).
+- [ ] Ranking en tiempo real / **SignalR** (E1 usa solo GET ranking + refresh).
+- [ ] Consumers RabbitMQ en demo.
+- [ ] **React Native** gameplay (participante participante); E1 solo login opcional.
+- [ ] Modo Trivia jugable (HU-32..40).
+- [ ] E2E Playwright (`Umbral.E2E.Tests`).
+
+> Nota: **Keycloak (OIDC)** ya entra en **Entrega 1** (§13.1), no es pendiente de E2.
+
+#### §13.1 Autenticación — Keycloak (OIDC), vigente en Entrega 1
+
+La identidad se gestiona con **Keycloak** (a veces el participante lo llama "clickload";
+**no** es load testing). El **JWT propio** anterior (`POST /auth/login`, BCrypt,
+tabla `usuarios`) **se reemplaza** por Keycloak. Guía: `.cursor/skills/keycloak-auth-skill.md`.
+
+| Aspecto | Decisión Entrega 1 |
+|---------|--------------------|
+| Flujo | Authorization Code + PKCE (frontend → login del realm) |
+| Usuarios / roles | En el realm `umbral` (sin tabla `usuarios` propia) |
+| API | Resource server: valida token por `Authority`/JWKS; no emite |
+| Tests | Integración con **`TestAuthHandler`** (Keycloak no se levanta en CI); smoke manual |
+| Cobertura | El wiring de Keycloak se excluye (configuración, como `Program.cs`) |
+
+Demostrable: login real distinto admin/operador y **403 por rol** en el catálogo.
 
 ### Entrega 2 — criterios transversales
 
@@ -984,98 +1063,33 @@ El pipeline falla si se incumple cualquiera de estas condiciones:
 
 ## 14. HU por entrega (numeración ERS)
 
-### Entrega 1 — Flujo BusquedaTesoro conectado de punta a punta
+### Entrega 1 — Catálogo admin + autenticación (ver PLAN)
 
-| HU (ERS) | Descripción                                      | Capa                  | Modo | Fase dominio |
-|----------|--------------------------------------------------|-----------------------|------|--------------|
-| HU-01    | Crear / activar misión                           | Web Admin             | BT   | 🔶 iter soporte |
-| HU-05    | Configurar nodos (etapas)                        | Web Admin             | BT   | 🔶 iter soporte |
-| HU-06    | Registrar pistas en etapa                        | Web Admin             | BT   | 🔶 iter soporte |
-| HU-12    | Crear sesión BusquedaTesoro desde misión activa  | Web Operador          | BT   | ✅ iter-01 |
-| HU-13    | Inscripción de equipos                           | Web Operador          | BT   | ✅ iter-02 |
-| HU-14    | Control de inicio de sesión                      | Web Operador          | BT   | ✅ iter-03 |
-| HU-15    | Pausa y reanudación                              | Web Operador          | BT   | ✅ iter-03 |
-| HU-16    | Aplicar penalización con motivo                  | Web Operador          | BT   | ✅ iter-04 |
-| HU-11    | Equipo ve pistas habilitadas                     | React Native          | BT   | — |
-| HU-17    | Tablero equipo en tiempo real                    | React Native          | BT   | — |
-| HU-18    | Enviar evidencia QR                              | React Native          | BT   | ⬜ iter-05 |
-| HU-19    | Validar ganador único + puntaje                  | Backend               | BT   | ⬜ iter-05/06 |
-| HU-20    | Transición automática de etapa                   | Backend               | BT   | ⬜ iter-06 |
-| HU-21    | Ranking en tiempo real                           | Web + React Native    | BT   | — |
-| HU-23    | Cerrar sesión / reporte final                    | Web Operador          | BT   | 🔶 iter-07 |
-| —        | Liberar pistas manualmente (RF-15)               | Web Operador          | BT   | — |
-| —        | Consumer RabbitMQ recálculo (RF-19)              | Backend async         | BT   | — |
+> **Roadmap, orden de trabajo y demo:** [`docs/entrega-1/PLAN.md`](../../docs/entrega-1/PLAN.md).
+> El antiguo flujo "BT punta a punta + plan de 10 días" de esta spec **no aplica** a E1.
 
-**Flujo demostrable en Entrega 1:**
+**HU demostrables en Entrega 1 (frontend + API + persistencia):**
 
-Admin crea misión con etapas y pistas (Web)
-↓
-Operador crea sesión BT + registra equipo (Web)
-↓
-Operador inicia sesión (Web)
-↓
-Equipo se une con código de acceso (React Native)
-↓
-Equipo ve pistas + escanea/ingresa código QR (React Native)
-↓
-Backend valida evidencia → publica evento en RabbitMQ
-↓
-Consumer recalcula puntaje + Auditoría registra evento
-↓
-SignalR notifica a todos → ranking actualiza en vivo (Web + Native)
-↓
-Operador aplica penalización → ranking se reordena en tiempo real
-↓
-Operador finaliza sesión → estado final con ranking definitivo
+| HU | Descripción | Estado típico |
+|----|-------------|---------------|
+| — | Login por rol con **Keycloak (OIDC)** | API ✅; front ✅ (**E1-K4**) |
+| HU-01..04 | CRUD Misiones | API ✅; front ✅ (**E1-2**) |
+| HU-24..31 | CRUD Trivia (banco) | API ✅; front ✅ (**E1-2**) |
+| HU-12..16 | Sesión BT operador (mínimo REST) | API ✅; front ⬜ (**E1-2b**) |
 
+**Backend listo, UI E2:** evidencia QR, SignalR, trivia jugable, RabbitMQ demo.
+**Mobile E1 opcional:** solo login (**E1-M1**).
 
-**Script de demo para el profesor:**
-
-[Web Admin]      Mostrar misión creada con etapas y pistas configuradas
-[Web Operador]   Crear sesión BT → código de acceso generado
-[React Native]   Equipo se une con el código → ve pantalla de juego
-[Web Operador]   Iniciar sesión → estado cambia a Activa en tiempo real
-[React Native]   Equipo ve pistas → ingresa/escanea QR
-[Terminal/Logs]  Mostrar evento publicado en RabbitMQ + consumer procesando
-[Web Operador]   Ranking actualiza automáticamente sin recargar (WebSocket)
-[Web Operador]   Aplicar penalización → ranking se reordena en vivo
-[Web Operador]   Finalizar sesión → estado Finalizada con ranking definitivo
-[CI/Terminal]   Mostrar pruebas corriendo + reporte cobertura ≥ 90%
+**Script de demo:** ver §6 y §8 de `docs/entrega-1/PLAN.md`.
 
 ---
 
-### Entrega 2 — Modo Trivia + completar BusquedaTesoro
+### Entrega 2 — Gameplay BT + Trivia jugable + E2E
 
-| HU (ERS) | Descripción (resumen)                                | Capa               | Modo   |
-|----------|------------------------------------------------------|--------------------|--------|
-| HU-24–27 | Banco de preguntas (CRUD)                            | Web Admin          | Trivia |
-| HU-28–31 | Categorías de trivia                                 | Web Admin          | Trivia |
-| HU-32    | Crear sesión Trivia                                  | Web Operador       | Trivia |
-| HU-33    | Sala de espera (equipos conectados)                  | Web Operador       | Trivia |
-| HU-34–35 | Secuencia y envío de respuestas                    | Native + Backend   | Trivia |
-| HU-36–39 | Procesamiento async, puntaje, ranking, transición  | Backend            | Trivia |
-| HU-40    | Desempate por timestamp servidor                     | Backend            | Trivia |
-| HU-09    | Liberación automática de pistas por tiempo (BT)      | Backend            | BT     |
-| HU-22    | Historial de auditoría                               | Web Admin          | Ambos  |
-| —        | E2E flujo BT completo                                | Playwright         | BT     |
-| —        | E2E flujo Trivia completo                            | Playwright         | Trivia |
-
----
-
-## 15. Plan de 10 días — Entrega 1
-
-| Día     | Foco                          | Entregable clave                              |
-|---------|-------------------------------|-----------------------------------------------|
-| 1 – 2   | Dominio + pruebas             | Agregados, VOs, domain tests ≥ 90%            |
-| 3 – 4   | Application + Infrastructure  | Handlers, validators, EF Core, repositorios   |
-| 5 – 6   | API + RabbitMQ + SignalR      | Controllers, JWT, hubs, 2 consumers           |
-| 7 – 8   | Frontend Web                  | Admin + Operador conectados con API real       |
-| 9       | React Native mínimo           | Join + Dashboard BT + WebSocket               |
-| 10      | Cierre y demo                 | CI verde, docker compose up, ensayo demo      |
-
-### División sugerida 
-Persona A (Cursor)  → genera código, pruebas, configuraciones
-Persona B (Tú)      → dirige, revisa, corre, integra y corrige
-
-
+| HU (ERS) | Descripción (resumen) | Modo |
+|----------|----------------------|------|
+| HU-09..23, HU-11, HU-17, HU-21 | Completar y demostrar BusquedaTesoro en vivo | BT |
+| HU-32..40 | Sesión trivia, rondas, ranking, transición | Trivia |
+| HU-22 | Historial de auditoría | Ambos |
+| — | E2E Playwright (`Umbral.E2E.Tests`) | Ambos |
 

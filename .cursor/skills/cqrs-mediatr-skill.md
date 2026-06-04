@@ -81,7 +81,7 @@ src/
     │   └── EventHandlers/
     │       ├── SesionIniciadaEventHandler.cs
     │       └── SesionFinalizadaEventHandler.cs
-    ├── CatalogoBusquedaTesoro/
+    ├── CatalogoMision/
     │   └── (misma estructura)
     ├── CatalogoTrivia/
     │   └── (misma estructura)
@@ -217,12 +217,12 @@ public sealed record SesionDetalleDto(
     string Estado,               // "Programada" | "EnPreparacion" | "Activa" | "Pausada" | "Finalizada" | "Cancelada"
     DateTime? IniciadaEn,
     DateTime? FinalizadaEn,
-    int TotalEquipos,
-    IReadOnlyList<EquipoResumenDto> Equipos
+    int TotalParticipantes,
+    IReadOnlyList<EquipoResumenDto> Participantes
 );
 
 public sealed record EquipoResumenDto(
-    Guid EquipoId,
+    Guid ParticipanteId,
     string Nombre,
     int Puntaje,
     int Posicion
@@ -249,15 +249,15 @@ internal sealed class ObtenerSesionPorIdQueryHandler
     {
         var sesion = await _db.Sesiones
             .AsNoTracking()
-            .Include(s => s.Equipos)
+            .Include(s => s.Participantes)
             .FirstOrDefaultAsync(s => s.SesionId == new SesionId(query.SesionId), ct)
             ?? throw new NotFoundException(nameof(Sesion), query.SesionId);
 
         // Calcular posición para cada equipo
-        var equiposOrdenados = sesion.Equipos
+        var equiposOrdenados = sesion.Participantes
             .OrderByDescending(e => e.Puntaje.Valor)
             .Select((e, idx) => new EquipoResumenDto(
-                e.EquipoId.Valor,
+                e.ParticipanteId.Valor,
                 e.Nombre.Valor,
                 e.Puntaje.Valor,
                 idx + 1))
@@ -269,7 +269,7 @@ internal sealed class ObtenerSesionPorIdQueryHandler
             sesion.Estado.ToString(),
             sesion.IniciadaEn == default ? null : sesion.IniciadaEn,
             sesion.FinalizadaEn,
-            sesion.Equipos.Count,
+            sesion.Participantes.Count,
             equiposOrdenados);
     }
 }
@@ -621,7 +621,7 @@ public sealed class GlobalExceptionMiddleware : IMiddleware
 | 7 | Controllers usan `IMediator` (no `ISender`). Rutas con prefijo `/api/v1/`. | Consistencia con `project-rules.md`. |
 | 8 | Queries proyectan **DTOs, no entidades**. | Evita lazy loading y exposición del modelo de dominio. |
 | 9 | `INotificacionRealTime` para SignalR y `IEventPublisher` para RabbitMQ en los handlers. | Puertos definidos en Domain; Application no conoce la infraestructura. |
-| 10 | BC `Sesion` y BC `CatalogoBusquedaTesoro` tienen sus propias carpetas en `Application`. | Respeta los límites del contexto. |
+| 10 | BC `Sesion` y BC `CatalogoMision` tienen sus propias carpetas en `Application`. | Respeta los límites del contexto. |
 
 ---
 
@@ -650,7 +650,7 @@ public sealed class GlobalExceptionMiddleware : IMiddleware
 public async Task<IActionResult> Iniciar(Guid id)
 {
     var sesion = await _repo.ObtenerPorIdAsync(new SesionId(id));
-    if (sesion.Equipos.Count == 0) return BadRequest("Sin equipos");
+    if (sesion.Participantes.Count == 0) return BadRequest("Sin equipos");
     sesion.Estado = EstadoSesion.Activa;    // setter directo
     await _repo.ActualizarAsync(sesion);
     return NoContent();
@@ -695,7 +695,7 @@ sesion.ClearDomainEvents();
 Cuando el usuario pida crear un Command, Query o Handler en UMBRAL:
 
 1. **Identificar tipo** → ¿Command (muta estado, retorna `Result<T>`) o Query (solo lee, retorna DTO)?
-2. **Identificar BC** → ¿Sesion, CatalogoBusquedaTesoro, CatalogoTrivia?
+2. **Identificar BC** → ¿Sesion, CatalogoMision, CatalogoTrivia?
 3. **Para Sesion**: hay dos factory methods → `CrearBusquedaTesoro` y `CrearTrivia`. Nunca `Sesion.Crear` genérico.
 4. **Crear los 3 archivos del Command** → `*Command.cs`, `*CommandHandler.cs`, `*CommandValidator.cs`
    — o los 3 del Query → `*Query.cs`, `*QueryHandler.cs`, `*Dto.cs`

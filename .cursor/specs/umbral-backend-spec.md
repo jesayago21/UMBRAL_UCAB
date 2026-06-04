@@ -17,9 +17,9 @@
 | SignalR                 | 8.0       | WebSockets                               |
 | Serilog                 | 3.x       | Logging estructurado                     |
 | xUnit                   | 2.x       | Framework de pruebas                     |
-| Moq                     | 4.x       | Mocking en pruebas                       |
+| NSubstitute             | 5.x       | Mocking en pruebas (Application)         |
 | FluentAssertions        | 6.x       | Aserciones legibles                      |
-| Testcontainers          | 3.x       | PostgreSQL en pruebas de integración     |
+| Testcontainers          | 4.x       | PostgreSQL en pruebas de integración     |
 | BCrypt.Net              | 4.x       | Hash de contraseñas                      |
 
 ---
@@ -111,12 +111,12 @@ public sealed class Sesion : AggregateRoot
     public DateTime IniciadaEn { get; private set; }
     public DateTime? FinalizadaEn { get; private set; }
 
-    private readonly List<EquipoSesion> _equipos = [];
+    private readonly List<ParticipanteSesion> _participantes = [];
     private readonly List<EventoSesion> _historialEventos = [];
     private readonly List<Evidencia> _evidencias = [];
     private readonly List<RespuestaTrivia> _respuestas = [];
 
-    public IReadOnlyList<EquipoSesion> Equipos => _equipos.AsReadOnly();
+    public IReadOnlyList<ParticipanteSesion> Participantes => _participantes.AsReadOnly();
     public IReadOnlyList<EventoSesion> HistorialEventos
         => _historialEventos.AsReadOnly();
     public IReadOnlyList<Evidencia> Evidencias => _evidencias.AsReadOnly();
@@ -170,9 +170,9 @@ public sealed class Sesion : AggregateRoot
         if (Estado != EstadoSesion.EnPreparacion)
             throw new DomainException(
                 $"No se puede iniciar una sesión en estado {Estado}.");
-        if (!_equipos.Any())
+        if (!_participantes.Any())
             throw new DomainException(
-                "La sesión necesita al menos un equipo registrado.");
+                "La sesión necesita al menos un participante registrado.");
 
         Estado     = EstadoSesion.Activa;
         IniciadaEn = DateTime.UtcNow;
@@ -224,41 +224,41 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("SesionCancelada", motivo);
     }
 
-    public EquipoSesion RegistrarEquipo(string nombre)
+    public ParticipanteSesion RegistrarEquipo(string nombre)
     {
         if (Estado is EstadoSesion.Finalizada or EstadoSesion.Cancelada)
             throw new DomainException(
-                "No se pueden registrar equipos en una sesión cerrada.");
+                "No se pueden registrar participantes en una sesión cerrada.");
 
-        if (_equipos.Any(e => e.Nombre.Valor == nombre))
+        if (_participantes.Any(e => e.Nombre.Valor == nombre))
             throw new DomainException(
-                $"Ya existe un equipo con el nombre '{nombre}' en esta sesión.");
+                $"Ya existe un participante con el nombre '{nombre}' en esta sesión.");
 
-        var equipo = EquipoSesion.Crear(SesionId, nombre);
-        _equipos.Add(equipo);
+        var participante = ParticipanteSesion.Crear(SesionId, nombre);
+        _participantes.Add(participante);
         RegistrarEvento("EquipoRegistrado", nombre);
-        return equipo;
+        return participante;
     }
 
-    public void AplicarPenalizacion(EquipoId equipoId, Penalizacion penalizacion)
+    public void AplicarPenalizacion(ParticipanteId participanteId, Penalizacion penalizacion)
     {
         if (!EstaEnEstadoActivo())
             throw new DomainException("Solo se pueden aplicar penalizaciones en sesiones activas.");
 
-        var equipo = ObtenerEquipo(equipoId);
-        equipo.AplicarPenalizacion(penalizacion);
+        var participante = ObtenerParticipante(participanteId);
+        participante.AplicarPenalizacion(penalizacion);
         RaiseDomainEvent(new PenalizacionAplicada(
-            SesionId, equipoId,
+            SesionId, participanteId,
             penalizacion.Puntos, penalizacion.Motivo,
             penalizacion.OperadorId, DateTime.UtcNow));
     }
 
     public bool EstaEnEstadoActivo() => Estado == EstadoSesion.Activa;
 
-    private EquipoSesion ObtenerEquipo(EquipoId equipoId)
-        => _equipos.FirstOrDefault(e => e.EquipoId == equipoId)
+    private ParticipanteSesion ObtenerParticipante(ParticipanteId participanteId)
+        => _participantes.FirstOrDefault(e => e.ParticipanteId == participanteId)
            ?? throw new DomainException(
-               $"El equipo {equipoId.Valor} no pertenece a esta sesión.");
+               $"El participante {participanteId.Valor} no pertenece a esta sesión.");
 
     private void RegistrarEvento(string tipo, string payload)
         => _historialEventos.Add(EventoSesion.Crear(SesionId, tipo, payload));
@@ -448,7 +448,7 @@ public sealed record GetRankingSesionQuery(Guid SesionId)
 // DTO
 public sealed record PosicionRankingDto(
     int Posicion,
-    string NombreEquipo,
+    string NombreParticipante,
     int PuntajeTotal,
     long TiempoAcumuladoMs);
 
@@ -465,7 +465,7 @@ public sealed class GetRankingSesionQueryHandler
         GetRankingSesionQuery query,
         CancellationToken cancellationToken)
     {
-        var equipos = await _db.EquiposSesion
+        var participantes = await _db.ParticipantesSesion
             .Where(e => e.SesionId == query.SesionId)
             .OrderByDescending(e => e.PuntajeTotal)
             .ThenBy(e => e.TiempoAcumuladoMs)
@@ -501,7 +501,7 @@ public sealed class UmbralDbContext : DbContext
     public DbSet<Pregunta>    Preguntas     => Set<Pregunta>();
     public DbSet<Categoria>   Categorias    => Set<Categoria>();
     public DbSet<Sesion>      Sesiones      => Set<Sesion>();
-    public DbSet<EquipoSesion> EquiposSesion => Set<EquipoSesion>();
+    public DbSet<ParticipanteSesion> ParticipantesSesion => Set<ParticipanteSesion>();
     public DbSet<Evidencia>   Evidencias    => Set<Evidencia>();
     public DbSet<RespuestaTrivia> RespuestasTrivia => Set<RespuestaTrivia>();
 
@@ -551,7 +551,7 @@ public sealed class SesionConfiguration : IEntityTypeConfiguration<Sesion>
             .HasColumnName("finalizada_en")
             .IsRequired(false);
 
-        builder.HasMany(s => s.Equipos)
+        builder.HasMany(s => s.Participantes)
             .WithOne()
             .HasForeignKey("sesion_id")
             .OnDelete(DeleteBehavior.Cascade);
@@ -615,7 +615,7 @@ public sealed class SesionRepository : ISesionRepository
     public async Task<Sesion?> FindByIdAsync(
         SesionId id, CancellationToken ct = default)
         => await _db.Sesiones
-            .Include(s => s.Equipos)
+            .Include(s => s.Participantes)
             .Include(s => s.ContextoBT)
             .Include(s => s.ContextoTrivia)
             .FirstOrDefaultAsync(s => s.SesionId == id, ct);
@@ -658,17 +658,17 @@ public sealed class PuntajeBusquedaConsumer
             ?? throw new InvalidOperationException(
                 $"Sesión {msg.SesionId} no encontrada.");
 
-        var equipo = sesion.Equipos
-            .First(e => e.EquipoId == msg.EquipoGanadorId);
+        var participante = sesion.Participantes
+            .First(e => e.ParticipanteId == msg.ParticipanteGanadorId);
 
         var puntaje = _estrategia.Calcular(msg.EsGanador);
-        equipo.SumarPuntaje(puntaje.Valor);
+        participante.SumarPuntaje(puntaje.Valor);
 
         await _sesionRepository.SaveAsync(sesion, context.CancellationToken);
 
         _logger.LogInformation(
-            "Puntaje {Puntos} asignado al equipo {EquipoId} en sesión {SesionId}",
-            puntaje.Valor, msg.EquipoGanadorId, msg.SesionId);
+            "Puntaje {Puntos} asignado al participante {ParticipanteId} en sesión {SesionId}",
+            puntaje.Valor, msg.ParticipanteGanadorId, msg.SesionId);
     }
 }
 ```
@@ -724,10 +724,10 @@ public sealed class NotificacionRealTimeService : INotificacionRealTime
             .SendAsync(evento, payload, ct);
 
     public async Task NotificarEquipoAsync(
-        Guid equipoId, string evento, object payload,
+        Guid participanteId, string evento, object payload,
         CancellationToken ct = default)
         => await _hubContext.Clients
-            .Group($"equipo-{equipoId}")
+            .Group($"equipo-{participanteId}")
             .SendAsync(evento, payload, ct);
 }
 ```
@@ -1048,9 +1048,14 @@ public abstract class EvidenciaProcessorBase
 ## 7. Seguridad
 
 ### 7.1 Roles y claims
-Claim: role = "Administrador" | "Operador" | "EquipoParticipante"
-Claim: sub  = userId (Guid)
-Claim: sesionId = sesionId (solo para EquipoParticipante)
+
+> Identidad gestionada por **Keycloak** (realm `umbral`). La API valida el token
+> (resource server). Ver `.cursor/skills/keycloak-auth-skill.md`.
+
+Claim: realm_access.roles = ["Administrador" | "Operador" | "Participante"]
+       (se aplana a claims `role` en la API)
+Claim: sub  = userId en Keycloak (Guid/UUID)
+Claim: sesionId = sesionId (solo para Participante; via mapper de Keycloak)
 
 ### 7.2 Endpoints por rol
 
@@ -1064,8 +1069,8 @@ Claim: sesionId = sesionId (solo para EquipoParticipante)
 | POST /sesiones/{id}/pistas/{pId}/liberar | Operador, Administrador     |
 | POST /sesiones/{id}/penalizaciones    | Operador, Administrador        |
 | GET  /sesiones/{id}/ranking           | Todos los autenticados         |
-| POST /sesiones/{id}/evidencias        | EquipoParticipante             |
-| POST /sesiones/{id}/respuestas-trivia | EquipoParticipante             |
+| POST /sesiones/{id}/evidencias        | Participante             |
+| POST /sesiones/{id}/respuestas-trivia | Participante             |
 
 ---
 

@@ -20,7 +20,7 @@ Umbral.Infrastructure
       ├── UmbralDbContext.cs
       ├── Configurations/          ← IEntityTypeConfiguration<T> por entidad
       │   ├── EjecucionSesion/
-      │   ├── CatalogoBusquedaTesoro/
+      │   ├── CatalogoMision/
       │   └── CatalogoTrivia/
       ├── Repositories/            ← implementaciones de ISesionRepository, etc.
       ├── Migrations/              ← dotnet ef migrations add ...
@@ -53,12 +53,12 @@ public sealed class UmbralDbContext : DbContext, IUmbralDbContext
     // ── EjecucionSesion ────────────────────────────────────────
     public DbSet<Sesion> Sesiones => Set<Sesion>();
     public DbSet<Etapa> Etapas => Set<Etapa>();
-    public DbSet<Equipo> Equipos => Set<Equipo>();
+    public DbSet<Equipo> Participantes => Set<Equipo>();
     public DbSet<Participante> Participantes => Set<Participante>();
     public DbSet<ContextoBusquedaTesoro> ContextosBusquedaTesoro => Set<ContextoBusquedaTesoro>();
     public DbSet<ContextoTrivia> ContextosTrivia => Set<ContextoTrivia>();
 
-    // ── CatalogoBusquedaTesoro ─────────────────────────────────
+    // ── CatalogoMision ─────────────────────────────────
     public DbSet<PistaBusqueda> PistasBusqueda => Set<PistaBusqueda>();
 
     // ── CatalogoTrivia ─────────────────────────────────────────
@@ -87,8 +87,8 @@ public sealed class UmbralDbContext : DbContext, IUmbralDbContext
             .HaveConversion<EtapaIdConverter>();
 
         configurationBuilder
-            .Properties<EquipoId>()
-            .HaveConversion<EquipoIdConverter>();
+            .Properties<ParticipanteId>()
+            .HaveConversion<ParticipanteIdConverter>();
 
         configurationBuilder
             .Properties<ParticipanteId>()
@@ -101,7 +101,7 @@ public interface IUmbralDbContext
 {
     DbSet<Sesion> Sesiones { get; }
     DbSet<Etapa> Etapas { get; }
-    DbSet<Equipo> Equipos { get; }
+    DbSet<Equipo> Participantes { get; }
     DbSet<Participante> Participantes { get; }
     DbSet<ContextoBusquedaTesoro> ContextosBusquedaTesoro { get; }
     DbSet<ContextoTrivia> ContextosTrivia { get; }
@@ -128,7 +128,7 @@ public sealed class SesionIdConverter
     { }
 }
 
-// Repetir para: EtapaIdConverter, EquipoIdConverter, ParticipanteIdConverter,
+// Repetir para: EtapaIdConverter, ParticipanteIdConverter, ParticipanteIdConverter,
 // PistaBusquedaIdConverter, PreguntaTriviaIdConverter, etc.
 ```
 
@@ -185,7 +185,7 @@ public sealed class SesionConfiguration : IEntityTypeConfiguration<Sesion>
             .HasForeignKey(e => e.SesionId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(s => s.Equipos)
+        builder.HasMany(s => s.Participantes)
             .WithOne()
             .HasForeignKey(e => e.SesionId)
             .OnDelete(DeleteBehavior.Cascade);
@@ -284,10 +284,10 @@ public sealed class ContextoBusquedaTesoroConfiguration
 }
 ```
 
-### 4.4 Configuración de PistaBusqueda (CatalogoBusquedaTesoro BC)
+### 4.4 Configuración de PistaBusqueda (CatalogoMision BC)
 
 ```csharp
-// Configurations/CatalogoBusquedaTesoro/PistaBusquedaConfiguration.cs
+// Configurations/CatalogoMision/PistaBusquedaConfiguration.cs
 public sealed class PistaBusquedaConfiguration : IEntityTypeConfiguration<PistaBusqueda>
 {
     public void Configure(EntityTypeBuilder<PistaBusqueda> builder)
@@ -398,7 +398,7 @@ internal sealed class SesionRepository : ISesionRepository
     public async Task<Sesion?> ObtenerPorIdAsync(SesionId id, CancellationToken ct = default)
         => await _context.Sesiones
             .Include(s => s.Etapas)
-            .Include(s => s.Equipos)
+            .Include(s => s.Participantes)
                 .ThenInclude(e => e.Participantes)
             .Include(s => s.ContextoBusquedaTesoro)
             .Include(s => s.ContextoTrivia)
@@ -525,24 +525,24 @@ volumes:
 
 # Crear migración
 dotnet ef migrations add NombreMigracion \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api \
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API \
   --output-dir Persistence/Migrations
 
 # Aplicar migración
 dotnet ef database update \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # Revertir última migración
 dotnet ef migrations remove \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # Generar SQL sin aplicar (para revisión)
 dotnet ef migrations script \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api \
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API \
   --output migration.sql
 ```
 
@@ -636,13 +636,13 @@ configurationBuilder.Properties<SesionId>().HaveConversion<SesionIdConverter>();
 
 // ❌ MALO — repositorio sin Include de hijos
 public async Task<Sesion?> ObtenerPorIdAsync(SesionId id, CancellationToken ct)
-    => await _context.Sesiones.FindAsync(id, ct);  // sin Etapas, Equipos, etc.
+    => await _context.Sesiones.FindAsync(id, ct);  // sin Etapas, Participantes, etc.
 
 // ✅ BUENO — AR cargado completo
 public async Task<Sesion?> ObtenerPorIdAsync(SesionId id, CancellationToken ct)
     => await _context.Sesiones
         .Include(s => s.Etapas)
-        .Include(s => s.Equipos).ThenInclude(e => e.Participantes)
+        .Include(s => s.Participantes).ThenInclude(e => e.Participantes)
         .Include(s => s.ContextoBusquedaTesoro)
         .Include(s => s.ContextoTrivia)
         .FirstOrDefaultAsync(s => s.Id == id, ct);

@@ -1,4 +1,5 @@
-using System.Text;
+using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -14,9 +15,6 @@ public static class ApiServiceCollectionExtensions
         IHostEnvironment environment)
     {
         services.AddProblemDetails();
-        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-
-        services.AddScoped<JwtTokenIssuer>();
 
         if (environment.IsEnvironment("Testing"))
         {
@@ -32,8 +30,8 @@ public static class ApiServiceCollectionExtensions
         }
         else
         {
-            var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key));
+            var keycloak = configuration.GetSection(KeycloakOptions.SectionName).Get<KeycloakOptions>()
+                ?? new KeycloakOptions();
 
             services
                 .AddAuthentication(options =>
@@ -43,16 +41,27 @@ public static class ApiServiceCollectionExtensions
                 })
                 .AddJwtBearer(options =>
                 {
+                    options.Authority = keycloak.Authority;
+                    options.RequireHttpsMetadata = keycloak.RequireHttpsMetadata;
+
+                    var validateAudience = !string.IsNullOrWhiteSpace(keycloak.Audience);
+
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = keycloak.Authority,
+                        ValidateAudience = validateAudience,
+                        ValidAudience = keycloak.Audience,
                         ValidateLifetime = true,
-                        ValidIssuer = jwt.Issuer,
-                        ValidAudience = jwt.Audience,
-                        IssuerSigningKey = key,
+                        ValidateIssuerSigningKey = true,
+                        RoleClaimType = ClaimTypes.Role,
+                        NameClaimType = "preferred_username",
                         ClockSkew = TimeSpan.FromSeconds(30)
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = MapRealmRolesAsync
                     };
                 });
         }
@@ -60,5 +69,51 @@ public static class ApiServiceCollectionExtensions
         services.AddAuthorization();
 
         return services;
+    }
+
+    /// <summary>
+    /// Keycloak emite roles en el claim <c>realm_access.roles</c> (JSON anidado).
+    /// ASP.NET Core no los reconoce como roles automáticamente, así que los
+    /// proyectamos a <see cref="ClaimTypes.Role"/> tras validar el token.
+    /// </summary>
+    private static Task MapRealmRolesAsync(TokenValidatedContext context)
+    {
+        if (context.Principal?.Identity is not ClaimsIdentity identity)
+            return Task.CompletedTask;
+
+        var realmAccess = identity.FindFirst("realm_access")?.Value;
+        if (string.IsNullOrWhiteSpace(realmAccess))
+            return Task.CompletedTask;
+
+        try
+        {
+            using var document = JsonDocument.Parse(realmAccess);
+            if (document.RootElement.TryGetProperty("roles", out var roles)
+                && roles.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var role in roles.EnumerateArray())
+                {
+                    var value = role.GetString();
+                    if (string.IsNullOrWhiteSpace(value))
+                        continue;
+
+                    if (!identity.HasClaim(ClaimTypes.Role, value))
+                        identity.AddClaim(new Claim(ClaimTypes.Role, value));
+
+                    // Realm legacy (rename Equipo → Participante): alias para [Authorize(Roles = "Participante")]
+                    if (string.Equals(value, "EquipoParticipante", StringComparison.Ordinal)
+                        && !identity.HasClaim(ClaimTypes.Role, "Participante"))
+                    {
+                        identity.AddClaim(new Claim(ClaimTypes.Role, "Participante"));
+                    }
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Token con realm_access malformado: lo dejamos sin roles mapeados.
+        }
+
+        return Task.CompletedTask;
     }
 }

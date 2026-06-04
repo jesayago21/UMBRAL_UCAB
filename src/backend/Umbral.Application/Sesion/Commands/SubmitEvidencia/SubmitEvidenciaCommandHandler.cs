@@ -31,7 +31,7 @@ internal sealed class SubmitEvidenciaCommandHandler
                      ?? throw new NotFoundException(nameof(SesionAR), command.SesionId);
 
         var evidencia = sesion.RegistrarEvidencia(
-            new EquipoId(command.EquipoId),
+            new ParticipanteId(command.ParticipanteId),
             command.CodigoQr);
 
         await _sesionRepository.SaveAsync(sesion, cancellationToken);
@@ -43,6 +43,6 @@ internal sealed class SubmitEvidenciaCommandHandler
         return Result<SubmitEvidenciaResult>.Ok(
             new SubmitEvidenciaResult(
                 evidencia.EvidenciaId.Valor,
-                evidencia.Resultado));
+                evidencia.Resultado.ToString()));
     }
 }

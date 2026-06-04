@@ -6,7 +6,7 @@
 Guía canónica para implementar comunicación en tiempo real con ASP.NET Core
 SignalR en UMBRAL. Cubre los **dos hubs** del sistema: `SesionHub` (eventos
 comunes + BusquedaTesoro) y `TriviaHub` (eventos exclusivos de Trivia),
-grupos por sesión/equipo/operador, clientes TypeScript (web) y React Native
+grupos por sesión/participante/operador, clientes TypeScript (web) y React Native
 (mobile), reconexión automática y autenticación.
 
 > **Fuente de verdad:** `.cursor/specs/umbral-product-spec.md` y
@@ -44,8 +44,8 @@ solo se conecta al hub `sesion`.
 
 | Grupo | Participantes | Hub |
 |-------|---------------|-----|
-| `sesion-{sesionId}` | Admin, Operador, todos los Equipos | SesionHub |
-| `equipo-{equipoId}` | Solo el equipo (pistas privadas) | SesionHub |
+| `sesion-{sesionId}` | Admin, Operador, todos los Participantes | SesionHub |
+| `equipo-{participanteId}` | Solo el participante (pistas privadas) | SesionHub |
 | `operador-{sesionId}` | Admin + Operador | SesionHub |
 | `trivia-{sesionId}` | Todos en la sesión Trivia | TriviaHub |
 
@@ -54,7 +54,7 @@ solo se conecta al hub `sesion`.
 ## 3. Estructura de carpetas
 
 ```
-src/Umbral.Infrastructure/
+src/backend/Umbral.Infrastructure/
 └── RealTime/
     ├── Hubs/
     │   ├── SesionHub.cs               ← Hub sesión + BT
@@ -63,7 +63,7 @@ src/Umbral.Infrastructure/
     │   └── ITriviaHubClient.cs        ← interfaz tipada del cliente
     └── NotificacionRealTimeService.cs ← implementación de INotificacionRealTime
 
-src/Umbral.Domain/
+src/backend/Umbral.Domain/
 └── Ports/
     └── INotificacionRealTime.cs       ← puerto de salida (en Domain)
 ```
@@ -91,7 +91,7 @@ public interface ISesionHubClient
 
     // ── BusquedaTesoro ────────────────────────────────────────
     Task EtapaAvanzada(EtapaAvanzadaPayload payload);
-    Task PistaLiberada(PistaLiberadaPayload payload);   // puede ser privada (1 equipo) o global
+    Task PistaLiberada(PistaLiberadaPayload payload);   // puede ser privada (1 participante) o global
 }
 
 // Infrastructure/RealTime/Hubs/ITriviaHubClient.cs
@@ -106,10 +106,10 @@ public interface ITriviaHubClient
 // ── Payloads ─────────────────────────────────────────────────
 public sealed record SesionEstadoPayload(Guid SesionId, string NuevoEstado);
 public sealed record RankingActualizadoPayload(Guid SesionId, IReadOnlyList<PosicionDto> Ranking);
-public sealed record PosicionDto(Guid EquipoId, string NombreEquipo, int Puntaje, int Posicion);
-public sealed record PenalizacionPayload(Guid SesionId, Guid EquipoId, int Puntos, string Motivo);
+public sealed record PosicionDto(Guid ParticipanteId, string NombreParticipante, int Puntaje, int Posicion);
+public sealed record PenalizacionPayload(Guid SesionId, Guid ParticipanteId, int Puntos, string Motivo);
 public sealed record EtapaAvanzadaPayload(Guid SesionId, int EtapaIndex);
-public sealed record PistaLiberadaPayload(Guid SesionId, Guid EquipoId, Guid PistaId, string Contenido);
+public sealed record PistaLiberadaPayload(Guid SesionId, Guid ParticipanteId, Guid PistaId, string Contenido);
 public sealed record PreguntaLanzadaPayload(Guid SesionId, Guid PreguntaId, string Enunciado, IReadOnlyList<string> Opciones, int TimerMs);
 public sealed record TiempoAgotadoPayload(Guid SesionId, Guid PreguntaId);
 public sealed record ResultadoRondaPayload(Guid SesionId, Guid RespuestaCorrectaId, IReadOnlyList<PosicionDto> Ranking);
@@ -150,12 +150,12 @@ public sealed class SesionHub : Hub<ISesionHubClient>
         await base.OnDisconnectedAsync(exception);
     }
 
-    /// <summary>Equipo se une al grupo de la sesión y al grupo de su equipo.</summary>
-    public async Task UnirseASesion(Guid sesionId, Guid equipoId)
+    /// <summary>Equipo se une al grupo de la sesión y al grupo de su participante.</summary>
+    public async Task UnirseASesion(Guid sesionId, Guid participanteId)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, $"sesion-{sesionId}");
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"equipo-{equipoId}");
-        _logger.LogInformation("Equipo {EquipoId} unido a sesion {SesionId}", equipoId, sesionId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"equipo-{participanteId}");
+        _logger.LogInformation("Equipo {ParticipanteId} unido a sesion {SesionId}", participanteId, sesionId);
     }
 
     /// <summary>Operador/Admin se une al grupo de sesión y al grupo de operadores.</summary>
@@ -205,7 +205,7 @@ public sealed class TriviaHub : Hub<ITriviaHubClient>
         {
             await _sender.Send(new RegistrarRespuestaTriviaCommand(
                 request.SesionId,
-                request.EquipoId,
+                request.ParticipanteId,
                 request.PreguntaId,
                 request.OpcionSeleccionadaId,
                 DateTime.UtcNow));
@@ -220,7 +220,7 @@ public sealed class TriviaHub : Hub<ITriviaHubClient>
 
 public sealed record ResponderPreguntaHubRequest(
     Guid SesionId,
-    Guid EquipoId,
+    Guid ParticipanteId,
     Guid PreguntaId,
     Guid OpcionSeleccionadaId);
 ```
@@ -242,12 +242,12 @@ public interface INotificacionRealTime
     // ── Ambos modos ────────────────────────────────────────────
     Task NotificarEstadoSesionAsync(Guid sesionId, string nuevoEstado, CancellationToken ct = default);
     Task NotificarRankingAsync(Guid sesionId, IReadOnlyList<PosicionDto> ranking, CancellationToken ct = default);
-    Task NotificarPenalizacionAsync(Guid sesionId, Guid equipoId, int puntos, string motivo, CancellationToken ct = default);
+    Task NotificarPenalizacionAsync(Guid sesionId, Guid participanteId, int puntos, string motivo, CancellationToken ct = default);
 
     // ── BusquedaTesoro ─────────────────────────────────────────
     Task NotificarEtapaAvanzadaAsync(Guid sesionId, int etapaIndex, CancellationToken ct = default);
-    Task NotificarPistaLiberadaAsync(Guid sesionId, Guid? equipoId, Guid pistaId, string contenido, CancellationToken ct = default);
-    // equipoId null = libera para todos; con valor = solo ese equipo
+    Task NotificarPistaLiberadaAsync(Guid sesionId, Guid? participanteId, Guid pistaId, string contenido, CancellationToken ct = default);
+    // participanteId null = libera para todos; con valor = solo ese equipo
 
     // ── Trivia ─────────────────────────────────────────────────
     Task NotificarPreguntaLanzadaAsync(Guid sesionId, PreguntaLanzadaPayload payload, CancellationToken ct = default);
@@ -293,13 +293,13 @@ internal sealed class NotificacionRealTimeService : INotificacionRealTime
             .EtapaAvanzada(new EtapaAvanzadaPayload(sesionId, etapaIndex));
 
     public Task NotificarPistaLiberadaAsync(
-        Guid sesionId, Guid? equipoId, Guid pistaId, string contenido, CancellationToken ct)
+        Guid sesionId, Guid? participanteId, Guid pistaId, string contenido, CancellationToken ct)
     {
-        var payload = new PistaLiberadaPayload(sesionId, equipoId ?? Guid.Empty, pistaId, contenido);
+        var payload = new PistaLiberadaPayload(sesionId, participanteId ?? Guid.Empty, pistaId, contenido);
 
-        if (equipoId.HasValue)
+        if (participanteId.HasValue)
             return _sesionHub.Clients
-                .Group($"equipo-{equipoId.Value}")
+                .Group($"equipo-{participanteId.Value}")
                 .PistaLiberada(payload);
         else
             return _sesionHub.Clients
@@ -323,10 +323,10 @@ internal sealed class NotificacionRealTimeService : INotificacionRealTime
             .ResultadoRonda(payload);
 
     public Task NotificarPenalizacionAsync(
-        Guid sesionId, Guid equipoId, int puntos, string motivo, CancellationToken ct)
+        Guid sesionId, Guid participanteId, int puntos, string motivo, CancellationToken ct)
         => _sesionHub.Clients
             .Group($"sesion-{sesionId}")
-            .PenalizacionAplicada(new PenalizacionPayload(sesionId, equipoId, puntos, motivo));
+            .PenalizacionAplicada(new PenalizacionPayload(sesionId, participanteId, puntos, motivo));
 }
 ```
 
@@ -499,7 +499,7 @@ import { HubConnectionBuilder, HttpTransportType, LogLevel } from "@microsoft/si
 
 export function useEquipoHub(
   sesionId: string,
-  equipoId: string,
+  participanteId: string,
   tipoSesion: "BusquedaTesoro" | "Trivia",
   token: string
 ) {
@@ -524,11 +524,11 @@ export function useEquipoHub(
     sesionConn.on("PistaLiberada", (p) => handlePistaLiberada(p));  // BT
 
     sesionConn.onreconnected(async () => {
-      await sesionConn.invoke("UnirseASesion", sesionId, equipoId);
+      await sesionConn.invoke("UnirseASesion", sesionId, participanteId);
     });
 
     sesionConn.start()
-      .then(() => sesionConn.invoke("UnirseASesion", sesionId, equipoId));
+      .then(() => sesionConn.invoke("UnirseASesion", sesionId, participanteId));
 
     sesionConnRef.current = sesionConn;
 
@@ -560,11 +560,11 @@ export function useEquipoHub(
       sesionConnRef.current?.stop();
       triviaConnRef.current?.stop();
     };
-  }, [sesionId, equipoId, tipoSesion, token]);
+  }, [sesionId, participanteId, tipoSesion, token]);
 
   const responderPregunta = async (preguntaId: string, opcionId: string) => {
     await triviaConnRef.current?.invoke("ResponderPregunta", {
-      sesionId, equipoId, preguntaId, opcionSeleccionadaId: opcionId,
+      sesionId, participanteId, preguntaId, opcionSeleccionadaId: opcionId,
     });
   };
 
@@ -586,7 +586,7 @@ export function useEquipoHub(
 | 6 | Los clientes implementan **reconexión automática** con backoff exponencial. | Resiliencia ante pérdidas de conectividad. |
 | 7 | Los clientes re-invocan el método de unión al grupo (`UnirseASesion`, etc.) **al reconectar**. | Los grupos SignalR se pierden al reconectar. |
 | 8 | Sesión BT: solo se conecta a `SesionHub`. Sesión Trivia: se conecta a **ambos** hubs. | Una sesión es de un único tipo, nunca mixta. |
-| 9 | Las pistas privadas se envían al grupo `equipo-{id}`. Las globales al grupo `sesion-{id}`. | Visibilidad por nodo/equipo (RB-21, RB-23). Liberación por tiempo: RB-07. |
+| 9 | Las pistas privadas se envían al grupo `equipo-{id}`. Las globales al grupo `sesion-{id}`. | Visibilidad por nodo/participante (RB-21, RB-23). Liberación por tiempo: RB-07. |
 | 10 | `EnableDetailedErrors` **solo en Development**. | Evita filtración de información en producción. |
 
 ---
@@ -654,7 +654,7 @@ conn.onreconnected(() => console.log("Reconectado"));  // ← no re-join al grup
 
 // ✅ BUENO — re-join al grupo al reconectar
 conn.onreconnected(async () => {
-    await conn.invoke("UnirseASesion", sesionId, equipoId);
+    await conn.invoke("UnirseASesion", sesionId, participanteId);
 });
 ```
 

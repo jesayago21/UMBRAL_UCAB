@@ -11,9 +11,9 @@ public sealed class AplicarPenalizacionValidator
             .NotEmpty()
             .WithMessage("El identificador de la sesión es obligatorio.");
 
-        RuleFor(x => x.EquipoId)
+        RuleFor(x => x.ParticipanteId)
             .NotEmpty()
-            .WithMessage("El identificador del equipo es obligatorio.");
+            .WithMessage("El identificador del participante es obligatorio.");
 
         RuleFor(x => x.Puntos)
             .GreaterThan(0)

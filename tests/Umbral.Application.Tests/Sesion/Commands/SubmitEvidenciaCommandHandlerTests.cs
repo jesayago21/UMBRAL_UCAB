@@ -9,6 +9,7 @@ using Umbral.Domain.Sesion.Events;
 using Umbral.Domain.Shared;
 using Xunit;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
+// ResultadoValidacion no se importa aquí; el resultado se compara como string (V1 auditoría).
 
 namespace Umbral.Application.Tests.Sesion.Commands;
 
@@ -29,7 +30,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
     {
         // Arrange
         var sesion = SesionTestBuilder.Activa("Alpha");
-        var equipo = sesion.Equipos.First();
+        var participante = sesion.Participantes.First();
         var qrValido = SesionTestBuilder.CodigoQrEtapaActual(sesion);
         sesion.ClearDomainEvents();
 
@@ -56,14 +57,14 @@ public sealed class SubmitEvidenciaCommandHandlerTests
         var result = await _sut.Handle(
             new SubmitEvidenciaCommand(
                 sesion.SesionId.Valor,
-                equipo.EquipoId.Valor,
+                participante.ParticipanteId.Valor,
                 qrValido),
             CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.EvidenciaId.Should().NotBeEmpty();
-        result.Value.Resultado.Should().Be(ResultadoValidacion.Valida);
+        result.Value.Resultado.Should().Be("Valida");
         eventos.Should().Contain(e => e is EvidenciaRegistrada);
         sesion.DomainEvents.Should().BeEmpty();
     }
@@ -86,7 +87,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_CuandoEquipoNoPerteneceALaSesion_LanzaDomainException()
+    public async Task Handle_CuandoParticipanteNoPerteneceALaSesion_LanzaDomainException()
     {
         // Arrange
         var sesion = SesionTestBuilder.Activa("Alpha");
@@ -112,8 +113,8 @@ public sealed class SubmitEvidenciaCommandHandlerTests
     public async Task Handle_CuandoPrimeraEvidenciaValida_EmiteEventosGanadorYTransicion()
     {
         // Arrange
-        var sesion = SesionTestBuilder.ActivaConEquiposDosEtapas("Alpha", "Beta");
-        var equipoGanador = sesion.Equipos.First();
+        var sesion = SesionTestBuilder.ActivaConParticipantesDosEtapas("Alpha", "Beta");
+        var participanteGanador = sesion.Participantes.First();
         var qrValido = SesionTestBuilder.CodigoQrEtapaActual(sesion);
 
         _sesionRepo
@@ -136,13 +137,13 @@ public sealed class SubmitEvidenciaCommandHandlerTests
         var result = await _sut.Handle(
             new SubmitEvidenciaCommand(
                 sesion.SesionId.Valor,
-                equipoGanador.EquipoId.Valor,
+                participanteGanador.ParticipanteId.Valor,
                 qrValido),
             CancellationToken.None);
 
         // Assert
-        result.Value.Resultado.Should().Be(ResultadoValidacion.Valida);
-        sesion.ContextoBT!.EtapaActualIndex.Should().Be(1);
+        result.Value.Resultado.Should().Be("Valida");
+        sesion.ContextoMision!.EtapaActualIndex.Should().Be(1);
         eventos.Should().Contain(e => e is EvidenciaRegistrada);
         eventos.Should().Contain(e => e is EvidenciaValidada);
         eventos.Should().Contain(e => e is EtapaCompletada);
@@ -152,9 +153,9 @@ public sealed class SubmitEvidenciaCommandHandlerTests
     public async Task Handle_CuandoSegundaEvidenciaUsaQrEtapaAnterior_ResultadoInvalida()
     {
         // Arrange
-        var sesion = SesionTestBuilder.ActivaConEquiposDosEtapas("Alpha", "Beta");
-        var equipoUno = sesion.Equipos[0];
-        var equipoDos = sesion.Equipos[1];
+        var sesion = SesionTestBuilder.ActivaConParticipantesDosEtapas("Alpha", "Beta");
+        var equipoUno = sesion.Participantes[0];
+        var equipoDos = sesion.Participantes[1];
         var qrEtapaUno = SesionTestBuilder.CodigoQrEtapaActual(sesion);
 
         _sesionRepo
@@ -168,7 +169,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
         await _sut.Handle(
             new SubmitEvidenciaCommand(
                 sesion.SesionId.Valor,
-                equipoUno.EquipoId.Valor,
+                equipoUno.ParticipanteId.Valor,
                 qrEtapaUno),
             CancellationToken.None);
 
@@ -185,12 +186,12 @@ public sealed class SubmitEvidenciaCommandHandlerTests
         var segunda = await _sut.Handle(
             new SubmitEvidenciaCommand(
                 sesion.SesionId.Valor,
-                equipoDos.EquipoId.Valor,
+                equipoDos.ParticipanteId.Valor,
                 qrEtapaUno),
             CancellationToken.None);
 
         // Assert
-        segunda.Value.Resultado.Should().Be(ResultadoValidacion.Invalida);
+        segunda.Value.Resultado.Should().Be("Invalida");
         eventosSegunda.Should().ContainSingle(e => e is EvidenciaRegistrada);
     }
 }

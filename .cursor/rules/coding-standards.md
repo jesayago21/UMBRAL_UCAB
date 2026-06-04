@@ -84,7 +84,7 @@
 - Los DTOs de Application (Request/Response) son `record`:
 ```csharp
   public record CrearSesionRequest(Guid MisionId, string NombreOperador);
-  public record SesionResumenDto(Guid Id, string Estado, int TotalEquipos);
+  public record SesionResumenDto(Guid Id, string Estado, int TotalParticipantes);
 ```
 
 ### 1.8 Pattern matching y expresiones
@@ -173,7 +173,7 @@ public sealed class GetRankingSesionQueryHandler
         GetRankingSesionQuery query,
         CancellationToken cancellationToken)
     {
-        return await _dbContext.EquiposSesion
+        return await _dbContext.ParticipantesSesion
             .Where(e => e.SesionId == query.SesionId)
             .OrderByDescending(e => e.PuntajeTotal)
             .Select(e => new PosicionRankingDto(e.Nombre, e.PuntajeTotal))
@@ -278,7 +278,7 @@ public sealed class GetRankingSesionQueryHandler
 
 ## 7. Pruebas
 
-### 7.1 Unitarias (xUnit + Moq)
+### 7.1 Unitarias — Dominio (xUnit + FluentAssertions)
 ```csharp
 public class SesionTests
 {
@@ -306,6 +306,13 @@ public class SesionTests
 }
 ```
 
+### 7.1b Unitarias — Application (xUnit + NSubstitute)
+
+Los handlers mockan puertos con **NSubstitute** (`Substitute.For<>`, `.Returns()`,
+`.Received()`). Ver `.cursor/skills/testing-skill.md` §4 y `.cursor/specs/umbral-quality-spec.md` §6.
+
+---
+
 ### 7.2 Naming obligatorio
 [Metodo][Escenario][ResultadoEsperado]
 
@@ -319,7 +326,7 @@ Usar el patrón Builder para construir entidades en pruebas. Nunca repitas setup
 public static class SesionBuilder
 {
     public static Sesion ConEstado(EstadoSesion estado) { ... }
-    public static Sesion ConEquipos(int cantidad) { ... }
+    public static Sesion ConParticipantes(int cantidad) { ... }
 }
 ```
 

@@ -17,7 +17,7 @@ UMBRAL
 
 Modalidad
 
-Trabajo por equipos con entregas parciales y presentación final
+Trabajo por participantes con entregas parciales y presentación final
 
 Tecnologías base
 
@@ -45,7 +45,7 @@ eventos del dominio.
 Nombre del proyecto: UMBRAL.
 
 Descripción general: UMBRAL es una plataforma web para diseñar misiones de investigación inmersiva,
-crear sesiones en vivo, registrar equipos participantes, liberar pistas, recibir evidencias, aplicar reglas de
+crear sesiones en vivo, registrar participantes participantes, liberar pistas, recibir evidencias, aplicar reglas de
 validación y puntaje, y supervisar toda la operación desde una consola central. El sistema debe permitir
 que los participantes y los operadores observen cambios de estado en tiempo real y que determinados
 procesos sean desacoplados mediante colas de mensajería.
@@ -54,11 +54,11 @@ procesos sean desacoplados mediante colas de mensajería.
 Una  organización  dedicada  a  experiencias  inmersivas  de  misterio  y  resolución  de  casos  administra
 actualmente sus sesiones mediante hojas de cálculo, grupos de mensajería y decisiones manuales del
 operador. Esta dinámica provoca retrasos en la liberación de pistas, dificultades para controlar el avance
-de varios equipos en paralelo, inconsistencias en los puntajes, falta de trazabilidad y una experiencia
+de varios participantes en paralelo, inconsistencias en los puntajes, falta de trazabilidad y una experiencia
 heterogénea para los participantes.
 
 La  organización  requiere  una  solución  centralizada  que  permita  modelar  las  misiones,  controlar  la
-ejecución en vivo de las sesiones, coordinar la participación de múltiples equipos, registrar evidencias,
+ejecución en vivo de las sesiones, coordinar la participación de múltiples participantes, registrar evidencias,
 recalcular  puntuaciones  y  visualizar  el  estado  global  de  la  sesión  en  un  tablero  de  supervisión.  La
 solución  debe  ser  construida  como  una  aplicación  web  moderna,  con  actualización  en  tiempo  real,
 backend desacoplado por responsabilidades y mecanismos de comunicación asíncrona para tareas que
@@ -113,7 +113,7 @@ reglas básicas de avance.
 
 sesión y control del tiempo de ejecución.
 
-3.  Gestión  de  equipos  participantes:  registro  de  equipos,  asignación  a  una  sesión  y  consulta  de  su
+3.  Gestión  de  participantes  participantes:  registro  de  participantes,  asignación  a  una  sesión  y  consulta  de  su
 
 progreso.
 
@@ -121,7 +121,7 @@ progreso.
 
 penalizaciones y seguimiento del ranking.
 
-5.  Panel del equipo: visualización de pistas asignadas, temporizador, puntaje acumulado y envío de
+5.  Panel del participante: visualización de pistas asignadas, temporizador, puntaje acumulado y envío de
 
 respuestas o evidencias.
 
@@ -209,11 +209,11 @@ pausada, finalizada y cancelada.
 
 RF-05
 
-El sistema debe permitir registrar equipos participantes y asociarlos a una sesión.
+El sistema debe permitir registrar participantes participantes y asociarlos a una sesión.
 
 RF-06
 
-Cada equipo debe visualizar su temporizador, puntaje y pistas habilitadas.
+Cada participante debe visualizar su temporizador, puntaje y pistas habilitadas.
 
 RF-07
 
@@ -226,18 +226,18 @@ RF-10
 El operador debe poder liberar pistas de forma manual o condicionada por reglas de
 avance.
 
-Los equipos deben poder enviar respuestas o evidencias asociadas a una etapa de la
+Los participantes deben poder enviar respuestas o evidencias asociadas a una etapa de la
 misión.
 
-Cada envío de evidencia debe quedar registrado con fecha, equipo, sesión y estado de
+Cada envío de evidencia debe quedar registrado con fecha, participante, sesión y estado de
 validación.
 
-El sistema debe recalcular el puntaje del equipo cuando una evidencia sea validada o
+El sistema debe recalcular el puntaje del participante cuando una evidencia sea validada o
 penalizada.
 
 RF-11
 
-El operador debe poder aplicar penalizaciones justificadas a un equipo.
+El operador debe poder aplicar penalizaciones justificadas a un participante.
 
 UCAB - 2026
 
@@ -267,7 +267,7 @@ RF-17
 
 RF-18
 
-La solución debe permitir consultar misiones, sesiones, equipos y ranking mediante
+La solución debe permitir consultar misiones, sesiones, participantes y ranking mediante
 consultas separadas de los comandos.
 
 La aplicación debe disponer de validaciones de negocio antes de aceptar cambios de
@@ -340,10 +340,10 @@ Tabla canónica completa (**RB-01 … RB-32**): [`TRAZABILIDAD.md`](TRAZABILIDAD
 | Código | Resumen |
 |--------|---------|
 | RB-01 | Sesión BT solo desde misión activa |
-| RB-02 | Nombre de equipo único por sesión |
+| RB-02 | Nombre de participante único por sesión |
 | RB-04–07 | Evidencias, etapas, pistas por tiempo |
 | RB-08 | Ranking y desempate |
-| RB-18 | Inicio de sesión requiere ≥1 equipo |
+| RB-18 | Inicio de sesión requiere ≥1 participante |
 | RB-19–24 | Evidencias en pausa, penalizaciones, QR, piso de puntaje |
 | RB-25–27 | Trazabilidad, solo lectura, operador por sesión |
 | RB-12–17, 28–32 | Trivia |
@@ -405,7 +405,7 @@ Entidad asociada a una sesión, con progreso, estado y puntaje.
 
 EvidenceSubmission
 
-Registro de respuesta o evidencia enviada por un equipo.
+Registro de respuesta o evidencia enviada por un participante.
 
 ScoreEntry
 
@@ -422,12 +422,12 @@ PenaltyReason.
 
 A efectos académicos, se solicita identificar al menos tres bounded contexts o subáreas con lenguaje
 propio:  diseño  de  misiones,  operación  de  sesiones  y  puntuación/monitoreo.  No  es  obligatorio  que  el
-equipo implemente microservicios; basta con que evidencie separación conceptual, lenguaje ubicuo y
+participante implemente microservicios; basta con que evidencie separación conceptual, lenguaje ubicuo y
 límites claros dentro de la solución.
 
 13. Principios y patrones que deben evidenciarse
 El proyecto debe servir como vehículo para aplicar de manera concreta los temas del curso. Por ello, se
-espera que cada equipo evidencie, en componentes reales del sistema, los principios y patrones que se
+espera que cada participante evidencie, en componentes reales del sistema, los principios y patrones que se
 indican a continuación.
 
 Tema
@@ -546,7 +546,7 @@ Proyecto 2 / entrega final
 Aplicación completa, contenedorizada, con pruebas unitarias, integración y E2E,
 cobertura objetivo, documentación técnica y presentación funcional.
 
-Cada  equipo  deberá  acompañar  los  entregables  con  una  breve  memoria  técnica  que  describa  las
+Cada  participante  deberá  acompañar  los  entregables  con  una  breve  memoria  técnica  que  describa  las
 decisiones de arquitectura, el modelo del dominio, los patrones implementados, las pruebas realizadas,
 los hallazgos de refactorización y las instrucciones para levantar la solución en ambiente local.
 
@@ -626,10 +626,10 @@ Claridad expositiva, defensa técnica y calidad de la memoria final.
 La defensa del proyecto deberá centrarse en el valor de la solución, las decisiones de arquitectura, el
 modelo  del  dominio,  la  demostración  del  flujo  principal  en  vivo  y  la  evidencia  objetiva  de  los  temas
 académicos cubiertos. No se espera una presentación meramente comercial; se espera una exposición
-técnica  y  argumentada,  donde  el  equipo  pueda  justificar  por  qué  su  diseño  responde  al  problema
+técnica  y  argumentada,  donde  el  participante  pueda  justificar  por  qué  su  diseño  responde  al  problema
 planteado y cómo cada componente implementado aporta a la calidad de la solución.
 
-  Demostración del flujo completo: creación de sesión, registro de equipo, liberación de pista, envío de
+  Demostración del flujo completo: creación de sesión, registro de participante, liberación de pista, envío de
 
 evidencia y actualización del ranking.
 
@@ -643,7 +643,7 @@ evidencia y actualización del ranking.
 UMBRAL  constituye  una  propuesta  académica  equilibrada:  evita  caer  en  dominios  excesivamente
 comunes, mantiene un alcance razonable para un semestre y, al mismo tiempo, ofrece suficientes puntos
 de  entrada  para  poner  en  práctica  todos  los  temas  planteados  en  el  plan  de  clases.  Su  naturaleza
-operativa, narrativa y en tiempo real obliga a los equipos a diseñar con criterio, probar con rigor y construir
+operativa, narrativa y en tiempo real obliga a los participantes a diseñar con criterio, probar con rigor y construir
 una  solución  técnicamente  defendible,  que  pueda  ser  evaluada  desde  la  calidad  del  código,  la
 arquitectura, la experiencia funcional y la solidez de la entrega final.
 

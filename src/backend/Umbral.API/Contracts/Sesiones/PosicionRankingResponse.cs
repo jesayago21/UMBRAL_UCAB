@@ -2,6 +2,6 @@ namespace Umbral.API.Contracts.Sesiones;
 
 public sealed record PosicionRankingResponse(
     int Posicion,
-    Guid EquipoId,
-    string NombreEquipo,
+    Guid ParticipanteId,
+    string NombreParticipante,
     int PuntajeTotal);

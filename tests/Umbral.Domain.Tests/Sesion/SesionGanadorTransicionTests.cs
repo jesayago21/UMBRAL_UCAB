@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Sesion.Events;
 using Umbral.Domain.Tests.Sesion.Builders;
@@ -17,42 +17,42 @@ public sealed class SesionGanadorTransicionTests
     private const string QrEtapa2 = "QR-FUENTE-002";
 
     [Fact]
-    public void RegistrarEvidencia_PrimerEquipoValido_Asigna100Puntos()
+    public void RegistrarEvidencia_PrimerParticipanteValido_Asigna100Puntos()
     {
         // Arrange
-        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConEquipo("Alpha").Build();
-        var equipo  = sesion.Equipos.First();
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConParticipante("Alpha").Build();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
-        equipo.PuntajeTotal.Valor.Should().Be(100);
+        participante.PuntajeTotal.Valor.Should().Be(100);
     }
 
     [Fact]
-    public void RegistrarEvidencia_PrimerEquipoValido_EmiteEvidenciaValidada()
+    public void RegistrarEvidencia_PrimerParticipanteValido_EmiteEvidenciaValidada()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         sesion.DomainEvents.Should().Contain(e => e is EvidenciaValidada);
     }
 
     [Fact]
-    public void RegistrarEvidencia_PrimerEquipoValido_EmiteEtapaCompletada()
+    public void RegistrarEvidencia_PrimerParticipanteValido_EmiteEtapaCompletada()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         sesion.DomainEvents.Should().Contain(e => e is EtapaCompletada);
@@ -60,18 +60,18 @@ public sealed class SesionGanadorTransicionTests
     }
 
     [Fact]
-    public void RegistrarEvidencia_PrimerEquipoValido_AvancesEtapaActiva()
+    public void RegistrarEvidencia_PrimerParticipanteValido_AvancesEtapaActiva()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
-        sesion.ContextoBT!.EtapaActualIndex.Should().Be(1);
-        sesion.ContextoBT.ObtenerEtapaActual().CodigoQRSolucion.Should().Be(QrEtapa2);
+        sesion.ContextoMision!.EtapaActualIndex.Should().Be(1);
+        sesion.ContextoMision.ObtenerEtapaBusquedaTesoroActual().CodigoQRSolucion.Should().Be(QrEtapa2);
     }
 
     [Fact]
@@ -79,14 +79,14 @@ public sealed class SesionGanadorTransicionTests
     {
         // Arrange — misión de 3 etapas para probar etapa intermedia (no final)
         var sesion = CrearSesionTresEtapasActiva("Alpha", "Beta");
-        var alpha = sesion.Equipos.First(e => e.Nombre.Valor == "Alpha");
-        var beta  = sesion.Equipos.First(e => e.Nombre.Valor == "Beta");
+        var alpha = sesion.Participantes.First(e => e.Nombre.Valor == "Alpha");
+        var beta  = sesion.Participantes.First(e => e.Nombre.Valor == "Beta");
 
-        sesion.RegistrarEvidencia(alpha.EquipoId, "QR-E1"); // avanza a etapa 2
-        sesion.RegistrarEvidencia(alpha.EquipoId, "QR-E2"); // avanza a etapa 3, alpha 200 pts
+        sesion.RegistrarEvidencia(alpha.ParticipanteId, "QR-E1"); // avanza a etapa 2
+        sesion.RegistrarEvidencia(alpha.ParticipanteId, "QR-E2"); // avanza a etapa 3, alpha 200 pts
 
         // Act — Beta intenta QR de etapa 2 ya superada (sesión en etapa 3)
-        var evBeta = sesion.RegistrarEvidencia(beta.EquipoId, "QR-E2");
+        var evBeta = sesion.RegistrarEvidencia(beta.ParticipanteId, "QR-E2");
 
         // Assert
         evBeta.Resultado.Should().Be(ResultadoValidacion.Invalida);
@@ -99,15 +99,15 @@ public sealed class SesionGanadorTransicionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
-            .Activa().ConEquipo("Alpha").ConEquipo("Beta").Build();
-        var alpha = sesion.Equipos.First(e => e.Nombre.Valor == "Alpha");
-        var beta  = sesion.Equipos.First(e => e.Nombre.Valor == "Beta");
+            .Activa().ConParticipante("Alpha").ConParticipante("Beta").Build();
+        var alpha = sesion.Participantes.First(e => e.Nombre.Valor == "Alpha");
+        var beta  = sesion.Participantes.First(e => e.Nombre.Valor == "Beta");
 
-        sesion.RegistrarEvidencia(alpha.EquipoId, QrEtapa1);
-        sesion.RegistrarEvidencia(alpha.EquipoId, QrEtapa2); // finaliza sesión
+        sesion.RegistrarEvidencia(alpha.ParticipanteId, QrEtapa1);
+        sesion.RegistrarEvidencia(alpha.ParticipanteId, QrEtapa2); // finaliza sesión
 
         // Act
-        var evBeta = sesion.RegistrarEvidencia(beta.EquipoId, QrEtapa2);
+        var evBeta = sesion.RegistrarEvidencia(beta.ParticipanteId, QrEtapa2);
 
         // Assert
         evBeta.Resultado.Should().Be(ResultadoValidacion.Rechazada);
@@ -118,12 +118,12 @@ public sealed class SesionGanadorTransicionTests
     public void RegistrarEvidencia_CompletarUltimaEtapa_FinalizaSesionAutomaticamente()
     {
         // Arrange
-        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConEquipo("Alpha").Build();
-        var equipo  = sesion.Equipos.First();
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConParticipante("Alpha").Build();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa2);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa2);
 
         // Assert
         sesion.Estado.Should().Be(EstadoSesion.Finalizada);
@@ -136,13 +136,13 @@ public sealed class SesionGanadorTransicionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
         sesion.ClearDomainEvents();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa2);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa2);
 
         // Assert
         var evt = sesion.DomainEvents.OfType<EtapaCompletada>().Single();
@@ -154,47 +154,47 @@ public sealed class SesionGanadorTransicionTests
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
-        var equipo  = sesion.Equipos.First();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
 
         // Assert
         var evt = sesion.DomainEvents.OfType<EvidenciaValidada>().Single();
         evt.PuntosOtorgados.Valor.Should().Be(100);
-        evt.EquipoGanadorId.Should().Be(equipo.EquipoId);
+        evt.ParticipanteGanadorId.Should().Be(participante.ParticipanteId);
     }
 
     [Fact]
     public void RegistrarEvidencia_CompletarDosEtapas_Acumula200Puntos()
     {
         // Arrange
-        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConEquipo("Alpha").Build();
-        var equipo  = sesion.Equipos.First();
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConParticipante("Alpha").Build();
+        var participante  = sesion.Participantes.First();
 
         // Act
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa1);
-        sesion.RegistrarEvidencia(equipo.EquipoId, QrEtapa2);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa1);
+        sesion.RegistrarEvidencia(participante.ParticipanteId, QrEtapa2);
 
         // Assert
-        equipo.PuntajeTotal.Valor.Should().Be(200);
+        participante.PuntajeTotal.Valor.Should().Be(200);
     }
 
-    private static SesionAR CrearSesionTresEtapasActiva(params string[] equipos)
+    private static SesionAR CrearSesionTresEtapasActiva(params string[] participantes)
     {
         var mision = Mision.Crear("Misión 3 etapas");
-        mision.AgregarEtapa("Etapa 1", "QR-E1");
-        mision.AgregarEtapa("Etapa 2", "QR-E2");
-        mision.AgregarEtapa("Etapa 3", "QR-E3");
+        mision.AgregarEtapaBusquedaTesoro("Etapa 1", "QR-E1");
+        mision.AgregarEtapaBusquedaTesoro("Etapa 2", "QR-E2");
+        mision.AgregarEtapaBusquedaTesoro("Etapa 3", "QR-E3");
         mision.Activar();
         mision.ClearDomainEvents();
 
-        var snapshot = MisionSnapshot.Desde(mision);
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, UsuarioId.Nuevo());
+        var snapshot = MisionSnapshot.DesdeSoloBusquedaTesoro(mision);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, UsuarioId.Nuevo());
         sesion.ClearDomainEvents();
         sesion.AbrirParaRegistro();
-        foreach (var nombre in equipos)
-            sesion.RegistrarEquipo(nombre);
+        foreach (var nombre in participantes)
+            SesionTestHelpers.UnirParticipante(sesion, nombre);
         sesion.Iniciar();
         sesion.ClearDomainEvents();
         return sesion;

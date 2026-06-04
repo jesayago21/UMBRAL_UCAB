@@ -1,4 +1,4 @@
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Shared;
 
 namespace Umbral.Domain.Sesion;
@@ -15,7 +15,7 @@ public sealed class ContextoBusquedaTesoro : Entity
 
     public MisionSnapshot MisionSnapshot { get; private set; } = default!;
     public int EtapaActualIndex { get; private set; }
-    public EquipoId? GanadorEtapaActualId { get; private set; }
+    public ParticipanteId? GanadorEtapaActualId { get; private set; }
 
     private ContextoBusquedaTesoro() { }
 
@@ -38,7 +38,7 @@ public sealed class ContextoBusquedaTesoro : Entity
     internal static ContextoBusquedaTesoro Rehydrate(
         MisionSnapshot snapshot,
         int etapaActualIndex,
-        EquipoId? ganadorEtapaActualId) =>
+        ParticipanteId? ganadorEtapaActualId) =>
         new()
         {
             MisionSnapshot         = snapshot,
@@ -47,12 +47,15 @@ public sealed class ContextoBusquedaTesoro : Entity
         };
 
     /// <summary>Etapa activa según <see cref="EtapaActualIndex"/> (RB-06).</summary>
-    public EtapaSnapshot ObtenerEtapaActual()
+    public EtapaBusquedaTesoroSnapshot ObtenerEtapaActual()
     {
         if (EtapaActualIndex < 0 || EtapaActualIndex >= MisionSnapshot.Etapas.Count)
             throw new DomainException("No hay etapa activa en el contexto de la sesión.");
 
-        return MisionSnapshot.Etapas[EtapaActualIndex];
+        var etapa = MisionSnapshot.Etapas[EtapaActualIndex];
+        if (etapa is not EtapaBusquedaTesoroSnapshot bt)
+            throw new DomainException("La etapa activa legacy no es de Búsqueda del Tesoro.");
+        return bt;
     }
 
     public bool EsUltimaEtapa() =>
@@ -60,7 +63,7 @@ public sealed class ContextoBusquedaTesoro : Entity
 
     public bool YaHayGanadorEnEtapaActual() => GanadorEtapaActualId is not null;
 
-    internal void RegistrarGanadorEtapa(EquipoId ganadorId)
+    internal void RegistrarGanadorEtapa(ParticipanteId ganadorId)
     {
         ArgumentNullException.ThrowIfNull(ganadorId);
 

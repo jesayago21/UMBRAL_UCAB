@@ -78,10 +78,10 @@ public sealed class MisionesControllerTests
     }
 
     [Fact]
-    public async Task DELETE_misiones_CuandoActiva_DesactivaYRetorna204()
+    public async Task DELETE_misiones_CuandoSinSesiones_EliminaMisionYEtapas_Retorna204()
     {
         SetRole("Administrador");
-        var create = await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest("Mision Desactivar", activar: true));
+        var create = await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest("Mision Eliminar", activar: true));
         create.StatusCode.Should().Be(HttpStatusCode.Created);
         var id = await ReadCreatedId(create);
 
@@ -89,9 +89,7 @@ public sealed class MisionesControllerTests
         delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var get = await _client.GetAsync($"/api/v1/misiones/{id}");
-        get.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await get.Content.ReadFromJsonAsync<MisionResponse>();
-        body!.Estado.Should().Be("Inactiva");
+        get.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -129,12 +127,16 @@ public sealed class MisionesControllerTests
         var crearSesion = await _client.PostAsJsonAsync(
             "/api/v1/sesiones/busqueda-tesoro",
             new CrearSesionBusquedaTesoroRequest(id));
-        var sesionId = (await crearSesion.Content.ReadFromJsonAsync<CrearSesionResponse>())!.Id;
+        var sesion = (await crearSesion.Content.ReadFromJsonAsync<CrearSesionResponse>())!;
 
+        SetRole("Participante");
+        _client.DefaultRequestHeaders.Remove(TestAuthHandler.UserIdHeaderName);
+        _client.DefaultRequestHeaders.Add(TestAuthHandler.UserIdHeaderName, Guid.NewGuid().ToString());
         await _client.PostAsJsonAsync(
-            $"/api/v1/sesiones/{sesionId}/equipos",
-            new RegistrarEquipoRequest("Equipo HU03"));
-        await _client.PostAsync($"/api/v1/sesiones/{sesionId}/iniciar", null);
+            $"/api/v1/sesiones/{sesion.Id}/unirse",
+            new UnirseSesionRequest(sesion.CodigoAcceso, "Alpha"));
+        SetRole("Administrador");
+        await _client.PostAsync($"/api/v1/sesiones/{sesion.Id}/iniciar", null);
 
         var response = await _client.PutAsJsonAsync(
             $"/api/v1/misiones/{id}",
@@ -144,6 +146,30 @@ public sealed class MisionesControllerTests
 
         var error = await response.Content.ReadFromJsonAsync<ApiErrorResponseDto>();
         error!.Tipo.Should().Be("DomainError");
+    }
+
+    [Fact]
+    public async Task GET_misiones_activas_CuandoOperador_Retorna200()
+    {
+        SetRole("Administrador");
+        var nombre = $"Mision activa operador {Guid.NewGuid():N}";
+        await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest(nombre, activar: true));
+
+        SetRole("Operador");
+        var response = await _client.GetAsync("/api/v1/misiones/activas");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<List<MisionActivaResponse>>();
+        body.Should().NotBeNull();
+        body!.Should().Contain(x => x.Nombre == nombre);
+    }
+
+    [Fact]
+    public async Task GET_misiones_activas_CuandoParticipante_Retorna403()
+    {
+        SetRole("Participante");
+        var response = await _client.GetAsync("/api/v1/misiones/activas");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     private void SetRole(string role)
@@ -158,12 +184,15 @@ public sealed class MisionesControllerTests
             new List<CrearEtapaRequest>
             {
                 new(
+                    "BusquedaTesoro",
+                    1,
                     "Etapa 1",
                     "QR-MISION-001",
                     new List<CrearPistaRequest>
                     {
                         new("Pista 1", "PorTiempo", 30)
-                    })
+                    },
+                    null)
             },
             activar);
 

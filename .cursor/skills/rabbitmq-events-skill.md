@@ -50,16 +50,16 @@ Consumer A           Consumer B
 ## 2. Estructura de carpetas
 
 ```
-src/Umbral.Application/
+src/backend/Umbral.Application/
 └── Common/
     └── Interfaces/
         └── IEventPublisher.cs            ← puerto de salida (Ports en Domain)
 
-src/Umbral.Domain/
+src/backend/Umbral.Domain/
 └── Ports/
     └── IEventPublisher.cs               ← definido en Domain (puerto driven)
 
-src/Umbral.Infrastructure/
+src/backend/Umbral.Infrastructure/
 └── Messaging/
     ├── Publishers/
     │   └── MassTransitEventPublisher.cs  ← implementación de IEventPublisher
@@ -99,7 +99,7 @@ public sealed record SesionIniciadaIntegrationEvent
     public Guid SesionId { get; init; }
     public string NombreSesion { get; init; } = string.Empty;
     public string TipoSesion { get; init; } = string.Empty;    // "BusquedaTesoro" | "Trivia"
-    public int TotalEquipos { get; init; }
+    public int TotalParticipantes { get; init; }
 }
 
 // Umbral.Contracts/IntegrationEvents/EjecucionSesion/SesionFinalizadaIntegrationEvent.cs
@@ -114,7 +114,7 @@ public sealed record SesionFinalizadaIntegrationEvent
     public IReadOnlyList<PuntajeFinalDto> Puntajes { get; init; } = [];
 }
 
-public sealed record PuntajeFinalDto(Guid EquipoId, string NombreEquipo, int Puntaje);
+public sealed record PuntajeFinalDto(Guid ParticipanteId, string NombreParticipante, int Puntaje);
 
 // Umbral.Contracts/IntegrationEvents/EjecucionSesion/EtapaCompletadaIntegrationEvent.cs
 public sealed record EtapaCompletadaIntegrationEvent
@@ -126,7 +126,7 @@ public sealed record EtapaCompletadaIntegrationEvent
     public Guid SesionId { get; init; }
     public Guid EtapaId { get; init; }
     public int OrdenEtapa { get; init; }
-    public Guid EquipoId { get; init; }
+    public Guid ParticipanteId { get; init; }
 }
 ```
 
@@ -198,8 +198,8 @@ public sealed class SesionIniciadaConsumer
         var evento = context.Message;
 
         _logger.LogInformation(
-            "Procesando SesionIniciada: SesionId={SesionId} Tipo={Tipo} Equipos={Equipos}",
-            evento.SesionId, evento.TipoSesion, evento.TotalEquipos);
+            "Procesando SesionIniciada: SesionId={SesionId} Tipo={Tipo} Participantes={Participantes}",
+            evento.SesionId, evento.TipoSesion, evento.TotalParticipantes);
 
         // Lógica de procesamiento...
         await Task.CompletedTask;

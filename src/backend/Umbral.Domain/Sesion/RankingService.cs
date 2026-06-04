@@ -5,16 +5,16 @@ namespace Umbral.Domain.Sesion;
 /// </summary>
 public static class RankingService
 {
-    public static IReadOnlyList<PosicionRanking> Calcular(IReadOnlyList<EquipoSesion> equipos)
+    public static IReadOnlyList<PosicionRanking> Calcular(IReadOnlyList<ParticipanteSesion> participantes)
     {
-        ArgumentNullException.ThrowIfNull(equipos);
+        ArgumentNullException.ThrowIfNull(participantes);
 
-        return equipos
+        return participantes
             .OrderByDescending(e => e.PuntajeTotal.Valor)
             .ThenBy(e => e.Nombre.Valor, StringComparer.OrdinalIgnoreCase)
             .Select((e, index) => new PosicionRanking(
                 index + 1,
-                e.EquipoId,
+                e.ParticipanteId,
                 e.Nombre.Valor,
                 e.PuntajeTotal.Valor))
             .ToList();

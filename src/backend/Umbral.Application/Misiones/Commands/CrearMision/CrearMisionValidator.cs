@@ -15,23 +15,39 @@ public sealed class CrearMisionValidator : AbstractValidator<CrearMisionCommand>
             .WithMessage("La misión debe tener al menos una etapa.");
 
         RuleForEach(x => x.Etapas)
-            .SetValidator(new CrearEtapaInputValidator());
+            .SetValidator(new EtapaMisionInputValidator());
     }
 
-    private sealed class CrearEtapaInputValidator : AbstractValidator<CrearEtapaInput>
+    private sealed class EtapaMisionInputValidator : AbstractValidator<EtapaMisionInput>
     {
-        public CrearEtapaInputValidator()
+        public EtapaMisionInputValidator()
         {
-            RuleFor(x => x.Descripcion)
+            RuleFor(x => x.TipoEtapa)
                 .NotEmpty()
-                .WithMessage("La descripción de la etapa es obligatoria.");
+                .Must(t => t is "BusquedaTesoro" or "Trivia")
+                .WithMessage("TipoEtapa debe ser BusquedaTesoro o Trivia.");
 
-            RuleFor(x => x.CodigoQrSolucion)
-                .NotEmpty()
-                .WithMessage("El código QR solución de la etapa es obligatorio.");
+            When(x => string.Equals(x.TipoEtapa, "BusquedaTesoro", StringComparison.OrdinalIgnoreCase), () =>
+            {
+                RuleFor(x => x.Descripcion)
+                    .NotEmpty()
+                    .WithMessage("La descripción de la etapa BT es obligatoria.");
 
-            RuleForEach(x => x.Pistas)
-                .SetValidator(new CrearPistaInputValidator());
+                RuleFor(x => x.CodigoQrSolucion)
+                    .NotEmpty()
+                    .WithMessage("El código QR solución de la etapa es obligatorio.");
+
+                RuleForEach(x => x.Pistas!)
+                    .SetValidator(new CrearPistaInputValidator())
+                    .When(x => x.Pistas is not null);
+            });
+
+            When(x => string.Equals(x.TipoEtapa, "Trivia", StringComparison.OrdinalIgnoreCase), () =>
+            {
+                RuleFor(x => x.CategoriaIds)
+                    .NotEmpty()
+                    .WithMessage("La etapa trivia requiere al menos una categoría (RB-33).");
+            });
         }
     }
 

@@ -154,13 +154,13 @@ public sealed class SesionCerrarSesionTests
     }
 
     [Fact]
-    public void ObtenerRankingFinal_CuandoEstaFinalizada_RetornaEquiposOrdenados()
+    public void ObtenerRankingFinal_CuandoEstaFinalizada_RetornaParticipantesOrdenados()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro()
-            .Activa().ConEquipo("Alpha").ConEquipo("Beta").Build();
-        sesion.Equipos.First(e => e.Nombre.Valor == "Beta").SumarPuntaje(80);
-        sesion.Equipos.First(e => e.Nombre.Valor == "Alpha").SumarPuntaje(120);
+            .Activa().ConParticipante("Alpha").ConParticipante("Beta").Build();
+        sesion.Participantes.First(e => e.Nombre.Valor == "Beta").SumarPuntaje(80);
+        sesion.Participantes.First(e => e.Nombre.Valor == "Alpha").SumarPuntaje(120);
         sesion.Finalizar();
         sesion.ClearDomainEvents();
 
@@ -169,7 +169,7 @@ public sealed class SesionCerrarSesionTests
 
         // Assert
         ranking.Should().HaveCount(2);
-        ranking[0].NombreEquipo.Should().Be("Alpha");
+        ranking[0].NombreParticipante.Should().Be("Alpha");
         ranking[0].PuntajeTotal.Should().Be(120);
         ranking[0].Posicion.Should().Be(1);
     }
@@ -178,8 +178,8 @@ public sealed class SesionCerrarSesionTests
     public void ObtenerRankingFinal_CuandoEstaCancelada_RetornaRanking()
     {
         // Arrange
-        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConEquipo("Alpha").Build();
-        sesion.Equipos.First().SumarPuntaje(50);
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().ConParticipante("Alpha").Build();
+        sesion.Participantes.First().SumarPuntaje(50);
         sesion.Cancelar("Cancelada");
 
         // Act

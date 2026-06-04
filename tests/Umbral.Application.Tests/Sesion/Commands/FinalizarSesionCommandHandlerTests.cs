@@ -65,7 +65,7 @@ public sealed class FinalizarSesionCommandHandlerTests
     public async Task Handle_CuandoEstadoNoPermiteFinalizar_LanzaDomainException()
     {
         // Arrange
-        var sesion = SesionTestBuilder.EnPreparacionSinEquipos();
+        var sesion = SesionTestBuilder.EnPreparacionSinParticipantes();
         _sesionRepo.FindByIdAsync(Arg.Any<SesionId>(), Arg.Any<CancellationToken>()).Returns(sesion);
 
         // Act

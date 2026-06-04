@@ -9,7 +9,7 @@ namespace Umbral.Infrastructure.Tests.Repositories;
 public sealed class SesionRepositoryTests(PostgresFixture fixture)
 {
     [Fact]
-    public async Task SaveAsync_Y_FindByIdAsync_PersistenSesionConEquipos()
+    public async Task SaveAsync_Y_FindByIdAsync_PersistenSesionConParticipantes()
     {
         var sesion = DomainTestData.SesionBusquedaTesoroActiva("Rangers");
         var sut = CreateRepository();
@@ -21,14 +21,14 @@ public sealed class SesionRepositoryTests(PostgresFixture fixture)
         loaded.Should().NotBeNull();
         loaded!.SesionId.Should().Be(sesion.SesionId);
         loaded.Estado.Should().Be(EstadoSesion.Activa);
-        loaded.Equipos.Should().ContainSingle(e => e.Nombre.Valor == "Rangers");
+        loaded.Participantes.Should().ContainSingle(e => e.Nombre.Valor == "Rangers");
     }
 
     [Fact]
     public async Task FindActivasAsync_RetornaSoloSesionesActivas()
     {
         var activa = DomainTestData.SesionBusquedaTesoroActiva("Activos");
-        var programada = Sesion.CrearBusquedaTesoro(
+        var programada = Sesion.CrearDesdeMision(
             DomainTestData.MisionSnapshotActiva("Otra misión"),
             UsuarioId.Nuevo());
         programada.ClearDomainEvents();

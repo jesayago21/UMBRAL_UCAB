@@ -12,6 +12,7 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
 {
     public const string SchemeName = "Test";
     public const string RoleHeaderName = "X-Test-Role";
+    public const string UserIdHeaderName = "X-Test-User-Id";
 
     public static readonly Guid DefaultOperadorId =
         Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -30,17 +31,22 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
             ? roleHeader.ToString()
             : string.Empty;
 
+        var userId = Request.Headers.TryGetValue(UserIdHeaderName, out var userIdHeader)
+                     && Guid.TryParse(userIdHeader.ToString(), out var parsedUserId)
+            ? parsedUserId
+            : DefaultOperadorId;
+
         var claims = string.IsNullOrWhiteSpace(role)
             ? new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, DefaultOperadorId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Role, "Operador"),
                 new Claim(ClaimTypes.Role, "Administrador"),
-                new Claim(ClaimTypes.Role, "EquipoParticipante")
+                new Claim(ClaimTypes.Role, "Participante")
             }
             : new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, DefaultOperadorId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Role, role)
             };
 

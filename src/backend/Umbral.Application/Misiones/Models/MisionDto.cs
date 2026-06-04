@@ -3,9 +3,6 @@ namespace Umbral.Application.Misiones.Models;
 public sealed record MisionDto(
     Guid Id,
     string Nombre,
-    string Descripcion,
-    string NivelDificultad,
-    int TiempoMaximoSeg,
     string Estado,
     int TotalEtapas,
     IReadOnlyList<EtapaMisionDto> Etapas);
@@ -13,9 +10,11 @@ public sealed record MisionDto(
 public sealed record EtapaMisionDto(
     Guid EtapaId,
     int Orden,
-    string Descripcion,
-    string CodigoQrSolucion,
-    IReadOnlyList<PistaMisionDto> Pistas);
+    string TipoEtapa,
+    string? Descripcion,
+    string? CodigoQrSolucion,
+    IReadOnlyList<PistaMisionDto>? Pistas,
+    IReadOnlyList<Guid>? CategoriaIds);
 
 public sealed record PistaMisionDto(
     Guid PistaId,

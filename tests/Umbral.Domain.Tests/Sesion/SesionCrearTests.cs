@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Umbral.Domain.CatalogoBusquedaTesoro.Mision;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Sesion.Events;
 using Umbral.Domain.Shared;
@@ -15,9 +15,9 @@ namespace Umbral.Domain.Tests.Sesion;
 ///
 /// Reglas cubiertos:
 ///   R-CB-01: La sesion nace en estado Programada.
-///   R-CB-02: TipoSesion == BusquedaTesoro.
+///   R-CB-02: TipoSesion == Mision (sesión unificada).
 ///   R-CB-03: Se emite SesionCreada con SesionId, TipoSesion y OperadorId.
-///   R-CB-04: ContextoBT != null y contiene el MisionSnapshot.
+///   R-CB-04: ContextoMision != null y contiene el MisionSnapshot.
 ///   R-CB-05: Dos creaciones generan SesionId distintos (unicidad).
 ///   R-CB-06: snapshot nulo lanza ArgumentNullException (guard).
 ///   R-CB-07: operadorId nulo lanza ArgumentNullException (guard).
@@ -34,24 +34,24 @@ public sealed class SesionCrearTests
         var operadorId = UsuarioId.Nuevo();
 
         // Act
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
         sesion.Estado.Should().Be(EstadoSesion.Programada);
     }
 
     [Fact]
-    public void CrearBusquedaTesoro_ConDatosValidos_TipoSesionEsBusquedaTesoro()
+    public void CrearBusquedaTesoro_ConDatosValidos_TipoSesionEsMision()
     {
         // Arrange
         var snapshot   = SesionBuilder.MisionSnapshotFake();
         var operadorId = UsuarioId.Nuevo();
 
         // Act
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
-        sesion.TipoSesion.Should().Be(TipoSesion.BusquedaTesoro);
+        sesion.TipoSesion.Should().Be(TipoSesion.Mision);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public sealed class SesionCrearTests
         var operadorId = new UsuarioId(Guid.NewGuid());
 
         // Act
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
         sesion.OperadorId.Should().Be(operadorId);
@@ -76,7 +76,7 @@ public sealed class SesionCrearTests
         var operadorId = UsuarioId.Nuevo();
 
         // Act
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
         sesion.SesionId.Should().NotBeNull();
@@ -91,8 +91,8 @@ public sealed class SesionCrearTests
         var operadorId = UsuarioId.Nuevo();
 
         // Act
-        var sesion1 = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
-        var sesion2 = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion1 = SesionAR.CrearDesdeMision(snapshot, operadorId);
+        var sesion2 = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
         sesion1.SesionId.Should().NotBe(sesion2.SesionId);
@@ -106,7 +106,7 @@ public sealed class SesionCrearTests
         var operadorId = UsuarioId.Nuevo();
 
         // Act
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
         sesion.DomainEvents.Should().ContainSingle()
@@ -121,58 +121,58 @@ public sealed class SesionCrearTests
         var operadorId = new UsuarioId(Guid.NewGuid());
 
         // Act
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
         var evento = sesion.DomainEvents.Should().ContainSingle()
             .Which.Should().BeOfType<SesionCreada>().Subject;
 
         evento.SesionId.Should().Be(sesion.SesionId);
-        evento.TipoSesion.Should().Be(TipoSesion.BusquedaTesoro);
+        evento.TipoSesion.Should().Be(TipoSesion.Mision);
         evento.OperadorId.Should().Be(operadorId);
     }
 
     [Fact]
-    public void CrearBusquedaTesoro_ConDatosValidos_ContextoBTNoEsNull()
+    public void CrearBusquedaTesoro_ConDatosValidos_ContextoMisionNoEsNull()
     {
         // Arrange
         var snapshot   = SesionBuilder.MisionSnapshotFake();
         var operadorId = UsuarioId.Nuevo();
 
         // Act
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
-        sesion.ContextoBT.Should().NotBeNull();
+        sesion.ContextoMision.Should().NotBeNull();
     }
 
     [Fact]
-    public void CrearBusquedaTesoro_ConDatosValidos_ContextoBTContieneMisionSnapshot()
+    public void CrearBusquedaTesoro_ConDatosValidos_ContextoMisionContieneMisionSnapshot()
     {
         // Arrange
         var snapshot   = SesionBuilder.MisionSnapshotFake("Misión Especial");
         var operadorId = UsuarioId.Nuevo();
 
         // Act
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
-        sesion.ContextoBT!.MisionSnapshot.Nombre.Should().Be("Misión Especial");
-        sesion.ContextoBT.MisionSnapshot.Etapas.Should().HaveCount(2);
+        sesion.ContextoMision!.MisionSnapshot.Nombre.Should().Be("Misión Especial");
+        sesion.ContextoMision.MisionSnapshot.Etapas.Should().HaveCount(2);
     }
 
     [Fact]
-    public void CrearBusquedaTesoro_ConDatosValidos_SesionNaceConEquiposVacios()
+    public void CrearBusquedaTesoro_ConDatosValidos_SesionNaceConParticipantesVacios()
     {
         // Arrange
         var snapshot   = SesionBuilder.MisionSnapshotFake();
         var operadorId = UsuarioId.Nuevo();
 
         // Act
-        var sesion = SesionAR.CrearBusquedaTesoro(snapshot, operadorId);
+        var sesion = SesionAR.CrearDesdeMision(snapshot, operadorId);
 
         // Assert
-        sesion.Equipos.Should().BeEmpty();
+        sesion.Participantes.Should().BeEmpty();
     }
 
     // ── Error guards ───────────────────────────────────────────────────────
@@ -184,7 +184,7 @@ public sealed class SesionCrearTests
         var operadorId = UsuarioId.Nuevo();
 
         // Act
-        var act = () => SesionAR.CrearBusquedaTesoro(null!, operadorId);
+        var act = () => SesionAR.CrearDesdeMision(null!, operadorId);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -197,7 +197,7 @@ public sealed class SesionCrearTests
         var snapshot = SesionBuilder.MisionSnapshotFake();
 
         // Act
-        var act = () => SesionAR.CrearBusquedaTesoro(snapshot, null!);
+        var act = () => SesionAR.CrearDesdeMision(snapshot, null!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();

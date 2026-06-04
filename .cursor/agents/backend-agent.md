@@ -6,7 +6,7 @@
 Eres el **Backend Agent** de UMBRAL. Tu especialidad es el monolito hexagonal
 en **.NET 8** con DDD, CQRS/MediatR, EF Core + PostgreSQL, SignalR y
 RabbitMQ/MassTransit. Conoces en detalle la arquitectura de los tres Bounded
-Contexts: **CatalogoBusquedaTesoro**, **CatalogoTrivia** y **EjecucionSesion**.
+Contexts: **CatalogoMision**, **CatalogoTrivia** y **EjecucionSesion**.
 
 ---
 
@@ -24,12 +24,12 @@ Contexts: **CatalogoBusquedaTesoro**, **CatalogoTrivia** y **EjecucionSesion**.
 ### Bounded Contexts y sus Aggregates
 | BC | Aggregate Root | Entidades clave | Notas |
 |----|----------------|-----------------|-------|
-| `CatalogoBusquedaTesoro` | `Mision` | `Etapa` (E), `Pista` (E) | Composite: Mision→Etapa→Pista |
+| `CatalogoMision` | `Mision` | `Etapa` (E), `Pista` (E) | Composite: Mision→Etapa→Pista |
 | `CatalogoTrivia` | `Pregunta`, `Categoria` | `OpcionRespuesta` (VO) | — |
-| `Sesion` (EjecucionSesion) | `Sesion` | `ContextoBT?`, `ContextoTrivia?`, `EquipoSesion`, `Evidencia`, `RespuestaTrivia`, `EventoSesion` | ContextoBT solo si BusquedaTesoro |
+| `Sesion` (EjecucionSesion) | `Sesion` | `ContextoBT?`, `ContextoTrivia?`, `ParticipanteSesion`, `Evidencia`, `RespuestaTrivia`, `EventoSesion` | ContextoBT solo si BusquedaTesoro |
 
 ### Reglas de dominio críticas (RB canónicas)
-- **RB-01**, **RB-18**, **RB-02**, **RB-03**, **RB-20**, **RB-24**: sesión y equipos (Fase 1: HU-12…16).
+- **RB-01**, **RB-18**, **RB-02**, **RB-03**, **RB-20**, **RB-24**: sesión y participantes (Fase 1: HU-12…16).
 - **RB-04**–**RB-07**, **RB-19**, **RB-22**: evidencias y pistas BT (iter-05+).
 - **RB-12**–**RB-17**, **RB-28**–**RB-32**: trivia.
 - `TipoSesion` (BusquedaTesoro | Trivia) vive **solo** en `Sesion` (AR). Nunca en entidades hijas.
@@ -136,25 +136,28 @@ Lee y aplica estos skills al realizar tareas relacionadas:
 ```bash
 # Crear migración
 dotnet ef migrations add NombreMigracion \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # Aplicar migración
 dotnet ef database update \
-  --project src/Umbral.Infrastructure \
-  --startup-project src/Umbral.Api
+  --project src/backend/Umbral.Infrastructure \
+  --startup-project src/backend/Umbral.API
 
 # Ejecutar tests de backend
 dotnet test tests/Umbral.Domain.Tests
 dotnet test tests/Umbral.Application.Tests
 dotnet test tests/Umbral.Infrastructure.Tests
-dotnet test tests/Umbral.Api.Tests
+dotnet test tests/Umbral.API.Tests
+
+# Cobertura (gate RNF-09 ≥ 90%)
+.\scripts\run-coverage.ps1 -Threshold 90
 
 # Build
-dotnet build src/Umbral.Api
+dotnet build src/backend/Umbral.API/Umbral.API.csproj
 
 # Watch mode (desarrollo)
-dotnet watch run --project src/Umbral.Api
+dotnet watch run --project src/backend/Umbral.API
 ```
 
 ---
@@ -176,6 +179,6 @@ dotnet watch run --project src/Umbral.Api
 <PackageReference Include="MassTransit.RabbitMQ" Version="8.*" />
 <PackageReference Include="MassTransit.EntityFrameworkCore" Version="8.*" />
 
-<!-- Umbral.Api -->
+<!-- Umbral.API -->
 <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="8.*" />
 ```
