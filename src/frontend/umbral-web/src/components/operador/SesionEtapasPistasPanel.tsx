@@ -1,3 +1,5 @@
+import { useCategorias } from '@/hooks/useCategorias'
+import { formatCategoriaIds } from '@/lib/formatCategoriaIds'
 import { cardClass } from '@/styles/ui'
 import type { EtapaSesionDto } from '@/types/sesion.types'
 
@@ -19,6 +21,8 @@ interface SesionEtapasPistasPanelProps {
 }
 
 export function SesionEtapasPistasPanel({ etapas }: SesionEtapasPistasPanelProps) {
+  const { data: categorias } = useCategorias()
+  const categoriaOptions = (categorias ?? []).map((c) => ({ id: c.id, nombre: c.nombre }))
   const totalPistas = etapas.reduce((n, e) => n + (e.pistas?.length ?? 0), 0)
   const tieneTrivia = etapas.some((e) => e.tipoEtapa === 'Trivia')
 
@@ -70,10 +74,7 @@ export function SesionEtapasPistasPanel({ etapas }: SesionEtapasPistasPanelProps
 
               {esTrivia ? (
                 <p className="mt-2 text-xs text-slate-600">
-                  Categorías:{' '}
-                  {(etapa.categoriaIds ?? []).length > 0
-                    ? etapa.categoriaIds!.join(', ')
-                    : '—'}
+                  Categorías: {formatCategoriaIds(etapa.categoriaIds, categoriaOptions)}
                 </p>
               ) : pistas.length === 0 ? (
                 <p className="mt-2 text-xs text-slate-500">Sin pistas en esta etapa.</p>

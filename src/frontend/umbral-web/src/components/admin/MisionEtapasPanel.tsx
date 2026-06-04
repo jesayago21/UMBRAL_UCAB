@@ -3,8 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { emptyPista, PistasEditor } from '@/components/admin/PistasEditor'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { SuccessAlert } from '@/components/shared/SuccessAlert'
+import { useCategorias } from '@/hooks/useCategorias'
 import { useSuccessMessage } from '@/hooks/useSuccessMessage'
 import { MISIONES_KEY, useMision } from '@/hooks/useMisiones'
+import { formatCategoriaIds } from '@/lib/formatCategoriaIds'
 import { getApiErrorMessage } from '@/services/apiClient'
 import { agregarPistaEtapa } from '@/services/misionService'
 import { btnPrimary, cardClass } from '@/styles/ui'
@@ -35,10 +37,12 @@ function EtapaRow({
   misionId,
   etapa,
   onPistaAdded,
+  categoriaOptions,
 }: {
   misionId: string
   etapa: EtapaDto
   onPistaAdded: () => void
+  categoriaOptions: ReadonlyArray<{ id: string; nombre: string }>
 }) {
   const [adding, setAdding] = useState(false)
   const [pistasDraft, setPistasDraft] = useState<CrearPistaRequest[]>([emptyPista()])
@@ -80,7 +84,7 @@ function EtapaRow({
 
       {etapa.tipoEtapa === 'Trivia' && (
         <p className="mt-2 text-xs text-slate-600">
-          Categorías: {(etapa.categoriaIds ?? []).join(', ') || '—'}
+          Categorías: {formatCategoriaIds(etapa.categoriaIds, categoriaOptions)}
         </p>
       )}
 
@@ -138,6 +142,8 @@ export function MisionEtapasPanel({ mision: misionInicial, onClose }: MisionEtap
   const queryClient = useQueryClient()
   const { successMessage, showSuccess, clearSuccess } = useSuccessMessage()
   const { data: mision = misionInicial, refetch } = useMision(misionInicial.id)
+  const { data: categorias } = useCategorias()
+  const categoriaOptions = (categorias ?? []).map((c) => ({ id: c.id, nombre: c.nombre }))
 
   const refreshMision = () => {
     void refetch()
@@ -176,6 +182,7 @@ export function MisionEtapasPanel({ mision: misionInicial, onClose }: MisionEtap
               misionId={mision.id}
               etapa={etapa}
               onPistaAdded={refreshMision}
+              categoriaOptions={categoriaOptions}
             />
           ))}
         </ol>
