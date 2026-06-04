@@ -32,7 +32,10 @@ docker compose up postgres keycloak -d
 dotnet build Umbral.sln
 dotnet run --project src/backend/Umbral.API
 dotnet test Umbral.sln
-# Cobertura: .\scripts\run-coverage.ps1 -Open   (Windows)
+# Coverage with gate (≥90% per assembly, CI standard)
+.\scripts\run-coverage.ps1 -Threshold 90        # Windows
+# Cobertura: 
+.\scripts\run-coverage.ps1 -Open                # Windows
 ```
 
 | Paso | URL / comando |
