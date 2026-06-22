@@ -30,7 +30,6 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IMisionRepository, MisionRepository>();
         services.AddScoped<ICategoriaRepository, CategoriaRepository>();
         services.AddScoped<IPreguntaRepository, PreguntaRepository>();
-        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IEventPublisher, NoOpEventPublisher>();
         // E2: reemplazar con implementación SignalR real cuando se active notificaciones en tiempo real.
         services.AddScoped<INotificacionRealTime, NoOpNotificacionRealTime>();
@@ -39,7 +38,6 @@ public static class InfrastructureServiceCollectionExtensions
             .Bind(configuration.GetSection(KeycloakAdminOptions.SectionName));
         services.AddHttpClient<KeycloakIdentityService>();
         services.AddScoped<IIdentityService>(sp => sp.GetRequiredService<KeycloakIdentityService>());
-        services.AddScoped<UsuariosEspejoSeeder>();
 
         return services;
     }

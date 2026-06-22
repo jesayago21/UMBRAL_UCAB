@@ -1,5 +1,3 @@
 namespace Umbral.API.Contracts.Sesiones;
 
-public sealed record SubmitEvidenciaRequest(
-    Guid ParticipanteId,
-    string CodigoQr);
+public sealed record SubmitEvidenciaRequest(string CodigoQr);

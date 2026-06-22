@@ -2,7 +2,6 @@ using FluentAssertions;
 using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.CatalogoMision.Mision.Events;
 using Umbral.Domain.CatalogoTrivia.Categoria;
-using Umbral.Domain.IdentidadYAccesos.Events;
 using Umbral.Domain.Shared;
 using Xunit;
 

@@ -2,10 +2,9 @@ namespace Umbral.Application.IdentidadYAccesos.Models;
 
 /// <summary>
 /// DTO de lectura (GET /usuarios, GET /usuarios/{id}).
-/// No incluye contraseña: las credenciales se devuelven únicamente en la respuesta 201 de creación.
+/// El identificador es el UUID de Keycloak (única fuente de verdad).
 /// </summary>
 public sealed record UsuarioDto(
-    Guid Id,
     Guid KeycloakUserId,
     string Email,
     string Username,
@@ -15,7 +14,7 @@ public sealed record UsuarioDto(
     IReadOnlyList<string> Roles);
 
 public sealed record CrearUsuarioResult(
-    Guid UsuarioId,
     Guid KeycloakUserId,
     string Email,
-    string Estado);
+    string Estado,
+    IReadOnlyList<string> Roles);

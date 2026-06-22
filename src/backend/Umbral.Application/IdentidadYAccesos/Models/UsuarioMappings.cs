@@ -4,11 +4,10 @@ namespace Umbral.Application.IdentidadYAccesos.Models;
 
 internal static class UsuarioMappings
 {
-    public static UsuarioDto ToDto(this UsuarioAdministrable usuario) =>
+    public static UsuarioDto ToDto(this UsuarioIdentidad usuario) =>
         new(
-            usuario.Id.Valor,
             usuario.KeycloakUserId.Value,
-            usuario.Email.Value,
+            usuario.Email,
             usuario.Username,
             usuario.Nombre,
             usuario.Apellido,

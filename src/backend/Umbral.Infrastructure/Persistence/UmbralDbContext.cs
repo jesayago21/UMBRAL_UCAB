@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.CatalogoTrivia.Categoria;
 using Umbral.Domain.CatalogoTrivia.Pregunta;
-using Umbral.Domain.IdentidadYAccesos;
 using Umbral.Domain.Sesion;
 using Umbral.Infrastructure.Persistence.ValueConverters;
 
@@ -26,7 +25,6 @@ public sealed class UmbralDbContext : DbContext
 
     public DbSet<Categoria> Categorias => Set<Categoria>();
     public DbSet<Pregunta> Preguntas => Set<Pregunta>();
-    public DbSet<UsuarioAdministrable> UsuariosAdministrables => Set<UsuarioAdministrable>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

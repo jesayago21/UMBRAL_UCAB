@@ -35,4 +35,19 @@ public interface IIdentityService
     Task EliminarEnIdentityServerAsync(KeycloakUserId userId, CancellationToken ct = default);
 
     Task<KeycloakUserId?> ObtenerIdPorUsernameAsync(string username, CancellationToken ct = default);
+
+    Task<bool> ExisteEmailAsync(EmailAddress email, CancellationToken ct = default);
+
+    Task<bool> ExisteUsernameAsync(string username, CancellationToken ct = default);
+
+    Task<UsuarioIdentidad?> ObtenerUsuarioPorIdAsync(KeycloakUserId userId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<UsuarioIdentidad>> ListarUsuariosAsync(
+        int first,
+        int max,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<RolSistema>> ObtenerRolesAsync(
+        KeycloakUserId userId,
+        CancellationToken ct = default);
 }

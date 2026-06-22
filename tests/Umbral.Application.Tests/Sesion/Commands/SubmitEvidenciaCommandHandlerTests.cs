@@ -57,7 +57,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
         var result = await _sut.Handle(
             new SubmitEvidenciaCommand(
                 sesion.SesionId.Valor,
-                participante.ParticipanteId.Valor,
+                participante.JugadorId.Valor,
                 qrValido),
             CancellationToken.None);
 
@@ -87,7 +87,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_CuandoParticipanteNoPerteneceALaSesion_LanzaDomainException()
+    public async Task Handle_CuandoJugadorNoPerteneceALaSesion_LanzaDomainException()
     {
         // Arrange
         var sesion = SesionTestBuilder.Activa("Alpha");
@@ -137,7 +137,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
         var result = await _sut.Handle(
             new SubmitEvidenciaCommand(
                 sesion.SesionId.Valor,
-                participanteGanador.ParticipanteId.Valor,
+                participanteGanador.JugadorId.Valor,
                 qrValido),
             CancellationToken.None);
 
@@ -169,7 +169,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
         await _sut.Handle(
             new SubmitEvidenciaCommand(
                 sesion.SesionId.Valor,
-                equipoUno.ParticipanteId.Valor,
+                equipoUno.JugadorId.Valor,
                 qrEtapaUno),
             CancellationToken.None);
 
@@ -186,7 +186,7 @@ public sealed class SubmitEvidenciaCommandHandlerTests
         var segunda = await _sut.Handle(
             new SubmitEvidenciaCommand(
                 sesion.SesionId.Valor,
-                equipoDos.ParticipanteId.Valor,
+                equipoDos.JugadorId.Valor,
                 qrEtapaUno),
             CancellationToken.None);
 

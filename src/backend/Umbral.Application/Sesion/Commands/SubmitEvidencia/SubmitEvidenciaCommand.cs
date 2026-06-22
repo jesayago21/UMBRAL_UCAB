@@ -8,5 +8,5 @@ namespace Umbral.Application.Sesion.Commands.SubmitEvidencia;
 /// </summary>
 public sealed record SubmitEvidenciaCommand(
     Guid SesionId,
-    Guid ParticipanteId,
+    Guid JugadorId,
     string CodigoQr) : IRequest<Result<SubmitEvidenciaResult>>;

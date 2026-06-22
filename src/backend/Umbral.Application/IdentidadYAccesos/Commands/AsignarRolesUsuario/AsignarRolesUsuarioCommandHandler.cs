@@ -2,8 +2,8 @@ using MediatR;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
 using Umbral.Domain.IdentidadYAccesos;
-using Umbral.Domain.IdentidadYAccesos.Enums;
 using Umbral.Domain.IdentidadYAccesos.Ports;
+using Umbral.Domain.IdentidadYAccesos.ValueObjects;
 using Umbral.Domain.Shared;
 
 namespace Umbral.Application.IdentidadYAccesos.Commands.AsignarRolesUsuario;
@@ -11,26 +11,35 @@ namespace Umbral.Application.IdentidadYAccesos.Commands.AsignarRolesUsuario;
 internal sealed class AsignarRolesUsuarioCommandHandler
     : IRequestHandler<AsignarRolesUsuarioCommand, Result<bool>>
 {
-    private readonly IUsuarioRepository _usuarios;
     private readonly IIdentityService _identity;
 
-    public AsignarRolesUsuarioCommandHandler(
-        IUsuarioRepository usuarios,
-        IIdentityService identity)
-    {
-        _usuarios = usuarios;
-        _identity = identity;
-    }
+    public AsignarRolesUsuarioCommandHandler(IIdentityService identity) => _identity = identity;
 
     public async Task<Result<bool>> Handle(AsignarRolesUsuarioCommand cmd, CancellationToken ct)
     {
-        var usuario = await _usuarios.ObtenerPorIdAsync(new UsuarioAdministrableId(cmd.UsuarioId), ct)
-                      ?? throw new NotFoundException(nameof(UsuarioAdministrable), cmd.UsuarioId);
+        var keycloakId = KeycloakUserId.From(cmd.KeycloakUserId);
+        _ = await _identity.ObtenerUsuarioPorIdAsync(keycloakId, ct)
+            ?? throw new NotFoundException("Usuario", cmd.KeycloakUserId);
 
-        var roles = cmd.Roles.Select(r => Enum.Parse<RolSistema>(r, ignoreCase: true)).ToList();
-        usuario.AsignarRoles(roles);
-        await _identity.SincronizarRolesAsync(usuario.KeycloakUserId, roles, ct);
-        await _usuarios.GuardarAsync(usuario, ct);
+        IReadOnlyList<Domain.IdentidadYAccesos.Enums.RolSistema> roles;
+        try
+        {
+            roles = PoliticaRolesAdministrables.Parsear(cmd.Roles);
+        }
+        catch (DomainException ex)
+        {
+            return Result<bool>.Fail(ex.Message);
+        }
+
+        try
+        {
+            await _identity.SincronizarRolesAsync(keycloakId, roles, ct);
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Fail($"Identity server: {ex.Message}");
+        }
+
         return Result<bool>.Ok(true);
     }
 }

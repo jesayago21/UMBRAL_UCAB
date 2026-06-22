@@ -125,9 +125,10 @@ public sealed class MisionesControllerTests
         var id = await ReadCreatedId(create);
 
         var crearSesion = await _client.PostAsJsonAsync(
-            "/api/v1/sesiones/busqueda-tesoro",
-            new CrearSesionBusquedaTesoroRequest(id));
-        var sesion = (await crearSesion.Content.ReadFromJsonAsync<CrearSesionResponse>())!;
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(id, "Sesión misión en uso"));
+        crearSesion.EnsureSuccessStatusCode();
+        var sesion = (await crearSesion.Content.ReadFromJsonAsync<CrearSesionMisionResponse>())!;
 
         SetRole("Participante");
         _client.DefaultRequestHeaders.Remove(TestAuthHandler.UserIdHeaderName);

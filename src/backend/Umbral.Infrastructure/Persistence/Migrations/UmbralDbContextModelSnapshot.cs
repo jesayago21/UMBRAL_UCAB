@@ -179,67 +179,6 @@ namespace Umbral.Infrastructure.Persistence.Migrations
                     b.ToTable("preguntas", (string)null);
                 });
 
-            modelBuilder.Entity("Umbral.Domain.IdentidadYAccesos.UsuarioAdministrable", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Apellido")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("apellido");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("email");
-
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("estado");
-
-                    b.Property<Guid>("KeycloakUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("keycloak_user_id");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("nombre");
-
-                    b.Property<string>("PasswordAsignada")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("password_asignada");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("username");
-
-                    b.Property<string>("_roles")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("roles_json");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.HasIndex("Username")
-                        .IsUnique();
-
-                    b.ToTable("usuarios_administrables", (string)null);
-                });
-
             modelBuilder.Entity("Umbral.Domain.Sesion.EventoSesion", b =>
                 {
                     b.Property<Guid>("EventoId")

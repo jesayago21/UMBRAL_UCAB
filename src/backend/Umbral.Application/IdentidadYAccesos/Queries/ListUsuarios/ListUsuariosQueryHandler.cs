@@ -7,9 +7,9 @@ namespace Umbral.Application.IdentidadYAccesos.Queries.ListUsuarios;
 internal sealed class ListUsuariosQueryHandler
     : IRequestHandler<ListUsuariosQuery, IReadOnlyList<UsuarioDto>>
 {
-    private readonly IUsuarioRepository _usuarios;
+    private readonly IIdentityService _identity;
 
-    public ListUsuariosQueryHandler(IUsuarioRepository usuarios) => _usuarios = usuarios;
+    public ListUsuariosQueryHandler(IIdentityService identity) => _identity = identity;
 
     public async Task<IReadOnlyList<UsuarioDto>> Handle(
         ListUsuariosQuery request,
@@ -17,9 +17,9 @@ internal sealed class ListUsuariosQueryHandler
     {
         var page     = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
-        var skip     = (page - 1) * pageSize;
+        var first    = (page - 1) * pageSize;
 
-        var list = await _usuarios.ListarAsync(skip, pageSize, ct);
+        var list = await _identity.ListarUsuariosAsync(first, pageSize, ct);
         return list.Select(u => u.ToDto()).ToList();
     }
 }

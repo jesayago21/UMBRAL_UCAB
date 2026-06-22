@@ -9,47 +9,48 @@ namespace Umbral.Application.Tests.IdentidadYAccesos.Queries;
 
 public sealed class ListUsuariosQueryHandlerTests
 {
-    private readonly IUsuarioRepository _usuarios = Substitute.For<IUsuarioRepository>();
+    private readonly IIdentityService _identity = Substitute.For<IIdentityService>();
     private readonly ListUsuariosQueryHandler _sut;
 
     public ListUsuariosQueryHandlerTests()
-        => _sut = new ListUsuariosQueryHandler(_usuarios);
+        => _sut = new ListUsuariosQueryHandler(_identity);
 
     [Fact]
-    public async Task Handle_PaginaValida_CalculaSkipYRetornaDtos()
+    public async Task Handle_PaginaValida_CalculaFirstYRetornaDtos()
     {
-        var usuario = UsuarioTestBuilder.Administrador();
-        _usuarios
-            .ListarAsync(10, 10, Arg.Any<CancellationToken>())
+        var usuario = UsuarioIdentidadTestBuilder.Administrador();
+        _identity
+            .ListarUsuariosAsync(10, 10, Arg.Any<CancellationToken>())
             .Returns([usuario]);
 
         var result = await _sut.Handle(new ListUsuariosQuery(2, 10), CancellationToken.None);
 
         result.Should().ContainSingle();
-        await _usuarios.Received(1).ListarAsync(10, 10, Arg.Any<CancellationToken>());
+        result[0].KeycloakUserId.Should().Be(usuario.KeycloakUserId.Value);
+        await _identity.Received(1).ListarUsuariosAsync(10, 10, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_PageCero_UsaPaginaUno()
     {
-        _usuarios
-            .ListarAsync(0, 50, Arg.Any<CancellationToken>())
+        _identity
+            .ListarUsuariosAsync(0, 50, Arg.Any<CancellationToken>())
             .Returns([]);
 
         await _sut.Handle(new ListUsuariosQuery(0, 50), CancellationToken.None);
 
-        await _usuarios.Received(1).ListarAsync(0, 50, Arg.Any<CancellationToken>());
+        await _identity.Received(1).ListarUsuariosAsync(0, 50, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_PageSizeMayor100_LimitaA100()
     {
-        _usuarios
-            .ListarAsync(0, 100, Arg.Any<CancellationToken>())
+        _identity
+            .ListarUsuariosAsync(0, 100, Arg.Any<CancellationToken>())
             .Returns([]);
 
         await _sut.Handle(new ListUsuariosQuery(1, 500), CancellationToken.None);
 
-        await _usuarios.Received(1).ListarAsync(0, 100, Arg.Any<CancellationToken>());
+        await _identity.Received(1).ListarUsuariosAsync(0, 100, Arg.Any<CancellationToken>());
     }
 }

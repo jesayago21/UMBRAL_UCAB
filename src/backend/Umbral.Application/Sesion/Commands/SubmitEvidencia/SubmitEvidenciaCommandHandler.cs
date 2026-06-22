@@ -3,6 +3,7 @@ using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
+using Umbral.Domain.Shared;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Application.Sesion.Commands.SubmitEvidencia;
@@ -30,8 +31,13 @@ internal sealed class SubmitEvidenciaCommandHandler
                          cancellationToken)
                      ?? throw new NotFoundException(nameof(SesionAR), command.SesionId);
 
+        var jugadorId = new UsuarioId(command.JugadorId);
+        var participante = sesion.Participantes
+                               .FirstOrDefault(p => p.JugadorId == jugadorId)
+                           ?? throw new DomainException("No estás inscrito en esta sesión.");
+
         var evidencia = sesion.RegistrarEvidencia(
-            new ParticipanteId(command.ParticipanteId),
+            participante.ParticipanteId,
             command.CodigoQr);
 
         await _sesionRepository.SaveAsync(sesion, cancellationToken);

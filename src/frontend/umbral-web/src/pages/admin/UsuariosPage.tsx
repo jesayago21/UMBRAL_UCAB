@@ -75,7 +75,7 @@ function RolSelect({
         ))}
       </select>
       <p className="text-xs text-slate-500">
-        Un solo rol por usuario (Administrador, Operador o Participante).
+        Un solo rol por usuario (Administrador u Operador).
       </p>
     </div>
   )
@@ -148,7 +148,7 @@ export function UsuariosPage() {
     const nuevaPassword = String(form.get('nuevaPassword') ?? '').trim()
     try {
       await actualizar.mutateAsync({
-        id: editTarget.id,
+        keycloakUserId: editTarget.keycloakUserId,
         body: {
           nombre: String(form.get('nombre')),
           apellido: String(form.get('apellido')),
@@ -167,7 +167,7 @@ export function UsuariosPage() {
     setFormError(null)
     const accion = usuario.estado === 'Activo' ? 'Bloquear' : 'Activar'
     try {
-      await cambiarEstado.mutateAsync({ id: usuario.id, accion })
+      await cambiarEstado.mutateAsync({ keycloakUserId: usuario.keycloakUserId, accion })
       showSuccess(accion === 'Bloquear' ? 'Usuario bloqueado.' : 'Usuario activado.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
@@ -181,14 +181,14 @@ export function UsuariosPage() {
     }
     if (
       !window.confirm(
-        `¿Eliminar a «${usuario.username}»? Se borrará de Keycloak y del registro local.`,
+        `¿Eliminar a «${usuario.username}»? Se borrará de Keycloak.`,
       )
     ) {
       return
     }
     setFormError(null)
     try {
-      await eliminar.mutateAsync(usuario.id)
+      await eliminar.mutateAsync(usuario.keycloakUserId)
       showSuccess('Usuario eliminado.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
@@ -199,7 +199,7 @@ export function UsuariosPage() {
     <div className="space-y-6">
       <PageHeader
         title="Usuarios"
-        description="Un usuario, un rol. La contraseña mostrada es la última fijada por el administrador (para entregar a operadores y participantes). Usuarios demo: Umbral123!"
+        description="Un usuario, un rol. Los usuarios se gestionan directamente en Keycloak."
       />
 
       {successMessage && <SuccessAlert message={successMessage} onDismiss={clearSuccess} />}
@@ -233,7 +233,7 @@ export function UsuariosPage() {
 
       {editTarget && (
         <form
-          key={editTarget.id}
+          key={editTarget.keycloakUserId}
           onSubmit={handleUpdate}
           className={`${cardHighlightClass} grid gap-3 sm:grid-cols-2`}
         >
@@ -241,7 +241,7 @@ export function UsuariosPage() {
             Editando: {editTarget.username} ({editTarget.email})
             {editTarget.roles.length > 1 && (
               <span className="mt-1 block text-xs font-normal text-amber-700">
-                Este usuario tenía varios roles en BD; al guardar quedará solo el rol del desplegable.
+                Este usuario tenía varios roles en Keycloak; al guardar quedará solo el rol del desplegable.
               </span>
             )}
           </p>
@@ -295,7 +295,7 @@ export function UsuariosPage() {
       {data && data.length > 0 && (
         <ul className={`${cardClass} divide-y divide-slate-100`}>
           {data.map((u) => (
-            <li key={u.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+            <li key={u.keycloakUserId} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
               <div>
                 <p className="font-medium text-slate-900">
                   {u.nombre} {u.apellido}{' '}

@@ -1,47 +1,42 @@
 using MediatR;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
-using Umbral.Domain.IdentidadYAccesos;
 using Umbral.Domain.IdentidadYAccesos.Ports;
+using Umbral.Domain.IdentidadYAccesos.ValueObjects;
 
 namespace Umbral.Application.IdentidadYAccesos.Commands.CambiarEstadoUsuario;
 
 internal sealed class CambiarEstadoUsuarioCommandHandler
     : IRequestHandler<CambiarEstadoUsuarioCommand, Result<bool>>
 {
-    private readonly IUsuarioRepository _usuarios;
     private readonly IIdentityService _identity;
 
-    public CambiarEstadoUsuarioCommandHandler(
-        IUsuarioRepository usuarios,
-        IIdentityService identity)
-    {
-        _usuarios = usuarios;
-        _identity = identity;
-    }
+    public CambiarEstadoUsuarioCommandHandler(IIdentityService identity) => _identity = identity;
 
     public async Task<Result<bool>> Handle(CambiarEstadoUsuarioCommand cmd, CancellationToken ct)
     {
-        var usuario = await _usuarios.ObtenerPorIdAsync(new UsuarioAdministrableId(cmd.UsuarioId), ct)
-                      ?? throw new NotFoundException(nameof(UsuarioAdministrable), cmd.UsuarioId);
+        var keycloakId = KeycloakUserId.From(cmd.KeycloakUserId);
+        _ = await _identity.ObtenerUsuarioPorIdAsync(keycloakId, ct)
+            ?? throw new NotFoundException("Usuario", cmd.KeycloakUserId);
 
         var accion = cmd.Accion.Trim();
+        bool habilitado;
         if (string.Equals(accion, "Activar", StringComparison.OrdinalIgnoreCase))
-        {
-            usuario.Activar();
-            await _identity.CambiarEstadoAsync(usuario.KeycloakUserId, habilitado: true, ct);
-        }
+            habilitado = true;
         else if (string.Equals(accion, "Bloquear", StringComparison.OrdinalIgnoreCase))
-        {
-            usuario.Bloquear();
-            await _identity.CambiarEstadoAsync(usuario.KeycloakUserId, habilitado: false, ct);
-        }
+            habilitado = false;
         else
-        {
             return Result<bool>.Fail("Acción inválida. Use Activar o Bloquear.");
+
+        try
+        {
+            await _identity.CambiarEstadoAsync(keycloakId, habilitado, ct);
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Fail($"Identity server: {ex.Message}");
         }
 
-        await _usuarios.GuardarAsync(usuario, ct);
         return Result<bool>.Ok(true);
     }
 }

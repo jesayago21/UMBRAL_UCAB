@@ -1,6 +1,5 @@
 /** Respuesta de GET /usuarios y GET /usuarios/{id}. No incluye contraseña. */
 export interface UsuarioDto {
-  id: string
   keycloakUserId: string
   email: string
   username: string
@@ -12,7 +11,6 @@ export interface UsuarioDto {
 
 /** Respuesta exclusiva del POST 201. Incluye contraseña temporal para entrega inmediata. */
 export interface CrearUsuarioResponse {
-  id: string
   keycloakUserId: string
   email: string
   username: string
@@ -43,5 +41,6 @@ export interface ActualizarUsuarioRequest {
   nuevaPassword?: string | null
 }
 
-export const ROLES_USUARIO = ['Administrador', 'Operador', 'Participante'] as const
+/** Roles asignables desde el panel de administración (HU-42 / RB-35). */
+export const ROLES_USUARIO = ['Administrador', 'Operador'] as const
 export type RolUsuarioAdmin = (typeof ROLES_USUARIO)[number]

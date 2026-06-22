@@ -20,17 +20,17 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
-    public async Task POST_busqueda_tesoro_CuandoMisionActiva_Retorna201()
+    public async Task POST_sesiones_mision_CuandoMisionActiva_Retorna201()
     {
         var misionId = await ApiTestData.SeedMisionActivaAsync(_services);
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/sesiones/busqueda-tesoro",
-            new CrearSesionBusquedaTesoroRequest(misionId));
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(misionId, "Sesión misión API"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var body = await response.Content.ReadFromJsonAsync<CrearSesionResponse>();
+        var body = await response.Content.ReadFromJsonAsync<CrearSesionMisionResponse>();
         body!.Id.Should().NotBeEmpty();
         body.CodigoAcceso.Should().NotBeNullOrWhiteSpace();
     }
@@ -115,11 +115,11 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
-    public async Task POST_busqueda_tesoro_CuandoMisionIdVacio_Retorna400()
+    public async Task POST_sesiones_mision_CuandoMisionIdVacio_Retorna400()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/sesiones/busqueda-tesoro",
-            new CrearSesionBusquedaTesoroRequest(Guid.Empty));
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(Guid.Empty, "Sesión inválida"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -129,11 +129,11 @@ public sealed class SesionesControllerTests
     }
 
     [Fact]
-    public async Task POST_busqueda_tesoro_CuandoMisionNoExiste_Retorna404()
+    public async Task POST_sesiones_mision_CuandoMisionNoExiste_Retorna404()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/sesiones/busqueda-tesoro",
-            new CrearSesionBusquedaTesoroRequest(Guid.NewGuid()));
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(Guid.NewGuid(), "Sesión inexistente"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -327,7 +327,7 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_penalizaciones_CuandoSesionActiva_Retorna204()
     {
-        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
+        var (sesionId, _, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
 
         var response = await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{sesionId}/penalizaciones",
@@ -339,7 +339,7 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_penalizaciones_CuandoPuntosInvalidos_Retorna400()
     {
-        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
+        var (sesionId, _, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
 
         var response = await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{sesionId}/penalizaciones",
@@ -381,11 +381,9 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_evidencias_CuandoQrValido_Retorna201()
     {
-        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
+        var (sesionId, jugadorId, _) = await CrearSesionIniciadaConParticipanteAsync();
 
-        var response = await _client.PostAsJsonAsync(
-            $"/api/v1/sesiones/{sesionId}/evidencias",
-            new SubmitEvidenciaRequest(participanteId, "QR-API-001"));
+        var response = await EnviarEvidenciaAsync(sesionId, jugadorId, "QR-API-001");
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -397,11 +395,9 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_evidencias_CuandoCodigoQrVacio_Retorna400()
     {
-        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
+        var (sesionId, jugadorId, _) = await CrearSesionIniciadaConParticipanteAsync();
 
-        var response = await _client.PostAsJsonAsync(
-            $"/api/v1/sesiones/{sesionId}/evidencias",
-            new SubmitEvidenciaRequest(participanteId, ""));
+        var response = await EnviarEvidenciaAsync(sesionId, jugadorId, "");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -413,11 +409,9 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_evidencias_CuandoQrInvalido_Retorna201ConResultadoInvalida()
     {
-        var (sesionId, participanteId) = await CrearSesionIniciadaConParticipanteAsync();
+        var (sesionId, jugadorId, _) = await CrearSesionIniciadaConParticipanteAsync();
 
-        var response = await _client.PostAsJsonAsync(
-            $"/api/v1/sesiones/{sesionId}/evidencias",
-            new SubmitEvidenciaRequest(participanteId, "QR-INEXISTENTE"));
+        var response = await EnviarEvidenciaAsync(sesionId, jugadorId, "QR-INEXISTENTE");
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -428,9 +422,11 @@ public sealed class SesionesControllerTests
     [Fact]
     public async Task POST_evidencias_CuandoSesionNoExiste_Retorna404()
     {
+        SetParticipanteAuth(Guid.NewGuid());
+
         var response = await _client.PostAsJsonAsync(
             $"/api/v1/sesiones/{Guid.NewGuid()}/evidencias",
-            new SubmitEvidenciaRequest(Guid.NewGuid(), "QR-API-001"));
+            new SubmitEvidenciaRequest("QR-API-001"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -550,13 +546,13 @@ public sealed class SesionesControllerTests
     public async Task GET_ranking_DespuesDeEvidenciaValida_OrdenaPorPuntaje()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        var alphaId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Alpha");
-        var betaId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Beta");
+        var alphaJugadorId = Guid.NewGuid();
+        var betaJugadorId = Guid.NewGuid();
+        var alphaId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Alpha", alphaJugadorId);
+        var betaId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Beta", betaJugadorId);
         await IniciarSesionAsync(sesionId);
 
-        await _client.PostAsJsonAsync(
-            $"/api/v1/sesiones/{sesionId}/evidencias",
-            new SubmitEvidenciaRequest(betaId, "QR-API-001"));
+        await EnviarEvidenciaAsync(sesionId, betaJugadorId, "QR-API-001");
 
         var response = await _client.GetAsync($"/api/v1/sesiones/{sesionId}/ranking");
 
@@ -585,10 +581,10 @@ public sealed class SesionesControllerTests
         var misionId = await ApiTestData.SeedMisionActivaAsync(_services);
 
         var crear = await _client.PostAsJsonAsync(
-            "/api/v1/sesiones/busqueda-tesoro",
-            new CrearSesionBusquedaTesoroRequest(misionId));
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(misionId, "Sesión flujo API"));
         crear.EnsureSuccessStatusCode();
-        var sesion = (await crear.Content.ReadFromJsonAsync<CrearSesionResponse>())!;
+        var sesion = (await crear.Content.ReadFromJsonAsync<CrearSesionMisionResponse>())!;
 
         var unirse = await UnirseParticipanteRequestAsync(sesion.Id, sesion.CodigoAcceso, "Alpha");
         unirse.EnsureSuccessStatusCode();
@@ -604,10 +600,10 @@ public sealed class SesionesControllerTests
     {
         var misionId = await ApiTestData.SeedMisionActivaAsync(_services);
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/sesiones/busqueda-tesoro",
-            new CrearSesionBusquedaTesoroRequest(misionId));
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(misionId, $"Sesión API test {Guid.NewGuid():N}"));
         response.EnsureSuccessStatusCode();
-        var body = await response.Content.ReadFromJsonAsync<CrearSesionResponse>();
+        var body = await response.Content.ReadFromJsonAsync<CrearSesionMisionResponse>();
         return (body!.Id, body.CodigoAcceso);
     }
 
@@ -734,12 +730,24 @@ public sealed class SesionesControllerTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    private async Task<(Guid SesionId, Guid ParticipanteId)> CrearSesionIniciadaConParticipanteAsync()
+    private async Task<(Guid SesionId, Guid JugadorId, Guid ParticipanteId)> CrearSesionIniciadaConParticipanteAsync()
     {
         var (sesionId, codigo) = await CrearSesionAsync();
-        var participanteId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Gamma");
+        var jugadorId = Guid.NewGuid();
+        var participanteId = await UnirseParticipanteYObtenerIdAsync(sesionId, codigo, "Gamma", jugadorId);
         await IniciarSesionAsync(sesionId);
-        return (sesionId, participanteId);
+        return (sesionId, jugadorId, participanteId);
+    }
+
+    private async Task<HttpResponseMessage> EnviarEvidenciaAsync(
+        Guid sesionId,
+        Guid jugadorId,
+        string codigoQr)
+    {
+        SetParticipanteAuth(jugadorId);
+        return await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/evidencias",
+            new SubmitEvidenciaRequest(codigoQr));
     }
 
     private async Task<Guid> UnirseParticipanteYObtenerIdAsync(

@@ -2,7 +2,6 @@ using FluentAssertions;
 using NSubstitute;
 using Umbral.Application.IdentidadYAccesos.Queries.GetUsuarioById;
 using Umbral.Application.Tests.Builders;
-using Umbral.Domain.IdentidadYAccesos;
 using Umbral.Domain.IdentidadYAccesos.Ports;
 using Umbral.Domain.IdentidadYAccesos.ValueObjects;
 using Xunit;
@@ -11,36 +10,39 @@ namespace Umbral.Application.Tests.IdentidadYAccesos.Queries;
 
 public sealed class GetUsuarioByIdQueryHandlerTests
 {
-    private readonly IUsuarioRepository _usuarios = Substitute.For<IUsuarioRepository>();
+    private readonly IIdentityService _identity = Substitute.For<IIdentityService>();
     private readonly GetUsuarioByIdQueryHandler _sut;
 
     public GetUsuarioByIdQueryHandlerTests()
-        => _sut = new GetUsuarioByIdQueryHandler(_usuarios);
+        => _sut = new GetUsuarioByIdQueryHandler(_identity);
 
     [Fact]
-    public async Task Handle_Existe_RetornaDto()
+    public async Task Handle_UsuarioExiste_RetornaDto()
     {
-        var usuario = UsuarioTestBuilder.Administrador();
-        _usuarios
-            .ObtenerPorIdAsync(Arg.Any<UsuarioAdministrableId>(), Arg.Any<CancellationToken>())
+        var usuario = UsuarioIdentidadTestBuilder.Operador();
+        _identity
+            .ObtenerUsuarioPorIdAsync(Arg.Any<KeycloakUserId>(), Arg.Any<CancellationToken>())
             .Returns(usuario);
 
-        var dto = await _sut.Handle(new GetUsuarioByIdQuery(usuario.Id.Valor), CancellationToken.None);
+        var result = await _sut.Handle(
+            new GetUsuarioByIdQuery(usuario.KeycloakUserId.Value),
+            CancellationToken.None);
 
-        dto.Should().NotBeNull();
-        dto!.Email.Should().Be("admin@umbral.test");
-        dto.Roles.Should().Contain("Administrador");
+        result.Should().NotBeNull();
+        result!.Email.Should().Be(usuario.Email);
     }
 
     [Fact]
-    public async Task Handle_NoExiste_RetornaNull()
+    public async Task Handle_UsuarioNoExiste_RetornaNull()
     {
-        _usuarios
-            .ObtenerPorIdAsync(Arg.Any<UsuarioAdministrableId>(), Arg.Any<CancellationToken>())
-            .Returns((UsuarioAdministrable?)null);
+        _identity
+            .ObtenerUsuarioPorIdAsync(Arg.Any<KeycloakUserId>(), Arg.Any<CancellationToken>())
+            .Returns((Domain.IdentidadYAccesos.UsuarioIdentidad?)null);
 
-        var dto = await _sut.Handle(new GetUsuarioByIdQuery(Guid.NewGuid()), CancellationToken.None);
+        var result = await _sut.Handle(
+            new GetUsuarioByIdQuery(Guid.NewGuid()),
+            CancellationToken.None);
 
-        dto.Should().BeNull();
+        result.Should().BeNull();
     }
 }

@@ -6,10 +6,14 @@ internal sealed class AsignarRolesUsuarioValidator : AbstractValidator<AsignarRo
 {
     public AsignarRolesUsuarioValidator()
     {
-        RuleFor(x => x.UsuarioId).NotEmpty();
+        RuleFor(x => x.KeycloakUserId).NotEmpty();
         RuleFor(x => x.Roles).NotEmpty();
         RuleFor(x => x.Roles)
             .Must(r => r.Count == 1)
             .WithMessage("Debe indicar exactamente un rol.");
+        RuleFor(x => x.Roles)
+            .Must(r => !r.Any(role =>
+                string.Equals(role, "Participante", StringComparison.OrdinalIgnoreCase)))
+            .WithMessage("El rol Participante no se asigna desde la administración de usuarios (RB-35).");
     }
 }

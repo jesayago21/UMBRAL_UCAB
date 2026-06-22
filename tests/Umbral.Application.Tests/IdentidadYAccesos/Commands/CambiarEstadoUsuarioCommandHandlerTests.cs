@@ -3,8 +3,6 @@ using NSubstitute;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.IdentidadYAccesos.Commands.CambiarEstadoUsuario;
 using Umbral.Application.Tests.Builders;
-using Umbral.Domain.IdentidadYAccesos;
-using Umbral.Domain.IdentidadYAccesos.Enums;
 using Umbral.Domain.IdentidadYAccesos.Ports;
 using Umbral.Domain.IdentidadYAccesos.ValueObjects;
 using Xunit;
@@ -13,46 +11,42 @@ namespace Umbral.Application.Tests.IdentidadYAccesos.Commands;
 
 public sealed class CambiarEstadoUsuarioCommandHandlerTests
 {
-    private readonly IUsuarioRepository _usuarios = Substitute.For<IUsuarioRepository>();
     private readonly IIdentityService _identity = Substitute.For<IIdentityService>();
     private readonly CambiarEstadoUsuarioCommandHandler _sut;
 
     public CambiarEstadoUsuarioCommandHandlerTests()
-        => _sut = new CambiarEstadoUsuarioCommandHandler(_usuarios, _identity);
+        => _sut = new CambiarEstadoUsuarioCommandHandler(_identity);
 
     [Fact]
-    public async Task Handle_Bloquear_DeshabilitaEnKeycloakYGuarda()
+    public async Task Handle_Bloquear_DeshabilitaEnKeycloak()
     {
-        var usuario = UsuarioTestBuilder.Administrador();
-        _usuarios
-            .ObtenerPorIdAsync(Arg.Any<UsuarioAdministrableId>(), Arg.Any<CancellationToken>())
+        var usuario = UsuarioIdentidadTestBuilder.Administrador();
+        _identity
+            .ObtenerUsuarioPorIdAsync(Arg.Any<KeycloakUserId>(), Arg.Any<CancellationToken>())
             .Returns(usuario);
 
         var result = await _sut.Handle(
-            new CambiarEstadoUsuarioCommand(usuario.Id.Valor, "Bloquear"),
+            new CambiarEstadoUsuarioCommand(usuario.KeycloakUserId.Value, "Bloquear"),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        usuario.Estado.Should().Be(EstadoUsuario.Bloqueado);
         await _identity.Received(1).CambiarEstadoAsync(
             usuario.KeycloakUserId, false, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_Activar_HabilitaEnKeycloakYGuarda()
+    public async Task Handle_Activar_HabilitaEnKeycloak()
     {
-        var usuario = UsuarioTestBuilder.Administrador();
-        usuario.Bloquear();
-        _usuarios
-            .ObtenerPorIdAsync(Arg.Any<UsuarioAdministrableId>(), Arg.Any<CancellationToken>())
+        var usuario = UsuarioIdentidadTestBuilder.Administrador();
+        _identity
+            .ObtenerUsuarioPorIdAsync(Arg.Any<KeycloakUserId>(), Arg.Any<CancellationToken>())
             .Returns(usuario);
 
         var result = await _sut.Handle(
-            new CambiarEstadoUsuarioCommand(usuario.Id.Valor, "activar"),
+            new CambiarEstadoUsuarioCommand(usuario.KeycloakUserId.Value, "activar"),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        usuario.Estado.Should().Be(EstadoUsuario.Activo);
         await _identity.Received(1).CambiarEstadoAsync(
             usuario.KeycloakUserId, true, Arg.Any<CancellationToken>());
     }
@@ -60,13 +54,13 @@ public sealed class CambiarEstadoUsuarioCommandHandlerTests
     [Fact]
     public async Task Handle_AccionInvalida_RetornaFail()
     {
-        var usuario = UsuarioTestBuilder.Administrador();
-        _usuarios
-            .ObtenerPorIdAsync(Arg.Any<UsuarioAdministrableId>(), Arg.Any<CancellationToken>())
+        var usuario = UsuarioIdentidadTestBuilder.Administrador();
+        _identity
+            .ObtenerUsuarioPorIdAsync(Arg.Any<KeycloakUserId>(), Arg.Any<CancellationToken>())
             .Returns(usuario);
 
         var result = await _sut.Handle(
-            new CambiarEstadoUsuarioCommand(usuario.Id.Valor, "Suspender"),
+            new CambiarEstadoUsuarioCommand(usuario.KeycloakUserId.Value, "Suspender"),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
@@ -75,9 +69,9 @@ public sealed class CambiarEstadoUsuarioCommandHandlerTests
     [Fact]
     public async Task Handle_UsuarioNoExiste_LanzaNotFoundException()
     {
-        _usuarios
-            .ObtenerPorIdAsync(Arg.Any<UsuarioAdministrableId>(), Arg.Any<CancellationToken>())
-            .Returns((UsuarioAdministrable?)null);
+        _identity
+            .ObtenerUsuarioPorIdAsync(Arg.Any<KeycloakUserId>(), Arg.Any<CancellationToken>())
+            .Returns((Domain.IdentidadYAccesos.UsuarioIdentidad?)null);
 
         var act = () => _sut.Handle(
             new CambiarEstadoUsuarioCommand(Guid.NewGuid(), "Bloquear"),

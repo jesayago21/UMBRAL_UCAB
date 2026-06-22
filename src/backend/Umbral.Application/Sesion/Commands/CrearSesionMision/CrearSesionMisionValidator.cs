@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace Umbral.Application.Sesion.Commands.CrearSesionMision;
 
-internal sealed class CrearSesionMisionValidator : AbstractValidator<CrearSesionMisionCommand>
+public sealed class CrearSesionMisionValidator : AbstractValidator<CrearSesionMisionCommand>
 {
     public CrearSesionMisionValidator()
     {
