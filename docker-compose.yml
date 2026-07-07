@@ -53,6 +53,54 @@ services:
     networks:
       - umbral_net
 
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    container_name: umbral_api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=umbral_db;Username=umbral_user;Password=umbral_pass"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: umbral_user
+      RabbitMQ__Password: umbral_pass
+      Keycloak__Authority: "http://keycloak:8080/realms/umbral"
+      Keycloak__Audience: umbral-api
+      Keycloak__RequireHttpsMetadata: "false"
+      KeycloakAdmin__BaseUrl: "http://keycloak:8080"
+      KeycloakAdmin__Realm: umbral
+      KeycloakAdmin__UseDevStub: "false"
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    networks:
+      - umbral_net
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/gateway.Dockerfile
+    container_name: umbral_gateway
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8000
+      ReverseProxy__Clusters__umbral-api__Destinations__api__Address: "http://api:5000/"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - api
+    networks:
+      - umbral_net
+    restart: unless-stopped
+
 volumes:
   postgres_data: {}
   rabbitmq_data: {}

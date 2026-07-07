@@ -8,7 +8,7 @@
 **/node_modules
 **/dist
 **/.env
+**/.env.local
 **/*.md
 **/tests
 **/coverage-report
-**/TestResults

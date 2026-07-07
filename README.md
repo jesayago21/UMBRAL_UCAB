@@ -31,6 +31,7 @@ cp .env.example .env
 docker compose up postgres keycloak -d
 dotnet build Umbral.sln
 dotnet run --project src/backend/Umbral.API
+dotnet run --project src/backend/Umbral.Gateway   # opcional: REST público en :8000
 dotnet test Umbral.sln
 # Coverage with gate (≥90% per assembly, CI standard)
 .\scripts\run-coverage.ps1 -Threshold 90        # Windows
@@ -40,7 +41,9 @@ dotnet test Umbral.sln
 
 | Paso | URL / comando |
 |------|----------------|
-| API health | http://localhost:5000/health |
+| API health (directa) | http://localhost:5000/health |
+| Gateway health | http://localhost:8000/health |
+| REST vía gateway | http://localhost:8000/api/v1/... |
 | Tests | `dotnet test Umbral.sln` |
 | Cobertura + reporte | `.\scripts\run-coverage.ps1 -Open` (Windows) o `bash scripts/run-coverage.sh` |
 
@@ -96,6 +99,7 @@ docker compose logs -f rabbitmq
 | RabbitMQ AMQP  | 5672        | `amqp://localhost:5672`          |
 | RabbitMQ UI    | 15672       | http://localhost:15672           |
 | API Backend    | 5000        | http://localhost:5000            |
+| API Gateway    | 8000        | http://localhost:8000            |
 | Frontend web   | 5173        | http://localhost:5173            |
 
 **Credenciales de desarrollo** (PostgreSQL y RabbitMQ): `umbral_user` / `umbral_pass`  
@@ -120,6 +124,7 @@ Con la infraestructura Docker corriendo (**PostgreSQL + Keycloak**):
 docker compose up postgres keycloak -d
 
 dotnet run --project src/backend/Umbral.API
+dotnet run --project src/backend/Umbral.Gateway   # opcional: REST público en :8000
 ```
 
 En **Development** la API aplica migraciones EF al arrancar. Si falla por esquema desactualizado:
@@ -150,7 +155,7 @@ Abrir **http://localhost:5173/login**.
 
 | Variable | Uso |
 |----------|-----|
-| `VITE_API_URL` | API REST (default `http://localhost:5000`) |
+| `VITE_API_URL` | API REST vía gateway (default `http://localhost:8000`; API directa `:5000`) |
 | `VITE_KEYCLOAK_*` | Realm `umbral`, client `umbral-web` |
 | `VITE_PARTICIPANTE_WEB_ENABLED` | `true` = jugador en `/participante` (E1). `false` cuando exista mobile |
 
