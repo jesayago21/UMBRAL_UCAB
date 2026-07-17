@@ -23,7 +23,10 @@ internal sealed class EliminarUsuarioCommandHandler
 
         try
         {
-            PoliticaRolesAdministrables.AsegurarPuedeEliminarse(usuario.Roles);
+            PoliticaRolesAdministrables.AsegurarPuedeEliminarse(
+                usuario.Username,
+                cmd.KeycloakUserId,
+                cmd.SolicitanteKeycloakUserId);
         }
         catch (DomainException ex)
         {

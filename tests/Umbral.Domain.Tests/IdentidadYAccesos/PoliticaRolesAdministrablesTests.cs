@@ -45,16 +45,43 @@ public sealed class PoliticaRolesAdministrablesTests
     }
 
     [Fact]
-    public void AsegurarPuedeEliminarse_Administrador_LanzaDomainException()
+    public void AsegurarPuedeEliminarse_AdminRaiz_LanzaDomainException()
     {
-        var act = () => PoliticaRolesAdministrables.AsegurarPuedeEliminarse([RolSistema.Administrador]);
-        act.Should().Throw<DomainException>();
+        var act = () => PoliticaRolesAdministrables.AsegurarPuedeEliminarse(
+            "admin", Guid.NewGuid(), Guid.NewGuid());
+        act.Should().Throw<DomainException>()
+            .WithMessage("*admin*");
+    }
+
+    [Fact]
+    public void AsegurarPuedeEliminarse_AutoEliminacion_LanzaDomainException()
+    {
+        var id = Guid.NewGuid();
+        var act = () => PoliticaRolesAdministrables.AsegurarPuedeEliminarse("admin2", id, id);
+        act.Should().Throw<DomainException>()
+            .WithMessage("*propia cuenta*");
+    }
+
+    [Fact]
+    public void AsegurarPuedeEliminarse_OtroAdministrador_NoLanza()
+    {
+        var act = () => PoliticaRolesAdministrables.AsegurarPuedeEliminarse(
+            "admin2", Guid.NewGuid(), Guid.NewGuid());
+        act.Should().NotThrow();
     }
 
     [Fact]
     public void AsegurarPuedeEliminarse_Operador_NoLanza()
     {
-        var act = () => PoliticaRolesAdministrables.AsegurarPuedeEliminarse([RolSistema.Operador]);
+        var act = () => PoliticaRolesAdministrables.AsegurarPuedeEliminarse(
+            "operador", Guid.NewGuid(), Guid.NewGuid());
         act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void EsAdministradorRaiz_IgnoraMayusculas()
+    {
+        PoliticaRolesAdministrables.EsAdministradorRaiz("Admin").Should().BeTrue();
+        PoliticaRolesAdministrables.EsAdministradorRaiz("admin2").Should().BeFalse();
     }
 }

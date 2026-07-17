@@ -21,7 +21,7 @@ public sealed class GetMiInscripcionParticipanteQueryHandlerTests
     public async Task Handle_SinInscripcion_RetornaNull()
     {
         _sesionRepo
-            .FindInscripcionAbiertaPorJugadorAsync(Arg.Any<UsuarioId>(), Arg.Any<CancellationToken>())
+            .FindInscripcionVigentePorJugadorAsync(Arg.Any<UsuarioId>(), Arg.Any<CancellationToken>())
             .Returns((SesionAR?)null);
 
         var result = await _sut.Handle(
@@ -42,7 +42,7 @@ public sealed class GetMiInscripcionParticipanteQueryHandlerTests
         var participanteId = sesion.Participantes.Single().ParticipanteId;
 
         _sesionRepo
-            .FindInscripcionAbiertaPorJugadorAsync(Arg.Any<UsuarioId>(), Arg.Any<CancellationToken>())
+            .FindInscripcionVigentePorJugadorAsync(Arg.Any<UsuarioId>(), Arg.Any<CancellationToken>())
             .Returns(sesion);
 
         var result = await _sut.Handle(
@@ -67,7 +67,7 @@ public sealed class GetMiInscripcionParticipanteQueryHandlerTests
             new Penalizacion(10, "Retraso", UsuarioId.Nuevo()));
 
         _sesionRepo
-            .FindInscripcionAbiertaPorJugadorAsync(Arg.Any<UsuarioId>(), Arg.Any<CancellationToken>())
+            .FindInscripcionVigentePorJugadorAsync(Arg.Any<UsuarioId>(), Arg.Any<CancellationToken>())
             .Returns(sesion);
 
         var result = await _sut.Handle(
@@ -76,5 +76,28 @@ public sealed class GetMiInscripcionParticipanteQueryHandlerTests
 
         result!.Penalizaciones.Should().ContainSingle(p =>
             p.Puntos == 10 && p.Motivo == "Retraso");
+    }
+
+    [Fact]
+    public async Task Handle_SesionFinalizada_RetornaDtoParaResultados()
+    {
+        var jugadorId = Guid.NewGuid();
+        var sesion = SesionTestBuilder.ConParticipante("Alpha", jugadorId);
+        sesion.Iniciar();
+        sesion.Finalizar();
+
+        _sesionRepo
+            .FindInscripcionVigentePorJugadorAsync(Arg.Any<UsuarioId>(), Arg.Any<CancellationToken>())
+            .Returns(sesion);
+
+        var result = await _sut.Handle(
+            new GetMiInscripcionParticipanteQuery(jugadorId),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.Estado.Should().Be("Finalizada");
+        await _sesionRepo.DidNotReceive().EliminarParticipacionesEnSesionesTerminalesAsync(
+            Arg.Any<UsuarioId>(),
+            Arg.Any<CancellationToken>());
     }
 }

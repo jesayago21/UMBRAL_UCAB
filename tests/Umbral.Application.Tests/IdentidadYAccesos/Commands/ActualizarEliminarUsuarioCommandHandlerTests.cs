@@ -96,7 +96,7 @@ public sealed class EliminarUsuarioCommandHandlerTests
             .Returns(usuario);
 
         var result = await _sut.Handle(
-            new EliminarUsuarioCommand(usuario.KeycloakUserId.Value),
+            new EliminarUsuarioCommand(usuario.KeycloakUserId.Value, Guid.NewGuid()),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -106,19 +106,54 @@ public sealed class EliminarUsuarioCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Administrador_RetornaFail()
+    public async Task Handle_AdminRaiz_RetornaFail()
     {
         var usuario = UsuarioIdentidadTestBuilder.Administrador();
         _identity.ObtenerUsuarioPorIdAsync(usuario.KeycloakUserId, Arg.Any<CancellationToken>())
             .Returns(usuario);
 
         var result = await _sut.Handle(
-            new EliminarUsuarioCommand(usuario.KeycloakUserId.Value),
+            new EliminarUsuarioCommand(usuario.KeycloakUserId.Value, Guid.NewGuid()),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         await _identity.DidNotReceive().EliminarEnIdentityServerAsync(
             Arg.Any<KeycloakUserId>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_AutoEliminacion_RetornaFail()
+    {
+        var usuario = UsuarioIdentidadTestBuilder.Administrador(username: "admin2");
+        _identity.ObtenerUsuarioPorIdAsync(usuario.KeycloakUserId, Arg.Any<CancellationToken>())
+            .Returns(usuario);
+
+        var result = await _sut.Handle(
+            new EliminarUsuarioCommand(usuario.KeycloakUserId.Value, usuario.KeycloakUserId.Value),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("propia cuenta"));
+        await _identity.DidNotReceive().EliminarEnIdentityServerAsync(
+            Arg.Any<KeycloakUserId>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_AdministradorSecundario_EliminaEnKeycloak()
+    {
+        var usuario = UsuarioIdentidadTestBuilder.Administrador(username: "admin2");
+        _identity.ObtenerUsuarioPorIdAsync(usuario.KeycloakUserId, Arg.Any<CancellationToken>())
+            .Returns(usuario);
+
+        var result = await _sut.Handle(
+            new EliminarUsuarioCommand(usuario.KeycloakUserId.Value, Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        await _identity.Received(1).EliminarEnIdentityServerAsync(
+            usuario.KeycloakUserId,
             Arg.Any<CancellationToken>());
     }
 }

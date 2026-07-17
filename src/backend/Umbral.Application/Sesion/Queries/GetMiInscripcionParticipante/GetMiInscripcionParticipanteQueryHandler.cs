@@ -20,14 +20,16 @@ internal sealed class GetMiInscripcionParticipanteQueryHandler
     {
         var jugadorId = new UsuarioId(query.JugadorId);
 
-        // Solo inscripción en curso (no Finalizada/Cancelada): evita “sesión fantasma” en lobby.
-        var sesion = await _sesionRepository.FindInscripcionAbiertaPorJugadorAsync(
+        // Incluye Finalizada para pantalla de resultados en mobile/web.
+        // Lobby filtra estados terminales y no los trata como partida en curso.
+        // Cancelada no entra en vigente (evita fantasma); se limpia abajo si no hay nada.
+        var sesion = await _sesionRepository.FindInscripcionVigentePorJugadorAsync(
             jugadorId,
             cancellationToken);
 
         if (sesion is null)
         {
-            // Limpia filas huérfanas en partidas ya cerradas.
+            // Sin partida vigente: limpia filas huérfanas en Cancelada/Finalizada.
             await _sesionRepository.EliminarParticipacionesEnSesionesTerminalesAsync(
                 jugadorId,
                 cancellationToken);

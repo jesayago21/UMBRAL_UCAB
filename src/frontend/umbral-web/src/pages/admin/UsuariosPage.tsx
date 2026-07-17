@@ -23,14 +23,19 @@ import {
   inputClass,
   selectClass,
 } from '@/styles/ui'
+import { useAuthStore } from '@/store/authStore'
 import {
   ROLES_USUARIO,
   type RolUsuarioAdmin,
   type UsuarioDto,
 } from '@/types/usuario.types'
 
-function puedeEliminar(usuario: UsuarioDto): boolean {
-  return !usuario.roles.some((r) => r.toLowerCase() === 'administrador')
+function puedeEliminar(usuario: UsuarioDto, usernameSesion: string | null): boolean {
+  const u = usuario.username.trim().toLowerCase()
+  // Cuenta seed «admin» y la propia sesión no se eliminan.
+  if (u === 'admin') return false
+  if (usernameSesion && u === usernameSesion.trim().toLowerCase()) return false
+  return true
 }
 
 function rolUnicoDesdeUsuario(usuario: UsuarioDto): RolUsuarioAdmin | '' {
@@ -86,6 +91,7 @@ export function UsuariosPage() {
   const [rolEditar, setRolEditar] = useState<RolUsuarioAdmin | ''>('')
   const [formError, setFormError] = useState<string | null>(null)
   const { successMessage, showSuccess, clearSuccess } = useSuccessMessage()
+  const usernameSesion = useAuthStore((s) => s.username)
 
   const { data, isLoading, isError, error } = useUsuarios()
   const crear = useCrearUsuario()
@@ -171,8 +177,12 @@ export function UsuariosPage() {
   }
 
   const handleDelete = async (usuario: UsuarioDto) => {
-    if (!puedeEliminar(usuario)) {
-      setFormError('No se puede eliminar un usuario con rol Administrador.')
+    if (!puedeEliminar(usuario, usernameSesion)) {
+      setFormError(
+        usuario.username.trim().toLowerCase() === 'admin'
+          ? 'No se puede eliminar la cuenta administradora raíz (admin).'
+          : 'No puedes eliminar tu propia cuenta mientras la sesión está activa.',
+      )
       return
     }
     if (
@@ -306,7 +316,7 @@ export function UsuariosPage() {
                 >
                   {u.estado === 'Activo' ? 'Bloquear' : 'Activar'}
                 </button>
-                {puedeEliminar(u) ? (
+                {puedeEliminar(u, usernameSesion) ? (
                   <button
                     type="button"
                     className={btnDangerLink}
@@ -316,7 +326,14 @@ export function UsuariosPage() {
                     Eliminar
                   </button>
                 ) : (
-                  <span className="text-xs text-slate-400" title="No se eliminan administradores">
+                  <span
+                    className="text-xs text-slate-400"
+                    title={
+                      u.username.trim().toLowerCase() === 'admin'
+                        ? 'Cuenta administradora raíz'
+                        : 'No puedes eliminarte a ti mismo'
+                    }
+                  >
                     No eliminable
                   </span>
                 )}

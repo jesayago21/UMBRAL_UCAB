@@ -74,7 +74,13 @@ public sealed record MiInscripcionParticipanteResponse(
     Guid ParticipanteId,
     string Estado,
     int TotalEtapas,
-    IReadOnlyList<EtapaSesionResponse> Etapas);
+    IReadOnlyList<EtapaSesionResponse> Etapas,
+    IReadOnlyList<PenalizacionParticipanteResponse>? Penalizaciones = null);
+
+public sealed record PenalizacionParticipanteResponse(
+    int Puntos,
+    string Motivo,
+    DateTime OcurridoEn);
 
 public sealed record SesionEtapasParticipanteResponse(
     string Estado,

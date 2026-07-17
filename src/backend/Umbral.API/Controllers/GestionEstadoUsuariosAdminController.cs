@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Umbral.API.Auth;
 using Umbral.API.Contracts.Usuarios;
 using Umbral.API.Extensions;
 using Umbral.Application.IdentidadYAccesos.Commands.ActualizarUsuario;
@@ -53,7 +55,14 @@ public sealed class GestionEstadoUsuariosAdminController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(new EliminarUsuarioCommand(id), cancellationToken);
+        var result = await _sender.Send(
+            new EliminarUsuarioCommand(id, ObtenerSolicitanteId()),
+            cancellationToken);
         return result.ToNoContentResult(HttpContext);
     }
+
+    private Guid ObtenerSolicitanteId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var gid)
+            ? gid
+            : TestAuthHandler.DefaultOperadorId;
 }

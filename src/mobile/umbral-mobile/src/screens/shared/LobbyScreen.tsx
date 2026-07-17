@@ -84,11 +84,13 @@ export function LobbyScreen({ navigation }: Props) {
   }, [queryClient])
 
   useEffect(() => {
+    // Finalizada/Cancelada no deben borrar el cache de React Query: Partida (montada
+    // debajo en el stack) necesita esos datos. Solo limpiamos storage local.
     if (
       inscripcionRaw &&
       (inscripcionRaw.estado === 'Cancelada' || inscripcionRaw.estado === 'Finalizada')
     ) {
-      void limpiarInscripcionLocal(queryClient)
+      void clearParticipanteSesionInscrita()
       return
     }
     if (inscripcion?.sesionId) {
@@ -103,7 +105,7 @@ export function LobbyScreen({ navigation }: Props) {
     if (isFetched && !errorInscripcion && !inscripcionRaw) {
       void clearParticipanteSesionInscrita()
     }
-  }, [inscripcion, inscripcionRaw, isFetched, errorInscripcion, queryClient])
+  }, [inscripcion, inscripcionRaw, isFetched, errorInscripcion])
 
   const salirDeSesionLocal = async () => {
     setFormError(null)
@@ -122,10 +124,42 @@ export function LobbyScreen({ navigation }: Props) {
     }
   }
 
+  // Primera carga: no bloquear toda la pantalla (evita “spinner eterno” si la API tarda).
   if (cargandoInscripcion && !isFetched) {
     return (
       <SafeAreaView style={styles.screen}>
-        <ActivityIndicator style={{ marginTop: 40 }} />
+        <View style={styles.content}>
+          <Text style={styles.title}>Inicio</Text>
+          <Text style={styles.muted}>{username ?? '…'}</Text>
+          <ActivityIndicator style={{ marginTop: 24 }} />
+          <Text style={[styles.muted, { marginTop: 12, textAlign: 'center' }]}>
+            Conectando con el servidor…
+          </Text>
+          <Pressable style={[styles.btnSecondary, { marginTop: 24 }]} onPress={() => void logout()}>
+            <Text style={styles.btnSecondaryText}>Cerrar sesión</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  if (errorInscripcion && !inscripcionRaw) {
+    return (
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.content}>
+          <Text style={styles.error}>No se pudo cargar tu inscripción.</Text>
+          <Pressable
+            style={styles.btnPrimary}
+            onPress={() =>
+              void queryClient.invalidateQueries({ queryKey: MI_INSCRIPCION_PARTICIPANTE_KEY })
+            }
+          >
+            <Text style={styles.btnPrimaryText}>Reintentar</Text>
+          </Pressable>
+          <Pressable style={styles.btnSecondary} onPress={() => void logout()}>
+            <Text style={styles.btnSecondaryText}>Cerrar sesión</Text>
+          </Pressable>
+        </View>
       </SafeAreaView>
     )
   }

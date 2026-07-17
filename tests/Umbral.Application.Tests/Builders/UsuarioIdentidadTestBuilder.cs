@@ -16,11 +16,11 @@ public static class UsuarioIdentidadTestBuilder
             EstadoUsuario.Activo,
             [RolSistema.Operador]);
 
-    public static UsuarioIdentidad Administrador(Guid? keycloakId = null) =>
+    public static UsuarioIdentidad Administrador(Guid? keycloakId = null, string username = "admin") =>
         new(
             KeycloakUserId.From(keycloakId ?? Guid.NewGuid()),
-            "admin@test.com",
-            "admin",
+            $"{username}@test.com",
+            username,
             "Admin",
             "User",
             EstadoUsuario.Activo,

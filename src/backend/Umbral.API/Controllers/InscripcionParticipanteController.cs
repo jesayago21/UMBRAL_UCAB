@@ -49,7 +49,10 @@ public sealed class InscripcionParticipanteController : ControllerBase
             inscripcion.ParticipanteId,
             inscripcion.Estado,
             inscripcion.TotalEtapas,
-            inscripcion.Etapas.Select(MapEtapa).ToList()));
+            inscripcion.Etapas.Select(MapEtapa).ToList(),
+            (inscripcion.Penalizaciones ?? [])
+                .Select(p => new PenalizacionParticipanteResponse(p.Puntos, p.Motivo, p.OcurridoEn))
+                .ToList()));
     }
 
     [HttpPost("{id:guid}/unirse")]

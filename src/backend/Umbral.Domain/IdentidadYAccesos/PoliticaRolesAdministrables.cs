@@ -9,6 +9,15 @@ namespace Umbral.Domain.IdentidadYAccesos;
 /// </summary>
 public static class PoliticaRolesAdministrables
 {
+    /// <summary>Cuenta seed / admin mayor: no eliminable desde el panel.</summary>
+    public const string UsernameAdministradorRaiz = "admin";
+
+    public static bool EsAdministradorRaiz(string? username) =>
+        string.Equals(
+            username?.Trim(),
+            UsernameAdministradorRaiz,
+            StringComparison.OrdinalIgnoreCase);
+
     public static void Validar(IReadOnlyList<RolSistema> roles)
     {
         if (roles is null || roles.Count == 0)
@@ -37,12 +46,25 @@ public static class PoliticaRolesAdministrables
         return parsed;
     }
 
-    public static void AsegurarPuedeEliminarse(IReadOnlyList<RolSistema> roles)
+    /// <summary>
+    /// No autoeliminación; la cuenta raíz <c>admin</c> tampoco se elimina.
+    /// Otros Administrador u Operador sí pueden eliminarse.
+    /// </summary>
+    public static void AsegurarPuedeEliminarse(
+        string usernameObjetivo,
+        Guid keycloakUserIdObjetivo,
+        Guid solicitanteKeycloakUserId)
     {
-        if (roles.Contains(RolSistema.Administrador))
+        if (keycloakUserIdObjetivo == solicitanteKeycloakUserId)
         {
             throw new DomainException(
-                "No se puede eliminar un usuario con rol Administrador. Solo Operador.");
+                "No puedes eliminar tu propia cuenta mientras la sesión está activa.");
+        }
+
+        if (EsAdministradorRaiz(usernameObjetivo))
+        {
+            throw new DomainException(
+                "No se puede eliminar la cuenta administradora raíz (admin).");
         }
     }
 }
