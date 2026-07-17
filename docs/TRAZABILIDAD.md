@@ -159,12 +159,18 @@ Usar **siempre** esta numeración en `TRACKER.md`, iteraciones de Fase 1 y docum
 | HU-22 | Historial de auditoría |
 | HU-23 | Reporte final / cerrar sesión |
 
+### Sala de espera / misión (ERS)
+
+| HU | Título (ERS) |
+|----|----------------|
+| HU-32 | Control de sala de espera (lista en vivo + expulsar en `EnPreparacion`) |
+
 ### Trivia (admin, operador, sistema)
 
 | HU | Título (ERS) |
 |----|----------------|
 | HU-24 … HU-31 | Banco de preguntas y categorías |
-| HU-32 … HU-40 | Sesión trivia, sala de espera, rondas, ranking, transiciones |
+| HU-33 … HU-40 | Sesión trivia jugable, rondas, ranking, transiciones |
 
 ---
 
@@ -184,7 +190,7 @@ La tabla antigua de `umbral-quality-spec.md` §14 usaba HU-01…HU-14 **propias 
 | HU-08 Ver pistas | **HU-11** |
 | HU-09 Enviar evidencia | **HU-18** |
 | HU-10 Validar evidencia | **HU-19** |
-| HU-11 Liberar pistas manual | RF-15 / panel operador |
+| HU-11 Liberar pistas manual | **RF-15** pista ad-hoc operador (`POST …/pistas-manuales`) |
 | HU-12 Penalización | **HU-16** |
 | HU-13 Ranking WebSocket | **HU-21**, **HU-17** |
 | HU-14 Consumer RabbitMQ | RF-19 |
@@ -193,12 +199,29 @@ La tabla antigua de `umbral-quality-spec.md` §14 usaba HU-01…HU-14 **propias 
 
 ## Fase 1 (dominio) — HUs en curso
 
-| Iteración | HU principal ERS |
-|-----------|------------------|
-| iter-01 | HU-12 |
-| iter-02 | HU-13 |
-| iter-03 | HU-14, HU-15 |
-| iter-04 | HU-16 |
-| iter-05 (plan) | HU-18 |
-| iter-06 (plan) | HU-19, HU-20 |
-| iter-07 (plan) | HU-23 |
+| Iteración | HU principal ERS | Estado |
+|-----------|------------------|--------|
+| iter-01 | HU-12 | ✅ |
+| iter-02 | HU-13 | ✅ |
+| iter-03 | HU-14, HU-15 | ✅ (+ SignalR SesionHub para estado) |
+| iter-04 | HU-16 | ✅ (Bloque A) |
+| iter-05 | HU-18 | ✅ (Bloque A) |
+| iter-06 | HU-19, HU-20 | ✅ (Bloque A) |
+| iter-07 | HU-22, HU-23 | ✅ (Bloque A) |
+| Bloque A catálogo | HU-03, HU-07, HU-08 | ✅ |
+| Bloque B (parcial) | HU-09 | ✅ dominio + background + SignalR `PistaLiberada` |
+| Bloque B (parcial) | HU-10 | ✅ dominio en SubmitEvidencia + SignalR `PistaLiberada` |
+| Bloque B (parcial) | RF-15 | ✅ pista ad-hoc operador + SignalR `PistaLiberada` |
+| Bloque B (parcial) | HU-17 | ✅ tablero BT: `EtapaAvanzada` + `RankingActualizado` + UI participante (TriviaHub pendiente) |
+| Bloque B (parcial) | HU-21 | ✅ ranking en vivo: payload completo en `RankingActualizado` (evidencia / penalización / finalizar) |
+| Bloque B (parcial) | HU-32 | ✅ sala de espera: `ParticipantesActualizados` + `ExpulsarParticipante` + SignalR `ParticipanteExpulsado` + UI operador/participante |
+| Bloque B (parcial) | HU-33 / HU-38 | ✅ secuencia trivia auto: operador inicia etapa; timer 30 s → transición 5 s → siguiente (BackgroundService); UI live (respuesta = HU-34) |
+| Bloque B (parcial) | HU-34 | ✅ encola respuesta: `POST …/trivia/respuestas` → 202 Accepted; UI confirma opción (RB-12/13) |
+| Bloque B (parcial) | HU-35 | ✅ MassTransit + RabbitMQ: `ProcesarRespuestaTriviaConsumer` cola `umbral.respuestas-trivia`; retry ×3; mensajes malformados descartados; Testing = bus InMemory |
+| Bloque B (parcial) | HU-36 | ✅ puntaje dinámico trivia: `CalculoPuntajeTriviaService` (base 100 + bonus velocidad); solo correcta y a tiempo (RB-17/RB-12); suma a `PuntajeTotal` de sesión (RB-29); persiste `TimestampServidor` + `TiempoRespuestaMs` (insumo HU-39) |
+| Bloque B (parcial) | HU-37 | ✅ ranking parcial + feedback: `RankingActualizado` tras cada respuesta (SignalR); feedback personal (correcta/tarde/pts vía poll `EstadoTrivia`); puntajes en BD + fallback REST `GET /ranking`. Opcional no hecho: revelar opción correcta a toda la sala al cerrar ronda |
+| Bloque B (parcial) | HU-39 | ✅ desempate RB-08: `RankingService` ordena por puntaje ↓, luego menor `TiempoAcumuladoMs` (solo respuestas a tiempo; fuera de tiempo = 0 útil, RB-12), luego nombre; expuesto en DTO/API/SignalR |
+| Bloque B (parcial) | HU-40 | ✅ etapa Trivia en misión: `EtapaTrivia` + `CategoriaId[]` (RB-33); admin `EtapasEditor`/`MisionEtapasPanel`; categorías deben existir al guardar; preguntas activas al activar (RB-09 vía `MisionTriviaValidacion`); snapshot en creación de sesión |
+| Bloque C (mobile) | umbral-mobile | ✅ scaffold Expo + Keycloak `umbral-mobile` + lobby/partida (BT QR manual, trivia, ranking, SignalR) en `src/mobile/umbral-mobile` |
+
+**Bloque C:** participante oficial en mobile; web desactivada (`VITE_PARTICIPANTE_WEB_ENABLED=false`). Pendiente: validar escáner QR en dispositivo físico.

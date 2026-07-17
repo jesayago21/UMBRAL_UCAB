@@ -30,7 +30,7 @@ Usa **una terminal por paso**. El gateway (`:8000`) es opcional pero recomendado
 
 ```bash
 cp .env.example .env
-docker compose up postgres keycloak -d
+docker compose up postgres mailpit keycloak -d
 ```
 
 RabbitMQ solo si lo necesitas (`docker compose up rabbitmq -d`); la API arranca sin él hoy.
@@ -99,6 +99,7 @@ curl -i http://localhost:8000/api/v1/misiones
 | Proxy funciona | http://localhost:8000/api/v1/misiones | Mismo status que `:5000/api/v1/misiones` |
 | Frontend | http://localhost:5173/login | Login Keycloak |
 | Keycloak admin | http://localhost:8080 | `admin` / `admin` |
+| Mailpit (emails) | http://localhost:8025 | Bandeja SMTP local (reset password) |
 
 ### Resumen de puertos
 
@@ -106,6 +107,7 @@ curl -i http://localhost:8000/api/v1/misiones
 |----------|--------|-----|
 | PostgreSQL | 5433 | Base de datos |
 | Keycloak | 8080 | Autenticación OIDC |
+| Mailpit | 1025 / 8025 | SMTP de desarrollo (UI en :8025) |
 | RabbitMQ | 5672 / 15672 | Mensajería (UI en :15672) |
 | **Umbral.API** | **5000** | Monolito hexagonal (acceso directo) |
 | **Umbral.Gateway** | **8000** | REST público `/api/v1/**` |
@@ -183,7 +185,7 @@ Abrir **http://localhost:5173/login**.
 |----------|-----|
 | `VITE_API_URL` | API REST vía gateway (default `http://localhost:8000`; API directa `:5000`) |
 | `VITE_KEYCLOAK_*` | Realm `umbral`, client `umbral-web` |
-| `VITE_PARTICIPANTE_WEB_ENABLED` | `true` = jugador en `/participante` (E1). `false` cuando exista mobile |
+| `VITE_PARTICIPANTE_WEB_ENABLED` | `false` = jugador solo en mobile. `true` = también `/participante` en web |
 
 ### Usuarios demo (Keycloak)
 
@@ -191,7 +193,7 @@ Abrir **http://localhost:5173/login**.
 |---------|------------|-----|----------------|
 | `admin` | `Umbral123!` | Administrador | `/admin/misiones` |
 | `operador` | `Umbral123!` | Operador | `/operador/sesiones` |
-| `participante` | `Umbral123!` | Participante | `/participante` (si `VITE_PARTICIPANTE_WEB_ENABLED=true`) |
+| `participante` | `Umbral123!` | Participante | App mobile (`umbral-mobile`) |
 
 Si Keycloak dice **usuario desconocido** o tras login aparece *rol no válido*, el realm se creó antes de añadir `participante` o el rol `Participante`. Con Keycloak en marcha:
 
@@ -199,7 +201,28 @@ Si Keycloak dice **usuario desconocido** o tras login aparece *rol no válido*, 
 .\scripts\keycloak-ensure-demo-users.ps1
 ```
 
-Para reimportar el realm desde cero (borra usuarios del contenedor): `docker compose rm -sf keycloak` y luego `docker compose up keycloak -d`.
+### Registro de usuarios (contraseña por email)
+
+Al crear un usuario **Administrador/Operador** desde Admin, Keycloak envía un correo con link `UPDATE_PASSWORD` (sin contraseña previa). En local:
+
+```bash
+docker compose up mailpit keycloak -d
+.\scripts\keycloak-configure-smtp.ps1   # si el realm ya existía sin SMTP
+```
+
+1. Crear usuario en `/admin/usuarios` (email real o de prueba).
+2. Abrir [Mailpit](http://localhost:8025) → abrir el correo → seguir el link.
+3. Definir contraseña en Keycloak e iniciar sesión.
+
+### Auto-registro de Participante
+
+Los jugadores se registran solos (rol fijo `Participante`; el admin **no** puede crearlos — RB-35 / HU-42):
+
+1. En Login → **Crear cuenta de participante** (`/registro`).
+2. Completar email, usuario, nombre, apellido y contraseña (≥8).
+3. Iniciar sesión con Keycloak y unirse a una sesión con el código del operador.
+
+Para reimportar el realm desde cero (borra usuarios del contenedor): `docker compose rm -sf keycloak` y luego `docker compose up mailpit keycloak -d`.
 
 ---
 
@@ -226,22 +249,23 @@ Duración orientativa: **12–15 min**. Requiere Postgres + Keycloak + API + gat
    - **Refrescar ranking** (poll manual, sin SignalR).
 4. *(Opcional)* Intentar `/admin/misiones` → pantalla **403** (rol incorrecto).
 
-### 4.3 Participante — unirse a sesión (web temporal)
+### 4.3 Participante — unirse a sesión
 
-> Cuando exista `umbral-mobile`, poner `VITE_PARTICIPANTE_WEB_ENABLED=false` y repetir el flujo en la app.
+**Cliente oficial:** app mobile `src/mobile/umbral-mobile` (`VITE_PARTICIPANTE_WEB_ENABLED=false`).
 
-1. Login **`participante`** / `Umbral123!` → `/participante`.
-2. **Búsqueda del tesoro** → listado de sesiones abiertas a inscripción.
-3. Ingresar el **código de la sesión** del operador → **Unirse**.
-4. El operador ve el participante en el detalle de la sesión.
-5. Tras unirse, la partida se abre en `/participante/sesiones/{id}` (misiones con etapas BT y/o Trivia).
+```bash
+cd src/mobile/umbral-mobile
+cp .env.example .env && npm install && npx expo start
+```
 
-### 4.4 Qué decir que queda para E2
+Login (participante) → lobby → partida (QR manual o cámara, trivia, ranking).
 
-- Ranking en **tiempo real** (SignalR).
-- **Gameplay** BT: escanear QR, enviar evidencias desde mobile.
-- **Trivia jugable** y sesiones trivia desde operador.
-- App **React Native** (`umbral-mobile`) como cliente definitivo del participante.
+Si alguien entra a web con rol Participante, verá el mensaje de acceso deshabilitado (usar mobile).
+
+### 4.4 Qué decir que queda
+
+- Validar escáner QR en teléfono físico.
+- Pulido NativeWind / tests mobile / EAS build.
 
 ---
 
@@ -255,7 +279,7 @@ Lista para cerrar E1 / abrir E2, en orden sugerido:
 | 2 | **Sesiones trivia** | Operador: misión con etapa trivia; participante: mismo listado en `/participante` |
 | 3 | **Misiones completas** | CRUD etapas y pistas en admin (si aún incompleto) |
 | 4 | **`umbral-mobile`** | Expo + OIDC + mismas APIs de unirse/listar |
-| 5 | **Deshabilitar participante en web** | `VITE_PARTICIPANTE_WEB_ENABLED=false` al tener mobile |
+| 5 | **Participante web** | ✅ `VITE_PARTICIPANTE_WEB_ENABLED=false` (cliente = mobile) |
 | 6 | **SignalR** | Ranking y eventos de sesión en vivo |
 | 7 | **Gameplay BT** | Evidencia QR, lobby post-unión, pantallas de juego |
 | 8 | **E2E Playwright** | Flujos admin + operador + 403 |

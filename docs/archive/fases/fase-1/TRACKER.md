@@ -47,15 +47,16 @@
 - [x] **HU-06** Registrar pistas en etapa — 🔶 `AgregarPista` en `Etapa`, `TipoLiberacion`
 - [ ] **HU-07** Modificar pistas — ⬜
 - [ ] **HU-08** Eliminar pistas — ⬜
-- [ ] **HU-09** Liberación automática por tiempo — ⬜
-- [ ] **HU-10** Liberación por ganador de etapa — ⬜
+- [x] **HU-09** Liberación automática por tiempo — ✅ dominio + background + SignalR pista
+- [x] **HU-10** Liberación por ganador de etapa — ✅ dominio + SignalR pista
+- [x] **RF-15** Liberación manual de pistas — ✅ pista ad-hoc + SignalR
 
 ### Sesión Operador
 
 - [x] **HU-12** Operador crea sesión BT — ✅ iter-01
 - [x] **HU-13** Operador registra participantes — ✅ iter-02 (`SesionRegistrarEquipoTests`, 15 tests)
 - [x] **HU-14** Operador inicia sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
-- [x] **HU-15** Pausar / reanudar sesión — ✅ iter-03 (`SesionCicloVidaTests`, 32 tests)
+- [x] **HU-15** Pausar / reanudar sesión — ✅ iter-03 + SignalR `SesionHub` (estado en vivo)
 - [x] **HU-16** Aplicar penalización — ✅ iter-04 (`PuntajeTests` + `SesionAplicarPenalizacionTests`, 30 tests)
 - [x] **HU-23** Reporte final / cerrar sesión — ✅ iter-07 (`SesionCerrarSesionTests` + `RankingServiceTests`, 16 tests)
 
@@ -68,7 +69,7 @@
 ### Dominio compartido / transversal
 
 - [x] Equipo se une con código de acceso — 🔶 `CodigoAcceso` por participante en `RegistrarEquipo`; flujo mobile ⬜
-- [ ] Liberación manual de pistas (RF-15) — ⬜
+- [x] Liberación manual de pistas (RF-15) — ✅ pista ad-hoc operador (SignalR NoOp E2)
 
 ### Fuera de Fase 1
 

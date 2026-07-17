@@ -51,7 +51,7 @@ Dependency direction: `API → Application → Domain` and `Infrastructure → A
 
 - Config: `src/backend/Umbral.Gateway/appsettings.json` (`ReverseProxy:Routes` + `Clusters`).
 - Health del gateway: `GET http://localhost:8000/health` (no proxy).
-- Frontend dev: `VITE_API_URL=http://localhost:8000` (REST vía gateway; SignalR sigue en `:5000` cuando se active).
+- Frontend dev: `VITE_API_URL=http://localhost:8000` (REST vía gateway); `VITE_SIGNALR_URL=http://localhost:5000` (hubs en la API; el gateway también puede enrutar `/hubs/**`).
 - Docker override cluster: `ReverseProxy__Clusters__umbral-api__Destinations__api__Address=http://api:5000/`
 
 ## Domain patterns
@@ -84,6 +84,7 @@ Dependency direction: `API → Application → Domain` and `Infrastructure → A
 | PostgreSQL 16 | 5433 | Avoids conflict with local 5432 |
 | RabbitMQ 3.13 | 5672 / 15672 | Management UI :15672 |
 | Keycloak 24 | 8080 | Realm auto-imported from `docker/keycloak/umbral-realm.json` |
+| Mailpit | 1025 / 8025 | SMTP de desarrollo (emails `UPDATE_PASSWORD` al registrar usuarios) |
 | API Gateway (YARP) | 8000 | `Umbral.Gateway` — REST `/api/v1/**` (opcional en dev local) |
 
 Stack completo con API + gateway en Docker:
@@ -109,4 +110,13 @@ GitHub Actions runs on push/PR to `main`, `develop`, `feature/**`. Steps: restor
 
 ## Participants in web (E1)
 
-`VITE_PARTICIPANTE_WEB_ENABLED=true` lets participants use the web app at `/participante`. Set to `false` when the React Native mobile app (`umbral-mobile`) is ready (E2).
+`VITE_PARTICIPANTE_WEB_ENABLED=false` — el rol Participante ya no usa `/participante` en web; el cliente oficial es `umbral-mobile`.
+
+Mobile app: `src/mobile/umbral-mobile` (Expo). Setup: see that folder's `README.md`.
+
+```bash
+cd src/mobile/umbral-mobile
+cp .env.example .env && npm install && npx expo start
+```
+
+Keycloak client: `umbral-mobile` (realm import). Demo user: `participante` / `Umbral123!`.
