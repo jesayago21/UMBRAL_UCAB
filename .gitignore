@@ -52,3 +52,7 @@ packages/
 
 # Publish output
 publish/
+
+# Local coverage scratch
+coverage-temp/
+
