@@ -6,6 +6,9 @@ Basada en el código real del monolito hexagonal.
 **Más allá de evidencia (Domain + Application general):**  
 [`DEFENSA-DOMINIO-APPLICATION.md`](DEFENSA-DOMINIO-APPLICATION.md)
 
+**Infrastructure + API (EF, SignalR, RabbitMQ, auth):**  
+[`DEFENSA-INFRASTRUCTURE-API.md`](DEFENSA-INFRASTRUCTURE-API.md)
+
 **Archivos clave para abrir mientras estudias:**
 - `SubmitEvidenciaValidator.cs`
 - `SubmitEvidenciaCommand.cs` / `SubmitEvidenciaCommandHandler.cs`

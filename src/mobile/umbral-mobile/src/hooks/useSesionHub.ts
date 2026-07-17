@@ -4,6 +4,7 @@ import type { HubConnection } from '@microsoft/signalr'
 import {
   MI_INSCRIPCION_PARTICIPANTE_KEY,
   RANKING_KEY,
+  SESIONES_DISPONIBLES_KEY,
   TRIVIA_ESTADO_KEY,
 } from '@/hooks/useSesiones'
 import { ordenarYNumerarRanking } from '@/lib/ranking'
@@ -134,6 +135,15 @@ export function useSesionHub({
       if (estado) onEstadoRef.current?.(estado)
       invalidateInscripcion()
     })
+    // Al abandonar / unirse / expulsar el servidor emite ParticipantesActualizados
+    // (SignalR JS a veces lo entrega en minúsculas).
+    const onParticipantesActualizados = () => {
+      invalidateInscripcion()
+      void queryClient.invalidateQueries({ queryKey: SESIONES_DISPONIBLES_KEY })
+    }
+    connection.on('ParticipantesActualizados', onParticipantesActualizados)
+    connection.on('participantesActualizados', onParticipantesActualizados)
+    connection.on('participantesactualizados', onParticipantesActualizados)
     connection.on('EtapaAvanzada', () => invalidateInscripcion())
     connection.on('PistaLiberada', () => invalidateInscripcion())
     connection.on('RankingActualizado', (payload: unknown) => {

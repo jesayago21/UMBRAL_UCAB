@@ -3,6 +3,9 @@
 Complemento de `DEFENSA-BACKEND-PREGUNTAS.md` (enfocado en SubmitEvidencia).  
 Aquí: qué pueden preguntar de **Dominio** y **Application** en general.
 
+**Siguiente bloque (Infrastructure + API):**  
+[`DEFENSA-INFRASTRUCTURE-API.md`](DEFENSA-INFRASTRUCTURE-API.md)
+
 ---
 
 ## 1. Bounded Contexts (Dominio)
