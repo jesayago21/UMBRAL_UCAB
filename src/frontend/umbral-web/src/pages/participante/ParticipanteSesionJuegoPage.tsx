@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { ParticipanteGameplayShell } from '@/components/participante/ParticipanteGameplayShell'
+import { LoadingState } from '@/components/shared/LoadingState'
 import { useAbandonarSesion, useMiInscripcionParticipante } from '@/hooks/useSesiones'
+import type { ParticipanteExpulsadoPayload } from '@/hooks/useSesionHub'
 import {
   clearParticipanteSesionInscrita,
   confirmarAbandonarSesion,
@@ -10,7 +12,6 @@ import {
   saveParticipanteSesionInscrita,
 } from '@/lib/participanteSesionStorage'
 import { getApiErrorMessage } from '@/services/apiClient'
-import { LoadingState } from '@/components/shared/LoadingState'
 
 export function ParticipanteSesionJuegoPage() {
   const { sesionId } = useParams<{ sesionId: string }>()
@@ -19,6 +20,17 @@ export function ParticipanteSesionJuegoPage() {
   const { data: inscripcionServidor, isLoading } = useMiInscripcionParticipante()
   const inscripcionLocal = getParticipanteSesionInscrita()
   const abandonar = useAbandonarSesion(sesionId ?? '')
+
+  const handleExpulsado = useCallback(
+    (payload: ParticipanteExpulsadoPayload) => {
+      clearParticipanteSesionInscrita()
+      navigate('/participante', {
+        replace: true,
+        state: { expulsadoMotivo: payload.motivo },
+      })
+    },
+    [navigate],
+  )
 
   if (isLoading) return <LoadingState />
 
@@ -36,8 +48,12 @@ export function ParticipanteSesionJuegoPage() {
     }
     saveParticipanteSesionInscrita(inscripcion)
 
+    const postJuego =
+      inscripcionServidor.estado === 'Finalizada' ||
+      inscripcionServidor.estado === 'Cancelada'
+
     const handleAbandonar = async () => {
-      if (!confirmarAbandonarSesion()) return
+      if (!confirmarAbandonarSesion({ postJuego })) return
       setError(null)
       try {
         await abandonar.mutateAsync()
@@ -50,17 +66,17 @@ export function ParticipanteSesionJuegoPage() {
 
     return (
       <div className="space-y-6">
-        <PageHeader
-          title="Partida en curso"
-          description="Vista de juego (plantilla E1). La interacción real llega en E2."
-        />
+        <PageHeader title={postJuego ? 'Resultados' : 'Partida'} />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <ParticipanteGameplayShell
           inscripcion={inscripcion}
           inscripcionServidor={inscripcionServidor}
           onAbandonar={handleAbandonar}
           abandonando={abandonar.isPending}
-          puedeAbandonar={inscripcionServidor.estado !== 'Activa' && inscripcionServidor.estado !== 'Pausada'}
+          puedeAbandonar={
+            inscripcionServidor.estado !== 'Activa' && inscripcionServidor.estado !== 'Pausada'
+          }
+          onParticipanteExpulsado={handleExpulsado}
         />
       </div>
     )

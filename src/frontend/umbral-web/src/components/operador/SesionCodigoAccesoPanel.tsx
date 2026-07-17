@@ -16,43 +16,30 @@ export function SesionCodigoAccesoPanel({
   onAbrirInscripcion,
 }: SesionCodigoAccesoPanelProps) {
   return (
-    <section className={`${cardClass} space-y-4`}>
-      <div>
-        <h3 className="font-medium text-slate-900">Código de acceso de la sesión</h3>
-        <p className="mt-1 text-sm text-slate-600">
-          Comparte este código con los jugadores. Lo ingresan al unirse desde su panel (login Keycloak).
-          <strong> Un solo código por sesión</strong>, no por participante.
-        </p>
-      </div>
+    <section className={`${cardClass} flex h-[14rem] flex-col gap-3`}>
+      <h3 className="font-medium text-slate-900">Código de acceso</h3>
+      <p className="text-sm text-slate-600">Compártelo con los jugadores para unirse.</p>
 
       <p className="inline-block rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 font-mono text-2xl font-bold tracking-widest text-indigo-900">
         {codigoAcceso}
       </p>
 
-      {estado === 'Programada' && (
-        <div className="space-y-2">
-          <p className="text-sm text-amber-800">
-            La sesión aún no es visible para jugadores. Ábrela para inscripción cuando quieras recibir
-            participantes.
-          </p>
-          {canAbrirInscripcion && (
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={onAbrirInscripcion}
-              className={btnPrimary}
-            >
-              Abrir inscripción
-            </button>
-          )}
-        </div>
-      )}
+      <div className="mt-auto space-y-2">
+        {estado === 'Programada' && canAbrirInscripcion && (
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={onAbrirInscripcion}
+            className={btnPrimary}
+          >
+            Abrir inscripción
+          </button>
+        )}
 
-      {estado === 'EnPreparacion' && (
-        <p className="text-sm text-green-800">
-          Inscripción abierta: los jugadores ven esta sesión en su panel y pueden unirse con el código.
-        </p>
-      )}
+        {estado === 'EnPreparacion' && (
+          <p className="text-sm text-green-800">Inscripción abierta.</p>
+        )}
+      </div>
     </section>
   )
 }

@@ -1,6 +1,8 @@
 import { ErrorState } from '@/components/shared/ErrorState'
 import { LoadingState } from '@/components/shared/LoadingState'
 import { useRankingSesion } from '@/hooks/useSesiones'
+import type { SesionHubConnectionStatus } from '@/hooks/useSesionHub'
+import { ordenarYNumerarRanking } from '@/lib/ranking'
 import { getApiErrorMessage } from '@/services/apiClient'
 import { btnSecondary, cardClass } from '@/styles/ui'
 import type { PosicionRankingDto } from '@/types/sesion.types'
@@ -16,6 +18,8 @@ export interface SesionRankingPanelProps {
   /** Título de la sección (default: Ranking). */
   title?: string
   className?: string
+  /** Estado del SesionHub — activa poll de respaldo si no hay conexión (HU-21). */
+  hubStatus?: SesionHubConnectionStatus
 }
 
 function RankingTable({
@@ -63,7 +67,7 @@ function RankingTable({
   )
 }
 
-/** Ranking de sesión — misma tabla y refresco que en operador. */
+/** Ranking de sesión — actualización en vivo vía SignalR (HU-21). */
 export function SesionRankingPanel({
   sesionId,
   enabled = true,
@@ -71,6 +75,7 @@ export function SesionRankingPanel({
   participanteIdDestacado,
   title = 'Ranking',
   className = '',
+  hubStatus,
 }: SesionRankingPanelProps) {
   const queryEnabled = enabled && Boolean(sesionId)
   const {
@@ -80,7 +85,12 @@ export function SesionRankingPanel({
     error,
     refetch,
     isFetching,
-  } = useRankingSesion(sesionId, queryEnabled)
+  } = useRankingSesion(sesionId, queryEnabled, {
+    // Sin hub en vivo: poll cada 3s para ver puntajes del ganador BT (HU-21).
+    refetchIntervalMs: hubStatus != null && hubStatus !== 'conectado' ? 3000 : false,
+  })
+
+  const rankingOrdenado = ranking ? ordenarYNumerarRanking(ranking) : undefined
 
   return (
     <section className={`${cardClass} space-y-4 ${className}`.trim()}>
@@ -92,7 +102,7 @@ export function SesionRankingPanel({
           onClick={() => void refetch()}
           className={btnSecondary}
         >
-          {isFetching ? 'Actualizando…' : 'Refrescar ranking'}
+          {isFetching ? 'Actualizando…' : 'Refrescar'}
         </button>
       </div>
 
@@ -108,13 +118,14 @@ export function SesionRankingPanel({
         />
       )}
 
-      {queryEnabled && ranking && ranking.length > 0 && (
-        <RankingTable ranking={ranking} participanteIdDestacado={participanteIdDestacado} />
+      {queryEnabled && rankingOrdenado && rankingOrdenado.length > 0 && (
+        <RankingTable ranking={rankingOrdenado} participanteIdDestacado={participanteIdDestacado} />
       )}
 
-      {queryEnabled && ranking && ranking.length === 0 && !isLoading && !isError && (
+      {queryEnabled && rankingOrdenado && rankingOrdenado.length === 0 && !isLoading && !isError && (
         <p className="text-sm text-slate-600">
-          Sin puntajes aún. El ranking se actualiza al registrar evidencias (E2).
+          Sin puntajes aún. El ranking se actualiza en vivo al validar evidencias o aplicar
+          penalizaciones.
         </p>
       )}
     </section>

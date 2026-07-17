@@ -9,19 +9,20 @@ interface SesionTimerPanelProps {
   finalizadaEn: string | null
   etapaActualOrden: number
   totalEtapas: number
-  etapaDescripcion: string | null
-  /** Etiqueta de progreso según tipo de sesión */
+  etapaDescripcion?: string | null
   unidadProgreso?: 'etapa' | 'pregunta'
+  className?: string
 }
 
+/** Reloj + progreso en formato compacto (barra superior del operador). */
 export function SesionTimerPanel({
   estado,
   iniciadaEn,
   finalizadaEn,
   etapaActualOrden,
   totalEtapas,
-  etapaDescripcion,
   unidadProgreso = 'etapa',
+  className = '',
 }: SesionTimerPanelProps) {
   const unidadLabel = unidadProgreso === 'pregunta' ? 'Pregunta' : 'Etapa'
   const [elapsedSec, setElapsedSec] = useState(0)
@@ -52,56 +53,32 @@ export function SesionTimerPanel({
   const juegoIniciado = Boolean(iniciadaEn) && estado !== 'programada' && estado !== 'enPreparacion'
 
   return (
-    <section className={`${cardClass} space-y-3`}>
+    <section
+      className={`${cardClass} flex h-[14rem] flex-col gap-3 ${className}`.trim()}
+      aria-label="Tiempo y progreso"
+    >
       <h3 className="font-medium text-slate-900">Tiempo y progreso</h3>
-
-      {juegoIniciado ? (
-        <>
-          <div className="flex flex-wrap items-baseline gap-3">
-            <span className="font-mono text-3xl font-semibold tabular-nums text-slate-900">
-              {formatDuracion(elapsedSec)}
-            </span>
-            <span className="text-sm text-slate-600">
-              {estado === 'activa'
-                ? 'Tiempo de sesión (en curso)'
-                : estado === 'pausada'
-                  ? 'Tiempo transcurrido (sesión pausada)'
-                  : 'Tiempo total de la sesión'}
-            </span>
-          </div>
-          {estado === 'pausada' && (
-            <p className="text-xs text-amber-800">
-              El reloj se detiene en pantalla al pausar; el dominio aún no descuenta pausas del total.
-            </p>
-          )}
-        </>
-      ) : (
-        <p className="text-sm text-slate-600">
-          El temporizador comienza al <strong>iniciar</strong> la sesión con participantes registrados.
-        </p>
-      )}
-
-      {totalEtapas > 0 && (
-        <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm">
-          <p className="font-medium text-slate-900">
-            {unidadLabel} {etapaActualOrden || 1} de {totalEtapas}
+      <div className="flex flex-1 flex-col justify-center gap-1">
+        {juegoIniciado ? (
+          <p
+            className={`font-mono text-2xl font-semibold tabular-nums ${
+              estado === 'pausada' ? 'text-amber-800' : 'text-slate-900'
+            }`}
+          >
+            {formatDuracion(elapsedSec)}
+            {estado === 'pausada' ? (
+              <span className="ml-2 text-xs font-sans font-medium">pausada</span>
+            ) : null}
           </p>
-          {etapaDescripcion && (
-            <p className="mt-1 text-slate-600">{etapaDescripcion}</p>
-          )}
-          {unidadProgreso === 'etapa' && (
-            <p className="mt-2 text-xs text-slate-500">
-              Las pistas con liberación por tiempo (RB-07) llegan en la segunda entrega con
-              WebSockets; el temporizador por etapa también.
-            </p>
-          )}
-          {unidadProgreso === 'pregunta' && (
-            <p className="mt-2 text-xs text-slate-500">
-              El lanzamiento de preguntas y respuestas en vivo se implementa en la segunda entrega.
-            </p>
-          )}
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-slate-500">—</p>
+        )}
+        {totalEtapas > 0 ? (
+          <p className="text-sm font-medium text-slate-800">
+            {unidadLabel} {etapaActualOrden || 1}/{totalEtapas}
+          </p>
+        ) : null}
+      </div>
     </section>
   )
 }

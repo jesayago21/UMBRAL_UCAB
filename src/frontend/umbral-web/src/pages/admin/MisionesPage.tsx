@@ -73,6 +73,9 @@ export function MisionesPage() {
           descripcion: e.descripcion?.trim(),
           codigoQrSolucion: e.codigoQrSolucion?.trim(),
           categoriaIds: e.categoriaIds,
+          latitud: e.latitud ?? null,
+          longitud: e.longitud ?? null,
+          radioMetros: e.radioMetros ?? null,
           pistas: (e.pistas ?? [])
             .filter((p) => p.contenido.trim())
             .map((p) => ({
@@ -96,17 +99,30 @@ export function MisionesPage() {
     if (!editTarget) return
     setFormError(null)
     const form = new FormData(event.currentTarget)
-    const activarRaw = form.get('activar')
     try {
       await actualizar.mutateAsync({
         id: editTarget.id,
         body: {
           nombre: String(form.get('nombre')),
-          activar: activarRaw === 'activa' ? true : activarRaw === 'inactiva' ? false : null,
+          activar: null,
         },
       })
       setEditTarget(null)
       showSuccess('Misión actualizada.')
+    } catch (err) {
+      setFormError(getApiErrorMessage(err))
+    }
+  }
+
+  const handleToggleEstado = async (mision: MisionDto) => {
+    setFormError(null)
+    const activar = mision.estado !== 'Activa'
+    try {
+      await actualizar.mutateAsync({
+        id: mision.id,
+        body: { nombre: mision.nombre, activar },
+      })
+      showSuccess(activar ? `Misión "${mision.nombre}" activada.` : `Misión "${mision.nombre}" desactivada.`)
     } catch (err) {
       setFormError(getApiErrorMessage(err))
     }
@@ -234,23 +250,19 @@ export function MisionesPage() {
       {editTarget && (
         <form onSubmit={handleUpdate} className={`${cardHighlightClass} space-y-3`}>
           <h3 className="font-medium text-slate-900">Editar misión</h3>
+          <p className="text-xs text-slate-600">
+            Cambia el nombre aquí. Para modificar, agregar o eliminar etapas usa «Gestionar etapas».
+            Activar/desactivar está en el listado.
+          </p>
           <input
             name="nombre"
             required
             defaultValue={editTarget.nombre}
             className={inputClass}
           />
-          <select
-            name="activar"
-            defaultValue={editTarget.estado === 'Activa' ? 'activa' : 'inactiva'}
-            className={inputClass}
-          >
-            <option value="activa">Activa</option>
-            <option value="inactiva">Inactiva</option>
-          </select>
           <div className="flex gap-2">
             <button type="submit" disabled={isSaving} className={btnPrimary}>
-              {actualizar.isPending ? 'Guardando…' : 'Actualizar'}
+              {actualizar.isPending ? 'Guardando…' : 'Guardar nombre'}
             </button>
             <button
               type="button"
@@ -308,7 +320,7 @@ export function MisionesPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-600">{mision.totalEtapas}</td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3">
                       <button
                         type="button"
                         disabled={isSaving}
@@ -320,7 +332,7 @@ export function MisionesPage() {
                         }}
                         className={btnLink}
                       >
-                        Ver etapas
+                        Gestionar etapas
                       </button>
                       <button
                         type="button"
@@ -333,7 +345,15 @@ export function MisionesPage() {
                         }}
                         className={btnLink}
                       >
-                        Editar
+                        Editar nombre
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSaving}
+                        onClick={() => void handleToggleEstado(mision)}
+                        className={btnLink}
+                      >
+                        {mision.estado === 'Activa' ? 'Desactivar' : 'Activar'}
                       </button>
                       <button
                         type="button"

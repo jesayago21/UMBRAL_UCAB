@@ -9,7 +9,7 @@ export interface UsuarioDto {
   roles: string[]
 }
 
-/** Respuesta exclusiva del POST 201. Incluye contraseña temporal para entrega inmediata. */
+/** Respuesta del POST 201. El usuario establece su contraseña al primer login. */
 export interface CrearUsuarioResponse {
   keycloakUserId: string
   email: string
@@ -18,7 +18,6 @@ export interface CrearUsuarioResponse {
   apellido: string
   estado: string
   roles: string[]
-  passwordTemporal: string
 }
 
 export interface CrearUsuarioRequest {
@@ -26,7 +25,6 @@ export interface CrearUsuarioRequest {
   username: string
   nombre: string
   apellido: string
-  passwordTemporal: string
   roles: [string]
 }
 

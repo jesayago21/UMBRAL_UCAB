@@ -25,7 +25,6 @@ import {
 } from '@/styles/ui'
 import {
   ROLES_USUARIO,
-  type CrearUsuarioResponse,
   type RolUsuarioAdmin,
   type UsuarioDto,
 } from '@/types/usuario.types'
@@ -115,21 +114,18 @@ export function UsuariosPage() {
       return
     }
     const username = String(form.get('username')).trim()
-    const password = String(form.get('password'))
-    let created: CrearUsuarioResponse | undefined
     try {
-      created = await crear.mutateAsync({
+      await crear.mutateAsync({
         email: String(form.get('email')),
         username,
         nombre: String(form.get('nombre')),
         apellido: String(form.get('apellido')),
-        passwordTemporal: password,
         roles: [rolCrear],
       })
       formEl.reset()
       setRolCrear('')
       showSuccess(
-        `Usuario registrado. Entregar a «${username}» su contraseña: ${created.passwordTemporal}`,
+        `Usuario «${username}» registrado. Se envió un correo para establecer la contraseña (en local: Mailpit http://localhost:8025).`,
       )
     } catch (err) {
       setFormError(getApiErrorMessage(err))
@@ -211,14 +207,6 @@ export function UsuariosPage() {
           <input name="username" required placeholder="Username (login)" className={inputClass} />
           <input name="nombre" required placeholder="Nombre" className={inputClass} />
           <input name="apellido" required placeholder="Apellido" className={inputClass} />
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            placeholder="Contraseña"
-            className={`${inputClass} sm:col-span-2`}
-          />
           <RolSelect
             id="rol-crear"
             value={rolCrear}

@@ -1,6 +1,9 @@
 import { btnLink, btnSecondary, inputClass, selectClass } from '@/styles/ui'
 import { PistasEditor } from '@/components/admin/PistasEditor'
+import { CodigoQrTesoro } from '@/components/shared/CodigoQrTesoro'
+import { MapaTesoroPicker } from '@/components/shared/MapaTesoroPicker'
 import type { CrearEtapaRequest, TipoEtapaApi } from '@/types/mision.types'
+import { categoriasTriviaUsadas } from '@/utils/misionTriviaCategories'
 
 export const emptyEtapa = (orden: number, tipo: TipoEtapaApi = 'BusquedaTesoro'): CrearEtapaRequest => ({
   tipoEtapa: tipo,
@@ -9,6 +12,9 @@ export const emptyEtapa = (orden: number, tipo: TipoEtapaApi = 'BusquedaTesoro')
   codigoQrSolucion: '',
   pistas: [],
   categoriaIds: [],
+  latitud: null,
+  longitud: null,
+  radioMetros: null,
 })
 
 interface EtapasEditorProps {
@@ -35,6 +41,8 @@ export function EtapasEditor({ etapas, onChange, categoriaOptions, disabled }: E
 
   const toggleCategoria = (index: number, categoriaId: string) => {
     const etapa = etapas[index]
+    const usadas = categoriasTriviaUsadas(etapas, { etapaIndex: index })
+    if (usadas.has(categoriaId)) return
     const ids = new Set(etapa.categoriaIds ?? [])
     if (ids.has(categoriaId)) ids.delete(categoriaId)
     else ids.add(categoriaId)
@@ -46,7 +54,7 @@ export function EtapasEditor({ etapas, onChange, categoriaOptions, disabled }: E
       <div>
         <h4 className="text-sm font-medium text-slate-900">Etapas del recorrido</h4>
         <p className="mt-1 text-xs text-slate-600">
-          Combina etapas de Búsqueda del Tesoro (QR y pistas) y Trivia (categorías del banco).
+          Combina etapas de Búsqueda del Tesoro (QR, mapa y pistas) y Trivia (categorías del banco).
         </p>
       </div>
 
@@ -74,6 +82,9 @@ export function EtapasEditor({ etapas, onChange, categoriaOptions, disabled }: E
                 codigoQrSolucion: tipo === 'BusquedaTesoro' ? etapa.codigoQrSolucion ?? '' : undefined,
                 pistas: tipo === 'BusquedaTesoro' ? etapa.pistas ?? [] : [],
                 categoriaIds: tipo === 'Trivia' ? etapa.categoriaIds ?? [] : [],
+                latitud: tipo === 'BusquedaTesoro' ? etapa.latitud ?? null : null,
+                longitud: tipo === 'BusquedaTesoro' ? etapa.longitud ?? null : null,
+                radioMetros: tipo === 'BusquedaTesoro' ? etapa.radioMetros ?? null : null,
               })
             }}
             className={selectClass}
@@ -101,6 +112,28 @@ export function EtapasEditor({ etapas, onChange, categoriaOptions, disabled }: E
                 placeholder="Código QR solución"
                 className={inputClass}
               />
+              <div className="grid gap-3 md:grid-cols-2">
+                <MapaTesoroPicker
+                  disabled={disabled}
+                  value={
+                    etapa.latitud != null && etapa.longitud != null && etapa.radioMetros != null
+                      ? {
+                          latitud: etapa.latitud,
+                          longitud: etapa.longitud,
+                          radioMetros: etapa.radioMetros,
+                        }
+                      : null
+                  }
+                  onChange={(ubicacion) =>
+                    updateEtapa(index, {
+                      latitud: ubicacion?.latitud ?? null,
+                      longitud: ubicacion?.longitud ?? null,
+                      radioMetros: ubicacion?.radioMetros ?? null,
+                    })
+                  }
+                />
+                <CodigoQrTesoro codigo={etapa.codigoQrSolucion ?? ''} disabled={disabled} />
+              </div>
               <PistasEditor
                 pistas={etapa.pistas ?? []}
                 onChange={(pistas) => updateEtapa(index, { pistas })}
@@ -109,21 +142,36 @@ export function EtapasEditor({ etapas, onChange, categoriaOptions, disabled }: E
             </>
           ) : (
             <div className="space-y-1">
-              <p className="text-xs text-slate-600">Categorías del banco de trivia (RB-33)</p>
+              <p className="text-xs text-slate-600">
+                Categorías del banco de trivia (RB-33). Cada categoría solo puede usarse en una etapa
+                trivia de la misión.
+              </p>
               {categoriaOptions.length === 0 ? (
                 <p className="text-xs text-amber-700">Crea categorías en Trivia antes de asignar.</p>
               ) : (
-                categoriaOptions.map((cat) => (
-                  <label key={cat.id} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      disabled={disabled}
-                      checked={(etapa.categoriaIds ?? []).includes(cat.id)}
-                      onChange={() => toggleCategoria(index, cat.id)}
-                    />
-                    {cat.nombre}
-                  </label>
-                ))
+                categoriaOptions.map((cat) => {
+                  const usadaEnOtraEtapa = categoriasTriviaUsadas(etapas, { etapaIndex: index }).has(
+                    cat.id,
+                  )
+                  const checked = (etapa.categoriaIds ?? []).includes(cat.id)
+                  return (
+                    <label
+                      key={cat.id}
+                      className={`flex items-center gap-2 text-sm ${usadaEnOtraEtapa && !checked ? 'text-slate-400' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        disabled={disabled || (usadaEnOtraEtapa && !checked)}
+                        checked={checked}
+                        onChange={() => toggleCategoria(index, cat.id)}
+                      />
+                      {cat.nombre}
+                      {usadaEnOtraEtapa && !checked && (
+                        <span className="text-xs text-slate-400">(ya usada en otra etapa)</span>
+                      )}
+                    </label>
+                  )
+                })
               )}
             </div>
           )}
