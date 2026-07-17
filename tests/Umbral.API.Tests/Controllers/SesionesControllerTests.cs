@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using Umbral.API.Auth;
+using Umbral.Application.Sesion.Queries.GetHistorialSesion;
+using Umbral.Application.Sesion.Queries.GetReporteFinalSesion;
 using Umbral.API.Contracts.Sesiones;
 using Umbral.API.Tests.Support;
 
@@ -539,7 +541,9 @@ public sealed class SesionesControllerTests
         ranking.Should().HaveCount(2);
         ranking![0].NombreParticipante.Should().Be("Alpha");
         ranking[0].PuntajeTotal.Should().Be(0);
+        ranking[0].Posicion.Should().Be(1);
         ranking[1].NombreParticipante.Should().Be("Gamma");
+        ranking[1].Posicion.Should().Be(2);
     }
 
     [Fact]
@@ -562,8 +566,10 @@ public sealed class SesionesControllerTests
         ranking.Should().HaveCount(2);
         ranking![0].ParticipanteId.Should().Be(betaId);
         ranking[0].PuntajeTotal.Should().Be(100);
+        ranking[0].Posicion.Should().Be(1);
         ranking[1].ParticipanteId.Should().Be(alphaId);
         ranking[1].PuntajeTotal.Should().Be(0);
+        ranking[1].Posicion.Should().Be(2);
     }
 
     [Fact]
@@ -594,6 +600,64 @@ public sealed class SesionesControllerTests
             $"/api/v1/sesiones/{sesion.Id}/iniciar",
             null);
         iniciar.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task GET_historial_CuandoSesionIniciada_RetornaEventos()
+    {
+        var sesionId = await CrearSesionIniciadaAsync();
+
+        var response = await _client.GetAsync($"/api/v1/sesiones/{sesionId}/historial");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<HistorialSesionDto>();
+        body!.SesionId.Should().Be(sesionId);
+        body.TotalEventos.Should().BeGreaterThan(0);
+        body.Eventos.Should().NotBeEmpty();
+        body.Eventos.Should().Contain(e => e.Tipo == "SesionIniciada");
+    }
+
+    [Fact]
+    public async Task GET_historial_CuandoSesionNoExiste_Retorna404()
+    {
+        var response = await _client.GetAsync(
+            $"/api/v1/sesiones/{Guid.NewGuid()}/historial");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GET_reporte_final_CuandoSesionFinalizada_RetornaRanking()
+    {
+        var (sesionId, codigo) = await CrearSesionAsync();
+        var jugadorId = Guid.NewGuid();
+        await UnirseParticipanteAsync(sesionId, codigo, "Ganador", jugadorId);
+        await IniciarSesionAsync(sesionId);
+        await EnviarEvidenciaAsync(sesionId, jugadorId, "QR-API-001");
+
+        ResetAuth();
+        await _client.PostAsync($"/api/v1/sesiones/{sesionId}/finalizar", null);
+
+        var response = await _client.GetAsync($"/api/v1/sesiones/{sesionId}/reporte-final");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<ReporteFinalSesionDto>();
+        body!.SesionId.Should().Be(sesionId);
+        body.Estado.Should().Be("Finalizada");
+        body.Ranking.Should().ContainSingle();
+        body.Ranking[0].NombreParticipante.Should().Be("Ganador");
+        body.Ranking[0].PuntajeTotal.Should().Be(100);
+    }
+
+    [Fact]
+    public async Task GET_reporte_final_CuandoSesionNoExiste_Retorna404()
+    {
+        var response = await _client.GetAsync(
+            $"/api/v1/sesiones/{Guid.NewGuid()}/reporte-final");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     private async Task<(Guid Id, string CodigoAcceso)> CrearSesionAsync()
@@ -728,6 +792,204 @@ public sealed class SesionesControllerTests
         var response = await _client.GetAsync($"/api/v1/sesiones/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GET_mi_inscripcion_CuandoInscrito_Retorna200()
+    {
+        var (sesionId, codigo) = await CrearSesionAsync();
+        var jugadorId = Guid.NewGuid();
+        await UnirseParticipanteAsync(sesionId, codigo, "Inscrito", jugadorId);
+
+        SetParticipanteAuth(jugadorId);
+        var response = await _client.GetAsync("/api/v1/sesiones/mi-inscripcion");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<MiInscripcionParticipanteResponse>();
+        body!.SesionId.Should().Be(sesionId);
+        body.Etapas.Should().NotBeEmpty();
+        ResetAuth();
+    }
+
+    [Fact]
+    public async Task GET_mi_inscripcion_CuandoSinInscripcion_Retorna204()
+    {
+        SetParticipanteAuth(Guid.NewGuid());
+        var response = await _client.GetAsync("/api/v1/sesiones/mi-inscripcion");
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        ResetAuth();
+    }
+
+    [Fact]
+    public async Task GET_etapas_CuandoParticipanteInscrito_Retorna200()
+    {
+        var (sesionId, codigo) = await CrearSesionAsync();
+        var jugadorId = Guid.NewGuid();
+        await UnirseParticipanteAsync(sesionId, codigo, "Etapas", jugadorId);
+        await IniciarSesionAsync(sesionId);
+
+        SetParticipanteAuth(jugadorId);
+        var response = await _client.GetAsync($"/api/v1/sesiones/{sesionId}/etapas");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<SesionEtapasParticipanteResponse>();
+        body!.TotalEtapas.Should().BeGreaterThan(0);
+        body.Etapas.Should().NotBeEmpty();
+        ResetAuth();
+    }
+
+    [Fact]
+    public async Task POST_pistas_manuales_CuandoSesionActiva_Retorna204()
+    {
+        var sesionId = await CrearSesionIniciadaAsync();
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/pistas-manuales",
+            new LiberarPistaManualRequest("Pista manual operador"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task DELETE_participante_CuandoEnLobby_Expulsa_Retorna204()
+    {
+        var (sesionId, codigo) = await CrearSesionAsync();
+        await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/abrir-inscripcion",
+            null);
+        var participanteId = await UnirseParticipanteYObtenerIdAsync(
+            sesionId, codigo, "Expulsado");
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"/api/v1/sesiones/{sesionId}/participantes/{participanteId}")
+        {
+            Content = JsonContent.Create(new ExpulsarParticipanteRequest("Comportamiento indebido"))
+        };
+
+        var response = await _client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task POST_trivia_lanzar_CuandoSesionMisionTriviaActiva_Retorna204()
+    {
+        var misionId = await ApiTestData.SeedMisionTriviaActivaAsync(_services);
+        var crear = await _client.PostAsJsonAsync(
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(misionId, "Sesión trivia misión"));
+        crear.EnsureSuccessStatusCode();
+        var sesion = (await crear.Content.ReadFromJsonAsync<CrearSesionMisionResponse>())!;
+
+        await _client.PostAsync(
+            $"/api/v1/sesiones/{sesion.Id}/abrir-inscripcion",
+            null);
+        await UnirseParticipanteAsync(sesion.Id, sesion.CodigoAcceso, "TriviaTeam");
+        await IniciarSesionAsync(sesion.Id);
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesion.Id}/trivia/lanzar",
+            new LanzarPreguntaTriviaRequest(30));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task GET_trivia_estado_DespuesDeLanzar_Retorna200()
+    {
+        var (sesionId, jugadorId) = await CrearSesionTriviaMisionIniciadaAsync();
+
+        await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/trivia/lanzar",
+            new LanzarPreguntaTriviaRequest(30));
+
+        SetParticipanteAuth(jugadorId);
+        var response = await _client.GetAsync(
+            $"/api/v1/sesiones/{sesionId}/trivia/estado");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<EstadoTriviaSesionResponse>();
+        body!.Fase.Should().Be("PreguntaActiva");
+        body.PreguntaId.Should().NotBeNull();
+        ResetAuth();
+    }
+
+    [Fact]
+    public async Task POST_trivia_respuestas_CuandoPreguntaActiva_Retorna202YProcesaEnCola()
+    {
+        var (sesionId, jugadorId) = await CrearSesionTriviaMisionIniciadaAsync();
+
+        await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/trivia/lanzar",
+            new LanzarPreguntaTriviaRequest(30));
+
+        SetParticipanteAuth(jugadorId);
+        var estado = await _client.GetAsync(
+            $"/api/v1/sesiones/{sesionId}/trivia/estado");
+        estado.EnsureSuccessStatusCode();
+        var trivia = (await estado.Content.ReadFromJsonAsync<EstadoTriviaSesionResponse>())!;
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/trivia/respuestas",
+            new SubmitRespuestaTriviaRequest(trivia.PreguntaId!.Value, 0, 30));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var ack = await response.Content.ReadFromJsonAsync<SubmitRespuestaTriviaResponse>();
+        ack!.Status.Should().Be("Accepted");
+        ack.MessageId.Should().NotBeEmpty();
+
+        EstadoTriviaSesionResponse? procesado = null;
+        for (var i = 0; i < 25; i++)
+        {
+            await Task.Delay(150);
+            var poll = await _client.GetAsync($"/api/v1/sesiones/{sesionId}/trivia/estado");
+            poll.EnsureSuccessStatusCode();
+            procesado = await poll.Content.ReadFromJsonAsync<EstadoTriviaSesionResponse>();
+            if (procesado!.YaRespondio && procesado.UltimaRespuestaPuntos.HasValue)
+                break;
+        }
+
+        procesado.Should().NotBeNull();
+        procesado!.YaRespondio.Should().BeTrue();
+        procesado.UltimaRespuestaEsCorrecta.Should().BeTrue();
+        procesado.UltimaRespuestaPuntos.Should().BeGreaterThan(0);
+        ResetAuth();
+    }
+
+    [Fact]
+    public async Task POST_trivia_cerrar_CuandoPreguntaActiva_Retorna204()
+    {
+        var (sesionId, _) = await CrearSesionTriviaMisionIniciadaAsync();
+
+        await _client.PostAsJsonAsync(
+            $"/api/v1/sesiones/{sesionId}/trivia/lanzar",
+            new LanzarPreguntaTriviaRequest(30));
+
+        var response = await _client.PostAsync(
+            $"/api/v1/sesiones/{sesionId}/trivia/cerrar",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    private async Task<(Guid SesionId, Guid JugadorId)> CrearSesionTriviaMisionIniciadaAsync()
+    {
+        var misionId = await ApiTestData.SeedMisionTriviaActivaAsync(_services);
+        var crear = await _client.PostAsJsonAsync(
+            "/api/v1/sesiones",
+            new CrearSesionMisionRequest(misionId, $"Sesión trivia {Guid.NewGuid():N}"));
+        crear.EnsureSuccessStatusCode();
+        var sesion = (await crear.Content.ReadFromJsonAsync<CrearSesionMisionResponse>())!;
+
+        await _client.PostAsync(
+            $"/api/v1/sesiones/{sesion.Id}/abrir-inscripcion",
+            null);
+
+        var jugadorId = Guid.NewGuid();
+        await UnirseParticipanteAsync(sesion.Id, sesion.CodigoAcceso, "TriviaPlayer", jugadorId);
+        await IniciarSesionAsync(sesion.Id);
+
+        return (sesion.Id, jugadorId);
     }
 
     private async Task<(Guid SesionId, Guid JugadorId, Guid ParticipanteId)> CrearSesionIniciadaConParticipanteAsync()

@@ -16,11 +16,12 @@ public sealed class CancelarSesionCommandHandlerTests
 {
     private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
+    private readonly INotificacionRealTime _notifier = Substitute.For<INotificacionRealTime>();
     private readonly CancelarSesionCommandHandler _sut;
 
     public CancelarSesionCommandHandlerTests()
     {
-        _sut = new CancelarSesionCommandHandler(_sesionRepo, _publisher);
+        _sut = new CancelarSesionCommandHandler(_sesionRepo, _publisher, _notifier);
     }
 
     [Fact]
@@ -48,6 +49,10 @@ public sealed class CancelarSesionCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         sesion.Estado.Should().Be(EstadoSesion.Cancelada);
         eventos.Should().ContainSingle(e => e is SesionCancelada);
+        await _notifier.Received(1).NotificarCambioEstadoSesionAsync(
+            sesion.SesionId.Valor.ToString(),
+            "Cancelada",
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

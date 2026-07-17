@@ -24,6 +24,21 @@ public sealed class MisionSnapshotTests
     }
 
     [Fact]
+    public void DesdeSoloBusquedaTesoro_CopiaUbicacionDelTesoro()
+    {
+        var mision = Mision.Crear("Snapshot con mapa");
+        mision.AgregarEtapaBusquedaTesoro("Etapa 1", "QR-001", 10.488, -66.847, 120);
+        mision.Activar();
+
+        var snapshot = MisionSnapshot.DesdeSoloBusquedaTesoro(mision);
+        var etapa = (EtapaBusquedaTesoroSnapshot)snapshot.Etapas[0];
+
+        etapa.Latitud.Should().Be(10.488);
+        etapa.Longitud.Should().Be(-66.847);
+        etapa.RadioMetros.Should().Be(120);
+    }
+
+    [Fact]
     public void Desde_ConEtapaTriviaResuelta_IncluyeSnapshotTrivia()
     {
         var mision = Mision.Crear("Snapshot trivia");

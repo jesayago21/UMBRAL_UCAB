@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Umbral.Application.Tests" />
+    <InternalsVisibleTo Include="Umbral.Infrastructure" />
   </ItemGroup>
 
   <PropertyGroup>

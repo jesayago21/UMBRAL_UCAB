@@ -12,10 +12,12 @@ namespace Umbral.API.Tests.Controllers;
 public sealed class MisionesControllerTests
 {
     private readonly HttpClient _client;
+    private readonly IServiceProvider _services;
 
     public MisionesControllerTests(ApiIntegrationFixture fixture)
     {
         _client = fixture.Factory.CreateClient();
+        _services = fixture.Factory.Services;
     }
 
     [Fact]
@@ -171,6 +173,148 @@ public sealed class MisionesControllerTests
         SetRole("Participante");
         var response = await _client.GetAsync("/api/v1/misiones/activas");
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task PUT_pistas_CuandoAdmin_ActualizaContenido_Retorna204()
+    {
+        SetRole("Administrador");
+        var create = await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest("Mision Pista Edit"));
+        create.StatusCode.Should().Be(HttpStatusCode.Created);
+        var misionId = await ReadCreatedId(create);
+
+        var get = await _client.GetAsync($"/api/v1/misiones/{misionId}");
+        var mision = (await get.Content.ReadFromJsonAsync<MisionResponse>())!;
+        var etapa = mision.Etapas[0];
+        var pista = etapa.Pistas![0];
+
+        var update = await _client.PutAsJsonAsync(
+            $"/api/v1/misiones/{misionId}/etapas/{etapa.EtapaId}/pistas/{pista.PistaId}",
+            new EditarPistaEtapaRequest("Pista editada API", "PorGanador", null));
+
+        update.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var getAfter = await _client.GetAsync($"/api/v1/misiones/{misionId}");
+        var misionAfter = (await getAfter.Content.ReadFromJsonAsync<MisionResponse>())!;
+        misionAfter.Etapas[0].Pistas![0].Contenido.Should().Be("Pista editada API");
+    }
+
+    [Fact]
+    public async Task DELETE_pistas_CuandoAdmin_EliminaPista_Retorna204()
+    {
+        SetRole("Administrador");
+        var create = await _client.PostAsJsonAsync("/api/v1/misiones", BuildCrearRequest("Mision Pista Delete"));
+        create.StatusCode.Should().Be(HttpStatusCode.Created);
+        var misionId = await ReadCreatedId(create);
+
+        var get = await _client.GetAsync($"/api/v1/misiones/{misionId}");
+        var mision = (await get.Content.ReadFromJsonAsync<MisionResponse>())!;
+        var etapa = mision.Etapas[0];
+        var pista = etapa.Pistas![0];
+
+        var delete = await _client.DeleteAsync(
+            $"/api/v1/misiones/{misionId}/etapas/{etapa.EtapaId}/pistas/{pista.PistaId}");
+
+        delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var getAfter = await _client.GetAsync($"/api/v1/misiones/{misionId}");
+        var misionAfter = (await getAfter.Content.ReadFromJsonAsync<MisionResponse>())!;
+        misionAfter.Etapas[0].Pistas.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task POST_etapas_CuandoAdmin_AgregaEtapaBusqueda_Retorna201()
+    {
+        SetRole("Administrador");
+        var create = await _client.PostAsJsonAsync(
+            "/api/v1/misiones",
+            BuildCrearRequest("Mision Etapas", activar: false));
+        create.EnsureSuccessStatusCode();
+        var misionId = await ReadCreatedId(create);
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/misiones/{misionId}/etapas",
+            new AgregarEtapaMisionRequest(
+                "BusquedaTesoro",
+                "Etapa extra",
+                "QR-EXTRA-001",
+                null,
+                [new AgregarPistaEtapaRequest("Pista extra", "PorTiempo", 30)]));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, Guid>>();
+        body!["id"].Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task POST_etapas_CuandoTrivia_AgregaEtapaTrivia_Retorna201()
+    {
+        SetRole("Administrador");
+        var (categoriaId, _) = await ApiTestData.SeedCategoriaConPreguntaAsync(_services);
+
+        var create = await _client.PostAsJsonAsync(
+            "/api/v1/misiones",
+            BuildCrearRequest("Mision Trivia Etapa", activar: false));
+        create.EnsureSuccessStatusCode();
+        var misionId = await ReadCreatedId(create);
+
+        var response = await _client.PostAsJsonAsync(
+            $"/api/v1/misiones/{misionId}/etapas",
+            new AgregarEtapaMisionRequest(
+                "Trivia",
+                null,
+                null,
+                [categoriaId],
+                null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task PUT_etapas_CuandoAdmin_EditaDescripcion_Retorna204()
+    {
+        SetRole("Administrador");
+        var create = await _client.PostAsJsonAsync(
+            "/api/v1/misiones",
+            BuildCrearRequest("Mision Editar Etapa", activar: false));
+        create.EnsureSuccessStatusCode();
+        var misionId = await ReadCreatedId(create);
+
+        var get = await _client.GetAsync($"/api/v1/misiones/{misionId}");
+        var etapaId = (await get.Content.ReadFromJsonAsync<MisionResponse>())!.Etapas[0].EtapaId;
+
+        var response = await _client.PutAsJsonAsync(
+            $"/api/v1/misiones/{misionId}/etapas/{etapaId}",
+            new EditarEtapaMisionRequest("Descripción editada", "QR-EDIT-001", null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task DELETE_etapas_CuandoAdmin_EliminaEtapa_Retorna204()
+    {
+        SetRole("Administrador");
+        var create = await _client.PostAsJsonAsync(
+            "/api/v1/misiones",
+            BuildCrearRequest("Mision Eliminar Etapa", activar: false));
+        create.EnsureSuccessStatusCode();
+        var misionId = await ReadCreatedId(create);
+
+        await _client.PostAsJsonAsync(
+            $"/api/v1/misiones/{misionId}/etapas",
+            new AgregarEtapaMisionRequest(
+                "BusquedaTesoro",
+                "Etapa a borrar",
+                "QR-BORRAR",
+                null,
+                null));
+        var get = await _client.GetAsync($"/api/v1/misiones/{misionId}");
+        var etapaId = (await get.Content.ReadFromJsonAsync<MisionResponse>())!.Etapas[^1].EtapaId;
+
+        var response = await _client.DeleteAsync(
+            $"/api/v1/misiones/{misionId}/etapas/{etapaId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     private void SetRole(string role)

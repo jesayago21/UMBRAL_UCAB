@@ -65,5 +65,8 @@ public sealed class ConsultaMisionesController : ControllerBase
                     pista.Contenido,
                     pista.TipoLiberacion,
                     pista.SegundosLiberacion)).ToList(),
-                etapa.CategoriaIds)).ToList());
+                etapa.CategoriaIds,
+                etapa.Latitud,
+                etapa.Longitud,
+                etapa.RadioMetros)).ToList());
 }

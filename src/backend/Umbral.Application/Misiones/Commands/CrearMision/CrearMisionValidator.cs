@@ -1,4 +1,5 @@
 using FluentValidation;
+using Umbral.Domain.CatalogoMision.Mision;
 
 namespace Umbral.Application.Misiones.Commands.CrearMision;
 
@@ -37,6 +38,26 @@ public sealed class CrearMisionValidator : AbstractValidator<CrearMisionCommand>
                     .NotEmpty()
                     .WithMessage("El código QR solución de la etapa es obligatorio.");
 
+                RuleFor(x => x)
+                    .Must(UbicacionCompletaOVacia)
+                    .WithMessage("La ubicación del tesoro requiere latitud, longitud y radio juntos.");
+
+                RuleFor(x => x.Latitud)
+                    .InclusiveBetween(-90, 90)
+                    .When(x => x.Latitud.HasValue)
+                    .WithMessage("La latitud debe estar entre -90 y 90.");
+
+                RuleFor(x => x.Longitud)
+                    .InclusiveBetween(-180, 180)
+                    .When(x => x.Longitud.HasValue)
+                    .WithMessage("La longitud debe estar entre -180 y 180.");
+
+                RuleFor(x => x.RadioMetros)
+                    .InclusiveBetween(EtapaBusquedaTesoro.RadioMetrosMinimo, EtapaBusquedaTesoro.RadioMetrosMaximo)
+                    .When(x => x.RadioMetros.HasValue)
+                    .WithMessage(
+                        $"El radio de búsqueda debe estar entre {EtapaBusquedaTesoro.RadioMetrosMinimo} y {EtapaBusquedaTesoro.RadioMetrosMaximo} metros.");
+
                 RuleForEach(x => x.Pistas!)
                     .SetValidator(new CrearPistaInputValidator())
                     .When(x => x.Pistas is not null);
@@ -48,6 +69,13 @@ public sealed class CrearMisionValidator : AbstractValidator<CrearMisionCommand>
                     .NotEmpty()
                     .WithMessage("La etapa trivia requiere al menos una categoría (RB-33).");
             });
+        }
+
+        private static bool UbicacionCompletaOVacia(EtapaMisionInput x)
+        {
+            var alguno = x.Latitud.HasValue || x.Longitud.HasValue || x.RadioMetros.HasValue;
+            var todos = x.Latitud.HasValue && x.Longitud.HasValue && x.RadioMetros.HasValue;
+            return !alguno || todos;
         }
     }
 

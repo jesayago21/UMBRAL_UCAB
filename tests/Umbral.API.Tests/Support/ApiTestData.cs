@@ -25,6 +25,23 @@ internal static class ApiTestData
         return mision.MisionId.Valor;
     }
 
+    public static async Task<Guid> SeedMisionTriviaActivaAsync(IServiceProvider services)
+    {
+        var (categoriaId, _) = await SeedCategoriaConPreguntaAsync(services);
+
+        using var scope = services.CreateScope();
+        var repo = new MisionRepository(
+            scope.ServiceProvider.GetRequiredService<UmbralDbContext>());
+
+        var mision = Mision.Crear($"Misión trivia API {Guid.NewGuid():N}");
+        mision.AgregarEtapaTrivia([new CategoriaId(categoriaId)]);
+        mision.Activar();
+        mision.ClearDomainEvents();
+
+        await repo.SaveAsync(mision);
+        return mision.MisionId.Valor;
+    }
+
     public static async Task<(Guid CategoriaId, Guid PreguntaId)> SeedCategoriaConPreguntaAsync(
         IServiceProvider services)
     {

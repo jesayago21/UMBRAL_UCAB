@@ -32,7 +32,10 @@ public sealed class CrearMisionController : ControllerBase
                     etapa.CodigoQrSolucion,
                     (etapa.Pistas ?? []).Select(pista =>
                         new CrearPistaInput(pista.Contenido, pista.TipoLiberacion, pista.SegundosLiberacion)).ToList(),
-                    etapa.CategoriaIds))
+                    etapa.CategoriaIds,
+                    etapa.Latitud,
+                    etapa.Longitud,
+                    etapa.RadioMetros))
                 .ToList(),
             request.Activar);
 

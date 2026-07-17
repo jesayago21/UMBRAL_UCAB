@@ -37,7 +37,6 @@ public sealed class KeycloakIdentityService : IIdentityService
         string username,
         string nombre,
         string apellido,
-        string passwordTemporal,
         IReadOnlyList<RolSistema> roles,
         CancellationToken ct = default)
     {
@@ -51,9 +50,80 @@ public sealed class KeycloakIdentityService : IIdentityService
         }
 
         var token  = await ObtenerAdminTokenAsync(ct);
-        var userId = await CrearUsuarioKeycloakAsync(token, email, username, nombre, apellido, ct);
-        await EstablecerPasswordAsync(token, userId, passwordTemporal, ct);
-        await SincronizarRolesKeycloakAsync(token, userId, roles, ct);
+        var userId = await CrearUsuarioKeycloakAsync(
+            token, email, username, nombre, apellido, requireUpdatePassword: true, ct);
+        try
+        {
+            await SincronizarRolesKeycloakAsync(token, userId, roles, ct);
+            await EnviarAccionesRequeridasEmailAsync(token, userId, ct);
+        }
+        catch
+        {
+            try
+            {
+                await EliminarEnIdentityServerAsync(userId, ct);
+            }
+            catch (Exception cleanupEx)
+            {
+                _logger.LogWarning(
+                    cleanupEx,
+                    "No se pudo revertir el usuario Keycloak {UserId} tras fallo de post-registro.",
+                    userId.Value);
+            }
+
+            throw;
+        }
+
+        return userId;
+    }
+
+    public async Task<KeycloakUserId> RegistrarParticipanteEnIdentityServerAsync(
+        EmailAddress email,
+        string username,
+        string nombre,
+        string apellido,
+        string password,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+            throw new ArgumentException("La contraseña debe tener al menos 8 caracteres.", nameof(password));
+
+        var roles = new[] { RolSistema.Participante };
+
+        if (_options.UseDevStub)
+        {
+            var devId = KeycloakDevStubStore.Registrar(email, username, nombre, apellido, roles);
+            _logger.LogWarning(
+                "KeycloakAdmin.UseDevStub=true: participante {Username} registrado en memoria (Id {Id}).",
+                username, devId.Value);
+            return await Task.FromResult(devId);
+        }
+
+        var token  = await ObtenerAdminTokenAsync(ct);
+        var userId = await CrearUsuarioKeycloakAsync(
+            token, email, username, nombre, apellido, requireUpdatePassword: false, ct);
+        try
+        {
+            await EstablecerPasswordAsync(token, userId, password, ct);
+            await SincronizarRolesKeycloakAsync(token, userId, roles, ct);
+        }
+        catch
+        {
+            try
+            {
+                await EliminarEnIdentityServerAsync(userId, ct);
+            }
+            catch (Exception cleanupEx)
+            {
+                _logger.LogWarning(
+                    cleanupEx,
+                    "No se pudo revertir el participante Keycloak {UserId} tras fallo de post-registro.",
+                    userId.Value);
+            }
+
+            throw;
+        }
+
         return userId;
     }
 
@@ -346,20 +416,34 @@ public sealed class KeycloakIdentityService : IIdentityService
         string username,
         string nombre,
         string apellido,
+        bool requireUpdatePassword,
         CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, UsersCollectionUrl());
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Content = JsonContent.Create(new
-        {
-            email         = email.Value,
-            username,
-            firstName     = nombre,
-            lastName      = apellido,
-            enabled       = true,
-            emailVerified = true,
-            requiredActions = Array.Empty<string>()
-        });
+
+        object payload = requireUpdatePassword
+            ? new
+            {
+                email         = email.Value,
+                username,
+                firstName     = nombre,
+                lastName      = apellido,
+                enabled       = true,
+                emailVerified = true,
+                requiredActions = new[] { "UPDATE_PASSWORD" }
+            }
+            : new
+            {
+                email         = email.Value,
+                username,
+                firstName     = nombre,
+                lastName      = apellido,
+                enabled       = true,
+                emailVerified = true
+            };
+
+        request.Content = JsonContent.Create(payload);
 
         var response = await _http.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
@@ -374,6 +458,34 @@ public sealed class KeycloakIdentityService : IIdentityService
 
         var idSegment = response.Headers.Location.Segments.Last().TrimEnd('/');
         return KeycloakUserId.From(Guid.Parse(idSegment));
+    }
+
+    private async Task EnviarAccionesRequeridasEmailAsync(
+        string token,
+        KeycloakUserId userId,
+        CancellationToken ct)
+    {
+        var query =
+            $"client_id={Uri.EscapeDataString(_options.FrontendClientId)}" +
+            $"&redirect_uri={Uri.EscapeDataString(_options.FrontendRedirectUri)}";
+        var url = $"{UserUrl(userId)}/execute-actions-email?{query}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Content = JsonContent.Create(new[] { "UPDATE_PASSWORD" });
+
+        var response = await _http.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(ct);
+            throw new InvalidOperationException(
+                $"Keycloak no pudo enviar el email de configuración de contraseña ({response.StatusCode}). " +
+                "Verifique SMTP del realm (Mailpit en local). Detalle: " + body);
+        }
+
+        _logger.LogInformation(
+            "Email execute-actions (UPDATE_PASSWORD) enviado para usuario Keycloak {UserId}.",
+            userId.Value);
     }
 
     private async Task EstablecerPasswordAsync(

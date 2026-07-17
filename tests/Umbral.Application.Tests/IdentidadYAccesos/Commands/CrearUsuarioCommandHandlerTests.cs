@@ -22,7 +22,6 @@ public sealed class CrearUsuarioCommandHandlerTests
             "nuevo_user",
             "Nuevo",
             "Usuario",
-            "Temporal123",
             ["Operador"]);
 
     [Fact]
@@ -34,7 +33,6 @@ public sealed class CrearUsuarioCommandHandlerTests
         _identity
             .RegistrarEnIdentityServerAsync(
                 Arg.Any<EmailAddress>(),
-                Arg.Any<string>(),
                 Arg.Any<string>(),
                 Arg.Any<string>(),
                 Arg.Any<string>(),
@@ -60,7 +58,6 @@ public sealed class CrearUsuarioCommandHandlerTests
         result.Errors.Should().Contain(e => e.Contains("RB-36"));
         await _identity.DidNotReceive().RegistrarEnIdentityServerAsync(
             Arg.Any<EmailAddress>(),
-            Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<string>(),
@@ -99,7 +96,6 @@ public sealed class CrearUsuarioCommandHandlerTests
         _identity
             .RegistrarEnIdentityServerAsync(
                 Arg.Any<EmailAddress>(),
-                Arg.Any<string>(),
                 Arg.Any<string>(),
                 Arg.Any<string>(),
                 Arg.Any<string>(),

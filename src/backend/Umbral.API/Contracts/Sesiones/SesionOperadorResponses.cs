@@ -23,6 +23,7 @@ public sealed record ParticipanteSesionResponse(
     string Nombre);
 
 public sealed record PistaSesionResponse(
+    Guid PistaId,
     string Contenido,
     string TipoLiberacion,
     int? SegundosLiberacion);
@@ -33,7 +34,11 @@ public sealed record EtapaSesionResponse(
     string Descripcion,
     bool EsActual,
     IReadOnlyList<PistaSesionResponse>? Pistas,
-    IReadOnlyList<Guid>? CategoriaIds);
+    IReadOnlyList<Guid>? CategoriaIds,
+    double? Latitud = null,
+    double? Longitud = null,
+    int? RadioMetros = null,
+    string? CodigoQrSolucion = null);
 
 public sealed record SesionDetalleResponse(
     Guid Id,
@@ -50,7 +55,8 @@ public sealed record SesionDetalleResponse(
     string? EtapaActualDescripcion,
     string? EtapaActivaTipo,
     IReadOnlyList<ParticipanteSesionResponse> Participantes,
-    IReadOnlyList<EtapaSesionResponse>? Etapas);
+    IReadOnlyList<EtapaSesionResponse>? Etapas,
+    string? TriviaFase = null);
 
 public sealed record SesionDisponibleParticipanteResponse(
     Guid Id,

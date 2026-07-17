@@ -10,6 +10,14 @@ public abstract class Etapa : Entity
 
     public abstract TipoEtapa Tipo { get; }
 
+    internal void AsignarOrden(int orden)
+    {
+        if (orden < 1)
+            throw new DomainException("El orden de la etapa debe ser al menos 1.");
+
+        Orden = orden;
+    }
+
     protected override bool IdEquals(Entity other) =>
         other is Etapa e && e.EtapaId == EtapaId;
 

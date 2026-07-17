@@ -28,7 +28,6 @@ public sealed class RegistroUsuariosAdminController : ControllerBase
                 request.Username,
                 request.Nombre,
                 request.Apellido,
-                request.PasswordTemporal,
                 request.Roles),
             cancellationToken);
 
@@ -43,7 +42,6 @@ public sealed class RegistroUsuariosAdminController : ControllerBase
                     request.Nombre,
                     request.Apellido,
                     created.Estado,
-                    created.Roles,
-                    request.PasswordTemporal)));
+                    created.Roles)));
     }
 }

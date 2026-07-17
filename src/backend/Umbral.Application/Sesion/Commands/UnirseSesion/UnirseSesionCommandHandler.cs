@@ -1,6 +1,7 @@
 using MediatR;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
+using Umbral.Application.Sesion;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Shared;
@@ -13,13 +14,16 @@ internal sealed class UnirseSesionCommandHandler
 {
     private readonly ISesionRepository _sesionRepository;
     private readonly IEventPublisher _eventPublisher;
+    private readonly INotificacionRealTime _notificacionRealTime;
 
     public UnirseSesionCommandHandler(
         ISesionRepository sesionRepository,
-        IEventPublisher eventPublisher)
+        IEventPublisher eventPublisher,
+        INotificacionRealTime notificacionRealTime)
     {
-        _sesionRepository = sesionRepository;
-        _eventPublisher   = eventPublisher;
+        _sesionRepository     = sesionRepository;
+        _eventPublisher       = eventPublisher;
+        _notificacionRealTime = notificacionRealTime;
     }
 
     public async Task<Result<UnirseSesionResult>> Handle(
@@ -54,6 +58,25 @@ internal sealed class UnirseSesionCommandHandler
             sesion.DomainEvents,
             cancellationToken);
         sesion.ClearDomainEvents();
+
+        var sesionId = sesion.SesionId.Valor.ToString();
+
+        await _notificacionRealTime.NotificarParticipantesActualizadosAsync(
+            sesionId,
+            sesion.Participantes.Count,
+            cancellationToken);
+
+        // HU-21: empujar ranking para que los demás participantes vean el ingreso al instante.
+        await _notificacionRealTime.NotificarRankingActualizadoAsync(
+            sesionId,
+            RankingNotificacionMapper.DesdeSesion(sesion),
+            cancellationToken);
+
+        // Si la unión abrió Programada → EnPreparacion, avisar también el estado.
+        await _notificacionRealTime.NotificarCambioEstadoSesionAsync(
+            sesionId,
+            sesion.Estado.ToString(),
+            cancellationToken);
 
         return Result<UnirseSesionResult>.Ok(new UnirseSesionResult(participante.ParticipanteId.Valor));
     }

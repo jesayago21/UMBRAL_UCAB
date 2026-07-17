@@ -4,4 +4,5 @@ public sealed record PosicionRankingDto(
     int Posicion,
     Guid ParticipanteId,
     string NombreParticipante,
-    int PuntajeTotal);
+    int PuntajeTotal,
+    long TiempoAcumuladoMs = 0);

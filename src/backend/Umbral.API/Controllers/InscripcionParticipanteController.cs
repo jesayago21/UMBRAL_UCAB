@@ -99,9 +99,13 @@ public sealed class InscripcionParticipanteController : ControllerBase
             e.EsActual,
             e.Pistas?
                 .Select(p => new PistaSesionResponse(
+                    p.PistaId,
                     p.Contenido,
                     p.TipoLiberacion,
                     p.SegundosLiberacion))
                 .ToList(),
-            e.CategoriaIds);
+            e.CategoriaIds,
+            e.Latitud,
+            e.Longitud,
+            e.RadioMetros);
 }

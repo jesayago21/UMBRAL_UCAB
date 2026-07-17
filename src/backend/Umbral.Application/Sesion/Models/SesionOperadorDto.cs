@@ -21,6 +21,7 @@ public sealed record ParticipanteSesionDto(
     string Nombre);
 
 public sealed record PistaSesionDto(
+    Guid PistaId,
     string Contenido,
     string TipoLiberacion,
     int? SegundosLiberacion);
@@ -31,7 +32,12 @@ public sealed record EtapaSesionDto(
     string Descripcion,
     bool EsActual,
     IReadOnlyList<PistaSesionDto>? Pistas,
-    IReadOnlyList<Guid>? CategoriaIds);
+    IReadOnlyList<Guid>? CategoriaIds,
+    double? Latitud = null,
+    double? Longitud = null,
+    int? RadioMetros = null,
+    /// <summary>Solo para operador; nunca se expone al participante.</summary>
+    string? CodigoQrSolucion = null);
 
 public sealed record SesionDetalleDto(
     Guid Id,
@@ -48,4 +54,6 @@ public sealed record SesionDetalleDto(
     string? EtapaActualDescripcion,
     string? EtapaActivaTipo,
     IReadOnlyList<ParticipanteSesionDto> Participantes,
-    IReadOnlyList<EtapaSesionDto>? Etapas);
+    IReadOnlyList<EtapaSesionDto>? Etapas,
+    /// <summary>HU-33 — fase trivia si la etapa activa es Trivia; null en otro caso.</summary>
+    string? TriviaFase = null);

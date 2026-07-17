@@ -1,4 +1,5 @@
 using Umbral.Domain.CatalogoMision.Mision;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Sesion;
 using Umbral.Domain.Shared;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
@@ -84,6 +85,20 @@ internal static class SesionTestBuilder
         foreach (var nombre in nombresParticipantes)
             UnirParticipante(sesion, nombre);
 
+        sesion.Iniciar();
+        sesion.ClearDomainEvents();
+        return sesion;
+    }
+
+    public static SesionAR ActivaTrivia(
+        IReadOnlyList<PreguntaId> preguntas,
+        string nombreParticipante = "Alpha")
+    {
+        var snapshot = MisionSnapshot.SoloTrivia(preguntas.ToList(), "Trivia test");
+        var sesion = SesionAR.CrearDesdeMision(snapshot, UsuarioId.Nuevo());
+        sesion.ClearDomainEvents();
+        sesion.AbrirParaRegistro();
+        UnirParticipante(sesion, nombreParticipante);
         sesion.Iniciar();
         sesion.ClearDomainEvents();
         return sesion;

@@ -44,7 +44,6 @@ internal sealed class CrearUsuarioCommandHandler
                 cmd.Username,
                 cmd.Nombre,
                 cmd.Apellido,
-                cmd.PasswordTemporal,
                 roles,
                 ct);
 

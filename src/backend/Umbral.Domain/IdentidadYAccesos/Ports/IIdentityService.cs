@@ -10,8 +10,19 @@ public interface IIdentityService
         string username,
         string nombre,
         string apellido,
-        string passwordTemporal,
         IReadOnlyList<RolSistema> roles,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Auto-registro de participante: crea el usuario con contraseña ya definida
+    /// (sin required action UPDATE_PASSWORD) y asigna solo el rol Participante.
+    /// </summary>
+    Task<KeycloakUserId> RegistrarParticipanteEnIdentityServerAsync(
+        EmailAddress email,
+        string username,
+        string nombre,
+        string apellido,
+        string password,
         CancellationToken ct = default);
 
     Task SincronizarRolesAsync(

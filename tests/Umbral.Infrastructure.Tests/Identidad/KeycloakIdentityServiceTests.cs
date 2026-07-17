@@ -26,7 +26,6 @@ public sealed class KeycloakIdentityServiceTests
             "stub_user",
             "Stub",
             "User",
-            "Password1",
             [RolSistema.Operador]);
 
         id.Value.Should().NotBe(Guid.Empty);
@@ -38,7 +37,7 @@ public sealed class KeycloakIdentityServiceTests
         var sut = CreateSut();
         var email = EmailAddress.Create("list_stub@test.com");
         await sut.RegistrarEnIdentityServerAsync(
-            email, "list_user", "List", "User", "Password1", [RolSistema.Operador]);
+            email, "list_user", "List", "User", [RolSistema.Operador]);
 
         var list = await sut.ListarUsuariosAsync(0, 50);
 
@@ -51,7 +50,7 @@ public sealed class KeycloakIdentityServiceTests
         var sut = CreateSut();
         var email = EmailAddress.Create("dup_stub@test.com");
         await sut.RegistrarEnIdentityServerAsync(
-            email, "dup_user", "Dup", "User", "Password1", [RolSistema.Operador]);
+            email, "dup_user", "Dup", "User", [RolSistema.Operador]);
 
         var existe = await sut.ExisteEmailAsync(email);
 
@@ -64,7 +63,7 @@ public sealed class KeycloakIdentityServiceTests
         var sut = CreateSut();
         var email = EmailAddress.Create("roles_stub@test.com");
         var id = await sut.RegistrarEnIdentityServerAsync(
-            email, "roles_user", "Roles", "User", "Password1", [RolSistema.Operador]);
+            email, "roles_user", "Roles", "User", [RolSistema.Operador]);
 
         await sut.SincronizarRolesAsync(id, [RolSistema.Administrador]);
 
@@ -78,7 +77,7 @@ public sealed class KeycloakIdentityServiceTests
         var sut = CreateSut();
         var email = EmailAddress.Create("estado_stub@test.com");
         var id = await sut.RegistrarEnIdentityServerAsync(
-            email, "estado_user", "Estado", "User", "Password1", [RolSistema.Operador]);
+            email, "estado_user", "Estado", "User", [RolSistema.Operador]);
 
         await sut.CambiarEstadoAsync(id, habilitado: false);
 
@@ -92,11 +91,30 @@ public sealed class KeycloakIdentityServiceTests
         var sut = CreateSut();
         var email = EmailAddress.Create("del_stub@test.com");
         var id = await sut.RegistrarEnIdentityServerAsync(
-            email, "del_user", "Del", "User", "Password1", [RolSistema.Operador]);
+            email, "del_user", "Del", "User", [RolSistema.Operador]);
 
         await sut.EliminarEnIdentityServerAsync(id);
 
         var usuario = await sut.ObtenerUsuarioPorIdAsync(id);
         usuario.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RegistrarParticipanteEnIdentityServerAsync_UseDevStub_AsignaRolParticipante()
+    {
+        var sut = CreateSut();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var email = EmailAddress.Create($"part_stub_{suffix}@test.com");
+
+        var id = await sut.RegistrarParticipanteEnIdentityServerAsync(
+            email,
+            $"part_stub_{suffix}",
+            "Part",
+            "Stub",
+            "Umbral123!");
+
+        var user = await sut.ObtenerUsuarioPorIdAsync(id);
+        user.Should().NotBeNull();
+        user!.Roles.Should().ContainSingle().Which.Should().Be(RolSistema.Participante);
     }
 }

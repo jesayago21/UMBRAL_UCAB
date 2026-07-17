@@ -26,7 +26,8 @@ public sealed class RankingSesionController : ControllerBase
                 x.Posicion,
                 x.ParticipanteId,
                 x.NombreParticipante,
-                x.PuntajeTotal))
+                x.PuntajeTotal,
+                x.TiempoAcumuladoMs))
             .ToList());
     }
 }

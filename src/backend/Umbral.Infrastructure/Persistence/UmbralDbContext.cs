@@ -18,6 +18,7 @@ public sealed class UmbralDbContext : DbContext
     public DbSet<ParticipanteSesion> ParticipantesSesion => Set<ParticipanteSesion>();
     public DbSet<EventoSesion> EventosSesion => Set<EventoSesion>();
     public DbSet<Evidencia> Evidencias => Set<Evidencia>();
+    public DbSet<RespuestaTrivia> RespuestasTrivia => Set<RespuestaTrivia>();
 
     public DbSet<Mision> Misiones => Set<Mision>();
     public DbSet<Etapa> EtapasMision => Set<Etapa>();
@@ -48,6 +49,8 @@ public sealed class UmbralDbContext : DbContext
             .HaveConversion<ParticipanteIdValueConverter>();
         configurationBuilder.Properties<EvidenciaId>()
             .HaveConversion<EvidenciaIdValueConverter>();
+        configurationBuilder.Properties<RespuestaTriviaId>()
+            .HaveConversion<RespuestaTriviaIdValueConverter>();
         configurationBuilder.Properties<UsuarioId>()
             .HaveConversion<UsuarioIdValueConverter>();
         configurationBuilder.Properties<CategoriaId>()

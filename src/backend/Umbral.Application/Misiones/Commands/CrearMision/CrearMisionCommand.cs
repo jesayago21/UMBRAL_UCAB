@@ -14,7 +14,10 @@ public sealed record EtapaMisionInput(
     string? Descripcion,
     string? CodigoQrSolucion,
     IReadOnlyList<CrearPistaInput>? Pistas,
-    IReadOnlyList<Guid>? CategoriaIds);
+    IReadOnlyList<Guid>? CategoriaIds,
+    double? Latitud = null,
+    double? Longitud = null,
+    int? RadioMetros = null);
 
 public sealed record CrearPistaInput(
     string Contenido,

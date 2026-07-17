@@ -5,12 +5,11 @@ public sealed record CrearUsuarioRequest(
     string Username,
     string Nombre,
     string Apellido,
-    string PasswordTemporal,
     IReadOnlyList<string> Roles);
 
 /// <summary>
-/// Respuesta exclusiva del POST 201: incluye la contraseña temporal para que el admin
-/// pueda entregarla al usuario en el momento de la creación.
+/// Respuesta del POST 201. El usuario establecerá su contraseña
+/// en el primer inicio de sesión (required action UPDATE_PASSWORD).
 /// </summary>
 public sealed record CrearUsuarioResponse(
     Guid KeycloakUserId,
@@ -19,8 +18,7 @@ public sealed record CrearUsuarioResponse(
     string Nombre,
     string Apellido,
     string Estado,
-    IReadOnlyList<string> Roles,
-    string PasswordTemporal);
+    IReadOnlyList<string> Roles);
 
 /// <summary>
 /// Respuesta de lectura (GET /usuarios, GET /usuarios/{id}).

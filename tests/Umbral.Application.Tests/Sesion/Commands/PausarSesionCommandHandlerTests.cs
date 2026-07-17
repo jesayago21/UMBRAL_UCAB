@@ -17,11 +17,12 @@ public sealed class PausarSesionCommandHandlerTests
 {
     private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
+    private readonly INotificacionRealTime _notifier = Substitute.For<INotificacionRealTime>();
     private readonly PausarSesionCommandHandler _sut;
 
     public PausarSesionCommandHandlerTests()
     {
-        _sut = new PausarSesionCommandHandler(_sesionRepo, _publisher);
+        _sut = new PausarSesionCommandHandler(_sesionRepo, _publisher, _notifier);
     }
 
     [Fact]
@@ -46,6 +47,10 @@ public sealed class PausarSesionCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         sesion.Estado.Should().Be(EstadoSesion.Pausada);
         eventos.Should().ContainSingle().Which.Should().BeOfType<SesionPausada>();
+        await _notifier.Received(1).NotificarCambioEstadoSesionAsync(
+            sesion.SesionId.Valor.ToString(),
+            "Pausada",
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

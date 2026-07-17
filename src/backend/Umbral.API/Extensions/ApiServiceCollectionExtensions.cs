@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Umbral.API.Auth;
 
@@ -44,12 +45,24 @@ public static class ApiServiceCollectionExtensions
                     options.Authority = keycloak.Authority;
                     options.RequireHttpsMetadata = keycloak.RequireHttpsMetadata;
 
+                    if (!string.IsNullOrWhiteSpace(keycloak.MetadataAddress))
+                    {
+                        var metadata = keycloak.MetadataAddress.TrimEnd('/');
+                        options.MetadataAddress = metadata.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                            ? metadata + "/.well-known/openid-configuration"
+                            : metadata;
+                    }
+
                     var validateAudience = !string.IsNullOrWhiteSpace(keycloak.Audience);
+
+                    var authority = keycloak.Authority?.TrimEnd('/') ?? string.Empty;
 
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
-                        ValidIssuer = keycloak.Authority,
+                        ValidIssuers = string.IsNullOrEmpty(authority)
+                            ? null
+                            : [authority, authority + "/"],
                         ValidateAudience = validateAudience,
                         ValidAudience = keycloak.Audience,
                         ValidateLifetime = true,
@@ -61,7 +74,30 @@ public static class ApiServiceCollectionExtensions
 
                     options.Events = new JwtBearerEvents
                     {
-                        OnTokenValidated = MapRealmRolesAsync
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken)
+                                && path.StartsWithSegments("/hubs"))
+                            {
+                                context.Token = accessToken;
+                            }
+
+                            return Task.CompletedTask;
+                        },
+                        OnTokenValidated = MapRealmRolesAsync,
+                        OnAuthenticationFailed = context =>
+                        {
+                            var logger = context.HttpContext.RequestServices
+                                .GetService(typeof(ILoggerFactory)) as ILoggerFactory;
+                            logger?.CreateLogger("JwtBearer").LogWarning(
+                                context.Exception,
+                                "JWT auth failed for {Method} {Path}",
+                                context.HttpContext.Request.Method,
+                                context.HttpContext.Request.Path);
+                            return Task.CompletedTask;
+                        }
                     };
                 });
         }

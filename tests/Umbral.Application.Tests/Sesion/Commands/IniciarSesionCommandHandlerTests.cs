@@ -17,11 +17,12 @@ public sealed class IniciarSesionCommandHandlerTests
 {
     private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
+    private readonly INotificacionRealTime _notifier = Substitute.For<INotificacionRealTime>();
     private readonly IniciarSesionCommandHandler _sut;
 
     public IniciarSesionCommandHandlerTests()
     {
-        _sut = new IniciarSesionCommandHandler(_sesionRepo, _publisher);
+        _sut = new IniciarSesionCommandHandler(_sesionRepo, _publisher, _notifier);
     }
 
     [Fact]
@@ -48,6 +49,10 @@ public sealed class IniciarSesionCommandHandlerTests
         sesion.IniciadaEn.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
         eventos.Should().ContainSingle().Which.Should().BeOfType<SesionIniciada>();
         sesion.DomainEvents.Should().BeEmpty();
+        await _notifier.Received(1).NotificarCambioEstadoSesionAsync(
+            sesion.SesionId.Valor.ToString(),
+            "Activa",
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

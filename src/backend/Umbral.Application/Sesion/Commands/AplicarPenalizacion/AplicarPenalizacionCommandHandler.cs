@@ -3,6 +3,7 @@ using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
+using Umbral.Domain.Shared;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Application.Sesion.Commands.AplicarPenalizacion;
@@ -12,13 +13,16 @@ internal sealed class AplicarPenalizacionCommandHandler
 {
     private readonly ISesionRepository _sesionRepository;
     private readonly IEventPublisher _eventPublisher;
+    private readonly INotificacionRealTime _notificacionRealTime;
 
     public AplicarPenalizacionCommandHandler(
         ISesionRepository sesionRepository,
-        IEventPublisher eventPublisher)
+        IEventPublisher eventPublisher,
+        INotificacionRealTime notificacionRealTime)
     {
-        _sesionRepository = sesionRepository;
-        _eventPublisher = eventPublisher;
+        _sesionRepository     = sesionRepository;
+        _eventPublisher       = eventPublisher;
+        _notificacionRealTime = notificacionRealTime;
     }
 
     public async Task<Result<Guid>> Handle(
@@ -42,6 +46,21 @@ internal sealed class AplicarPenalizacionCommandHandler
             sesion.DomainEvents,
             cancellationToken);
         sesion.ClearDomainEvents();
+
+        var sesionId = sesion.SesionId.Valor.ToString();
+        var participanteId = command.ParticipanteId.ToString();
+
+        await _notificacionRealTime.NotificarRankingActualizadoAsync(
+            sesionId,
+            RankingNotificacionMapper.DesdeSesion(sesion),
+            cancellationToken);
+
+        await _notificacionRealTime.NotificarPenalizacionAplicadaAsync(
+            sesionId,
+            participanteId,
+            penalizacion.Puntos,
+            penalizacion.Motivo,
+            cancellationToken);
 
         return Result<Guid>.Ok(sesion.SesionId.Valor);
     }

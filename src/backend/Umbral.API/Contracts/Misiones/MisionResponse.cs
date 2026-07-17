@@ -14,7 +14,10 @@ public sealed record EtapaMisionResponse(
     string? Descripcion,
     string? CodigoQrSolucion,
     IReadOnlyList<PistaMisionResponse>? Pistas,
-    IReadOnlyList<Guid>? CategoriaIds);
+    IReadOnlyList<Guid>? CategoriaIds,
+    double? Latitud = null,
+    double? Longitud = null,
+    int? RadioMetros = null);
 
 public sealed record PistaMisionResponse(
     Guid PistaId,

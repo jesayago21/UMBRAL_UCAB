@@ -64,6 +64,7 @@ public sealed class SesionConfiguration : IEntityTypeConfiguration<Sesion>
         builder.Ignore(x => x.Participantes);
         builder.Ignore(x => x.HistorialEventos);
         builder.Ignore(x => x.Evidencias);
+        builder.Ignore(x => x.RespuestasTrivia);
         builder.Ignore(x => x.DomainEvents);
     }
 }

@@ -52,8 +52,29 @@ internal static class SesionOperadorMappings
             resumen.EtapaActualDescripcion,
             resumen.EtapaActivaTipo,
             participantes,
-            MapEtapas(sesion));
+            MapEtapas(sesion, soloPistasLiberadasPara: null),
+            MapTriviaFase(sesion));
     }
+
+    private static string? MapTriviaFase(SesionAR sesion)
+    {
+        if (sesion.ContextoMision is null)
+            return null;
+
+        if (sesion.ContextoMision.ObtenerEtapaActual() is not EtapaTriviaSnapshot)
+            return null;
+
+        return sesion.ContextoMision.ObtenerFaseTrivia().ToString();
+    }
+
+    /// <summary>
+    /// Etapas para el participante: solo pistas ya liberadas/entregadas (HU-09 / HU-11).
+    /// </summary>
+    public static IReadOnlyList<EtapaSesionDto> ToEtapasParticipante(
+        this SesionAR sesion,
+        ParticipanteId participanteId) =>
+        MapEtapas(sesion, soloPistasLiberadasPara: participanteId)
+        ?? Array.Empty<EtapaSesionDto>();
 
     private static (
         Guid MisionId,
@@ -110,7 +131,9 @@ internal static class SesionOperadorMappings
         return (Guid.Empty, "Sesión", 0, 0, null, null);
     }
 
-    private static IReadOnlyList<EtapaSesionDto>? MapEtapas(SesionAR sesion)
+    private static IReadOnlyList<EtapaSesionDto>? MapEtapas(
+        SesionAR sesion,
+        ParticipanteId? soloPistasLiberadasPara)
     {
         if (sesion.ContextoMision is null && sesion.ContextoBT is null)
             return null;
@@ -124,22 +147,31 @@ internal static class SesionOperadorMappings
             ? snapshot.Etapas[index].Orden
             : 0;
 
+        var entregadas = sesion.ContextoMision?.PistasEntregadas;
+
         return snapshot.Etapas
-            .OrderBy(e => e.Orden)
-            .Select(e =>
+            .Select((e, etapaIdx) =>
             {
                 if (e is EtapaBusquedaTesoroSnapshot bt)
                 {
+                    var pistasDto = MapPistasEtapa(
+                        bt,
+                        etapaIdx,
+                        entregadas,
+                        soloPistasLiberadasPara);
+
                     return new EtapaSesionDto(
                         bt.Orden,
                         bt.Tipo.ToString(),
                         bt.Descripcion,
                         bt.Orden == etapaActualOrden,
-                        bt.Pistas.Select(p => new PistaSesionDto(
-                            p.Contenido,
-                            p.TipoLiberacion.ToString(),
-                            p.SegundosLiberacion)).ToList(),
-                        null);
+                        pistasDto,
+                        null,
+                        bt.Latitud,
+                        bt.Longitud,
+                        bt.RadioMetros,
+                        // Operador ve el QR; el participante solo puede ingresarlo como evidencia.
+                        soloPistasLiberadasPara is null ? bt.CodigoQRSolucion : null);
                 }
 
                 var trivia = (EtapaTriviaSnapshot)e;
@@ -153,6 +185,57 @@ internal static class SesionOperadorMappings
             })
             .ToList();
     }
+
+    private static IReadOnlyList<PistaSesionDto> MapPistasEtapa(
+        EtapaBusquedaTesoroSnapshot bt,
+        int etapaIdx,
+        IReadOnlyList<PistaEntregada>? entregadas,
+        ParticipanteId? soloPistasLiberadasPara)
+    {
+        IEnumerable<PistaSesionDto> catalogo;
+        if (soloPistasLiberadasPara is not null && entregadas is not null)
+        {
+            catalogo = bt.Pistas
+                .Where(p =>
+                    entregadas.Any(pe =>
+                        pe.PistaId == p.PistaId &&
+                        pe.EtapaIndex == etapaIdx &&
+                        pe.ParticipanteId == soloPistasLiberadasPara &&
+                        pe.Contenido is null))
+                .Select(ToCatalogoDto);
+        }
+        else if (soloPistasLiberadasPara is not null)
+        {
+            catalogo = [];
+        }
+        else
+        {
+            catalogo = bt.Pistas.Select(ToCatalogoDto);
+        }
+
+        IEnumerable<PistaSesionDto> manuals = [];
+        if (entregadas is not null)
+        {
+            var query = entregadas.Where(pe =>
+                pe.Contenido is not null && pe.EtapaIndex == etapaIdx);
+
+            if (soloPistasLiberadasPara is not null)
+                query = query.Where(pe => pe.ParticipanteId == soloPistasLiberadasPara);
+
+            manuals = query
+                .GroupBy(pe => pe.PistaId)
+                .Select(g => new PistaSesionDto(
+                    g.Key.Valor,
+                    g.First().Contenido!,
+                    "Manual",
+                    null));
+        }
+
+        return catalogo.Concat(manuals).ToList();
+    }
+
+    private static PistaSesionDto ToCatalogoDto(PistaSnapshot p) =>
+        new(p.PistaId.Valor, p.Contenido, p.TipoLiberacion.ToString(), p.SegundosLiberacion);
 
     private static (Guid, string, int, int, string?) MapBusquedaTesoroLegacy(ContextoBusquedaTesoro contexto)
     {

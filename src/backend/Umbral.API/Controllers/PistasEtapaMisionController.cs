@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Umbral.API.Contracts.Misiones;
 using Umbral.API.Extensions;
 using Umbral.Application.Misiones.Commands.AgregarPistaEtapa;
+using Umbral.Application.Misiones.Commands.EditarPistaEtapa;
+using Umbral.Application.Misiones.Commands.EliminarPistaEtapa;
 
 namespace Umbral.API.Controllers;
 
@@ -35,5 +37,42 @@ public sealed class PistasEtapaMisionController : ControllerBase
 
         return result.ToActionResult(HttpContext,
             id => new CreatedResult($"/api/v1/misiones/{misionId}", new { id }));
+    }
+
+    [HttpPut("{misionId:guid}/etapas/{etapaId:guid}/pistas/{pistaId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> EditarPista(
+        Guid misionId,
+        Guid etapaId,
+        Guid pistaId,
+        [FromBody] EditarPistaEtapaRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new EditarPistaEtapaCommand(
+                misionId,
+                etapaId,
+                pistaId,
+                request.Contenido,
+                request.TipoLiberacion,
+                request.SegundosLiberacion),
+            cancellationToken);
+
+        return result.ToActionResult(HttpContext, _ => new NoContentResult());
+    }
+
+    [HttpDelete("{misionId:guid}/etapas/{etapaId:guid}/pistas/{pistaId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> EliminarPista(
+        Guid misionId,
+        Guid etapaId,
+        Guid pistaId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new EliminarPistaEtapaCommand(misionId, etapaId, pistaId),
+            cancellationToken);
+
+        return result.ToActionResult(HttpContext, _ => new NoContentResult());
     }
 }

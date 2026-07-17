@@ -1,22 +1,49 @@
 namespace Umbral.Domain.Sesion;
 
 /// <summary>
-/// Domain Service — ranking por puntaje descendente (HU-23, RB-08).
+/// Domain Service — ranking por puntaje descendente; desempate por menor tiempo
+/// acumulado de respuestas trivia a tiempo (HU-23 / HU-39, RB-08 / RB-12).
 /// </summary>
 public static class RankingService
 {
-    public static IReadOnlyList<PosicionRanking> Calcular(IReadOnlyList<ParticipanteSesion> participantes)
+    public static IReadOnlyList<PosicionRanking> Calcular(
+        IReadOnlyList<ParticipanteSesion> participantes,
+        IReadOnlyList<RespuestaTrivia>? respuestasTrivia = null)
     {
         ArgumentNullException.ThrowIfNull(participantes);
 
+        var tiempoPorParticipante = CalcularTiemposAcumulados(respuestasTrivia);
+
         return participantes
-            .OrderByDescending(e => e.PuntajeTotal.Valor)
-            .ThenBy(e => e.Nombre.Valor, StringComparer.OrdinalIgnoreCase)
-            .Select((e, index) => new PosicionRanking(
+            .Select(e => (
+                Participante: e,
+                TiempoMs: tiempoPorParticipante.GetValueOrDefault(e.ParticipanteId, 0L)))
+            .OrderByDescending(x => x.Participante.PuntajeTotal.Valor)
+            .ThenBy(x => x.TiempoMs)
+            .ThenBy(x => x.Participante.Nombre.Valor, StringComparer.OrdinalIgnoreCase)
+            .Select((x, index) => new PosicionRanking(
                 index + 1,
-                e.ParticipanteId,
-                e.Nombre.Valor,
-                e.PuntajeTotal.Valor))
+                x.Participante.ParticipanteId,
+                x.Participante.Nombre.Valor,
+                x.Participante.PuntajeTotal.Valor,
+                x.TiempoMs))
             .ToList();
+    }
+
+    /// <summary>
+    /// Suma solo tiempos de respuestas a tiempo (RB-12: fuera de tiempo no es tiempo útil).
+    /// </summary>
+    internal static Dictionary<ParticipanteId, long> CalcularTiemposAcumulados(
+        IReadOnlyList<RespuestaTrivia>? respuestasTrivia)
+    {
+        if (respuestasTrivia is null || respuestasTrivia.Count == 0)
+            return new Dictionary<ParticipanteId, long>();
+
+        return respuestasTrivia
+            .Where(r => !r.FueraDeTiempo)
+            .GroupBy(r => r.ParticipanteId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(r => r.TiempoRespuestaMs));
     }
 }

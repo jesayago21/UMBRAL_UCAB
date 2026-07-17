@@ -74,7 +74,8 @@ public sealed class ConsultaSesionesOperadorController : ControllerBase
             dto.Participantes
                 .Select(e => new ParticipanteSesionResponse(e.ParticipanteId, e.JugadorId, e.Nombre))
                 .ToList(),
-            dto.Etapas?.Select(MapEtapa).ToList());
+            dto.Etapas?.Select(MapEtapa).ToList(),
+            dto.TriviaFase);
 
     private static EtapaSesionResponse MapEtapa(EtapaSesionDto e) =>
         new(
@@ -84,9 +85,14 @@ public sealed class ConsultaSesionesOperadorController : ControllerBase
             e.EsActual,
             e.Pistas?
                 .Select(p => new PistaSesionResponse(
+                    p.PistaId,
                     p.Contenido,
                     p.TipoLiberacion,
                     p.SegundosLiberacion))
                 .ToList(),
-            e.CategoriaIds);
+            e.CategoriaIds,
+            e.Latitud,
+            e.Longitud,
+            e.RadioMetros,
+            e.CodigoQrSolucion);
 }

@@ -17,11 +17,12 @@ public sealed class ReanudarSesionCommandHandlerTests
 {
     private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
+    private readonly INotificacionRealTime _notifier = Substitute.For<INotificacionRealTime>();
     private readonly ReanudarSesionCommandHandler _sut;
 
     public ReanudarSesionCommandHandlerTests()
     {
-        _sut = new ReanudarSesionCommandHandler(_sesionRepo, _publisher);
+        _sut = new ReanudarSesionCommandHandler(_sesionRepo, _publisher, _notifier);
     }
 
     [Fact]
@@ -46,6 +47,10 @@ public sealed class ReanudarSesionCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         sesion.Estado.Should().Be(EstadoSesion.Activa);
         eventos.Should().ContainSingle().Which.Should().BeOfType<SesionReanudada>();
+        await _notifier.Received(1).NotificarCambioEstadoSesionAsync(
+            sesion.SesionId.Valor.ToString(),
+            "Activa",
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
