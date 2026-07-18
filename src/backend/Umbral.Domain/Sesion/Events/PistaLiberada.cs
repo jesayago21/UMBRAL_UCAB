@@ -3,7 +3,7 @@ using Umbral.Domain.Shared;
 
 namespace Umbral.Domain.Sesion.Events;
 
-/// <summary>Domain event — pista liberada a un participante (PorTiempo, PorGanador o manual) (RB-07, RB-21).</summary>
+/// <summary>Domain event — pista liberada a un participante (PorTiempo, AlInicio/PorGanador o manual) (RB-07, RB-21).</summary>
 public sealed record PistaLiberada(
     SesionId SesionId,
     ParticipanteId ParticipanteId,

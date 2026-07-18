@@ -26,7 +26,7 @@ internal sealed class EditarPistaEtapaCommandHandler
             throw new DomainException(
                 "No se puede editar pistas de una misión con sesiones activas (RB-11).");
 
-        var tipo = Enum.Parse<TipoLiberacion>(command.TipoLiberacion, ignoreCase: true);
+        var tipo = TipoLiberacionParser.Parse(command.TipoLiberacion);
         mision.EditarPistaEtapa(
             new EtapaId(command.EtapaId),
             new PistaId(command.PistaId),

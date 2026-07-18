@@ -127,12 +127,12 @@ public sealed class SesionLiberarPistasPorTiempoTests
     }
 
     [Fact]
-    public void LiberarPistasPorTiempoVencidas_CuandoSoloPorGanador_NoEntrega()
+    public void LiberarPistasPorTiempoVencidas_CuandoSoloAlInicio_NoVuelveAEntregar()
     {
-        var mision = Mision.Crear("Solo PorGanador");
+        var mision = Mision.Crear("Solo AlInicio");
         mision.AgregarEtapaBusquedaTesoro("Etapa 1", "QR-PG-001");
         ((EtapaBusquedaTesoro)mision.Etapas[0])
-            .AgregarPista("Solo ganador", TipoLiberacion.PorGanador);
+            .AgregarPista("Pista inicial", TipoLiberacion.PorGanador);
         mision.Activar();
         mision.ClearDomainEvents();
 
@@ -144,10 +144,11 @@ public sealed class SesionLiberarPistasPorTiempoTests
         sesion.Iniciar();
         sesion.ClearDomainEvents();
 
+        // Ya se entregó al iniciar; PorTiempo no debe duplicar ni tocar AlInicio.
         var count = sesion.LiberarPistasPorTiempoVencidas(DateTimeOffset.UtcNow.AddHours(1));
 
         count.Should().Be(0);
-        sesion.ContextoMision!.PistasEntregadas.Should().BeEmpty();
+        sesion.ContextoMision!.PistasEntregadas.Should().ContainSingle();
     }
 
     [Fact]

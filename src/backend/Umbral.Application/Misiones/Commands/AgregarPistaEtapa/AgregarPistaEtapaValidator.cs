@@ -11,8 +11,8 @@ public sealed class AgregarPistaEtapaValidator : AbstractValidator<AgregarPistaE
         RuleFor(x => x.Contenido).NotEmpty();
         RuleFor(x => x.TipoLiberacion)
             .NotEmpty()
-            .Must(x => x is "PorTiempo" or "PorGanador")
-            .WithMessage("El tipo de liberación debe ser PorTiempo o PorGanador.");
+            .Must(x => x is "PorTiempo" or "PorGanador" or "AlInicio")
+            .WithMessage("El tipo de liberación debe ser PorTiempo o AlInicio (PorGanador).");
         RuleFor(x => x.SegundosLiberacion)
             .GreaterThan(0)
             .When(x => x.TipoLiberacion == "PorTiempo");

@@ -57,7 +57,7 @@ internal sealed class CrearMisionCommandHandler : IRequestHandler<CrearMisionCom
                 var etapaBt = mision.Etapas.OfType<EtapaBusquedaTesoro>().Last();
                 foreach (var pista in etapa.Pistas ?? [])
                 {
-                    var tipo = Enum.Parse<TipoLiberacion>(pista.TipoLiberacion, ignoreCase: true);
+                    var tipo = TipoLiberacionParser.Parse(pista.TipoLiberacion);
                     etapaBt.AgregarPista(pista.Contenido, tipo, pista.SegundosLiberacion);
                 }
             }

@@ -9,7 +9,7 @@ export const emptyPista = (): CrearPistaRequest => ({
 
 const TIPOS = [
   { value: 'PorTiempo', label: 'Por tiempo (segundos)' },
-  { value: 'PorGanador', label: 'Al declararse ganador de la etapa' },
+  { value: 'PorGanador', label: 'Al inicio de la etapa (con el mapa)' },
 ] as const
 
 interface PistasEditorProps {
@@ -33,7 +33,7 @@ export function PistasEditor({ pistas, onChange, disabled }: PistasEditorProps) 
     <div className="mt-3 space-y-2 rounded-md border border-dashed border-slate-300 bg-slate-50/50 p-3">
       <p className="text-xs font-medium text-slate-700">Pistas de esta etapa</p>
       {pistas.length === 0 && (
-        <p className="text-xs text-slate-500">Sin pistas. Opcional: añade ayudas con liberación por tiempo o por ganador.</p>
+        <p className="text-xs text-slate-500">Sin pistas. Opcional: por tiempo o al inicio de la etapa (con el mapa).</p>
       )}
       {pistas.map((pista, index) => (
         <div key={index} className="space-y-2 rounded border border-slate-200 bg-white p-2">

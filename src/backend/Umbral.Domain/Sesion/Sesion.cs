@@ -182,7 +182,8 @@ public sealed class Sesion : AggregateRoot
         IniciadaEn = DateTime.UtcNow;
         ContextoMision?.ReiniciarRelojEtapa(DateTimeOffset.UtcNow);
         RaiseDomainEvent(new SesionIniciada(SesionId, TipoSesion));
-        RegistrarEvento("SesionIniciada", $"operador={OperadorId.Valor}");
+        RegistrarEvento("SesionIniciada", Nombre);
+        LiberarPistasAlInicioEtapaActual(DateTimeOffset.UtcNow);
     }
 
     public void Pausar()
@@ -440,25 +441,21 @@ public sealed class Sesion : AggregateRoot
         RegistrarEvento("EtapaCompletada",
             $"etapaIndex={indexCompletada};ganador={participante.Nombre.Valor}");
 
-        // HU-10: liberar pistas PorGanador de la etapa BT siguiente a los demás, antes de avanzar.
-        if (!esUltima)
-            LiberarPistasPorGanadorEtapaSiguiente(participante.ParticipanteId, DateTimeOffset.UtcNow);
-
         if (esUltima)
             Finalizar();
         else
+        {
             ContextoMision.AvanzarEtapa(DateTimeOffset.UtcNow);
+            LiberarPistasAlInicioEtapaActual(DateTimeOffset.UtcNow);
+        }
     }
 
     /// <summary>
-    /// HU-10 — libera pistas PorGanador de la etapa BT siguiente a todos los participantes
-    /// excepto el ganador (producto: "pistas de avance para los demás"). RB-21 / ERS HU-10.
-    /// No-op si la siguiente etapa no es BT o no hay pistas PorGanador.
+    /// Libera pistas de inicio (PorGanador/AlInicio) de la etapa BT actual a todos los
+    /// participantes. Se invoca al iniciar la sesión y al avanzar de etapa.
     /// </summary>
     /// <returns>Cantidad de entregas realizadas.</returns>
-    public int LiberarPistasPorGanadorEtapaSiguiente(
-        ParticipanteId ganadorId,
-        DateTimeOffset ahora)
+    public int LiberarPistasAlInicioEtapaActual(DateTimeOffset ahora)
     {
         if (Estado != EstadoSesion.Activa)
             return 0;
@@ -466,35 +463,26 @@ public sealed class Sesion : AggregateRoot
         if (ContextoMision is null)
             return 0;
 
-        if (ContextoMision.EsUltimaEtapa())
+        if (ContextoMision.ObtenerEtapaActual() is not EtapaBusquedaTesoroSnapshot etapa)
             return 0;
 
-        var siguienteIndex = ContextoMision.EtapaActualIndex + 1;
-        if (siguienteIndex < 0 || siguienteIndex >= ContextoMision.MisionSnapshot.Etapas.Count)
-            return 0;
-
-        if (ContextoMision.MisionSnapshot.Etapas[siguienteIndex] is not EtapaBusquedaTesoroSnapshot siguienteBt)
-            return 0;
-
+        var etapaIndex = ContextoMision.EtapaActualIndex;
         var liberadas = 0;
 
-        foreach (var pista in siguienteBt.Pistas)
+        foreach (var pista in etapa.Pistas)
         {
             if (pista.TipoLiberacion != TipoLiberacion.PorGanador)
                 continue;
 
             foreach (var participante in _participantes)
             {
-                if (participante.ParticipanteId == ganadorId)
-                    continue;
-
                 if (ContextoMision.YaEntregoPista(
-                        pista.PistaId, siguienteIndex, participante.ParticipanteId))
+                        pista.PistaId, etapaIndex, participante.ParticipanteId))
                     continue;
 
                 var entrega = PistaEntregada.Crear(
                     pista.PistaId,
-                    siguienteIndex,
+                    etapaIndex,
                     participante.ParticipanteId,
                     ahora);
 
@@ -504,12 +492,12 @@ public sealed class Sesion : AggregateRoot
                     SesionId,
                     participante.ParticipanteId,
                     pista.PistaId,
-                    siguienteIndex,
+                    etapaIndex,
                     pista.Contenido));
 
                 RegistrarEvento(
                     "PistaLiberada",
-                    $"pista={pista.PistaId.Valor};etapaIndex={siguienteIndex};participante={participante.Nombre.Valor};motivo=PorGanador");
+                    $"contenido={ResumirParaHistorial(pista.Contenido)};etapa={etapaIndex};participante={participante.Nombre.Valor};motivo=AlInicio");
 
                 liberadas++;
             }
@@ -576,7 +564,7 @@ public sealed class Sesion : AggregateRoot
 
                 RegistrarEvento(
                     "PistaLiberada",
-                    $"pista={pista.PistaId.Valor};etapaIndex={etapaIndex};participante={participante.Nombre.Valor}");
+                    $"contenido={ResumirParaHistorial(pista.Contenido)};etapa={etapaIndex};participante={participante.Nombre.Valor}");
 
                 liberadas++;
             }
@@ -654,7 +642,7 @@ public sealed class Sesion : AggregateRoot
 
             RegistrarEvento(
                 "PistaLiberada",
-                $"pista={pistaId.Valor};etapaIndex={etapaIndex};participante={participante.Nombre.Valor};motivo=Manual");
+                $"contenido={ResumirParaHistorial(texto)};etapa={etapaIndex};participante={participante.Nombre.Valor};motivo=Manual");
 
             liberadas++;
         }
@@ -828,6 +816,14 @@ public sealed class Sesion : AggregateRoot
         _participantes.FirstOrDefault(e => e.ParticipanteId == participanteId)
         ?? throw new DomainException(
             $"El participante '{participanteId.Valor}' no pertenece a esta sesión.");
+
+    private static string ResumirParaHistorial(string texto, int max = 80)
+    {
+        var limpio = (texto ?? string.Empty).Replace(';', ',').Trim();
+        if (limpio.Length <= max)
+            return limpio;
+        return limpio[..max] + "…";
+    }
 
     private void RegistrarEvento(string tipo, string payload) =>
         _historialEventos.Add(EventoSesion.Crear(SesionId, tipo, payload));

@@ -25,7 +25,7 @@ internal sealed class AgregarPistaEtapaCommandHandler
             throw new DomainException(
                 "No se puede agregar pistas a una misión con sesiones activas (RB-11).");
 
-        var tipo = Enum.Parse<TipoLiberacion>(command.TipoLiberacion, ignoreCase: true);
+        var tipo = TipoLiberacionParser.Parse(command.TipoLiberacion);
         mision.AgregarPistaAEtapa(
             new EtapaId(command.EtapaId),
             command.Contenido,

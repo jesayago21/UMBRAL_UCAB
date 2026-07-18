@@ -7,7 +7,7 @@ import type { EtapaSesionDto } from '@/types/sesion.types'
 
 const TIPO_LIBERACION_LABEL: Record<string, string> = {
   PorTiempo: 'Por tiempo',
-  PorGanador: 'Al ganador',
+  PorGanador: 'Al inicio',
 }
 
 function liberacionTexto(pista: NonNullable<EtapaSesionDto['pistas']>[number]): string {

@@ -227,11 +227,11 @@ public sealed class SubmitEvidenciaCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_CuandoGanaEtapaConPorGanadorEnSiguiente_NotificaPistaLiberada()
+    public async Task Handle_CuandoGanaEtapaConPistaAlInicioEnSiguiente_NotificaPistaLiberadaATodos()
     {
-        var sesion = CrearSesionActivaDosEtapasConPorGanador();
+        var sesion = CrearSesionActivaDosEtapasConPistaAlInicio();
         var ganador = sesion.Participantes[0];
-        var noGanador = sesion.Participantes[1];
+        var otro = sesion.Participantes[1];
         var qrValido = SesionTestBuilder.CodigoQrEtapaActual(sesion);
 
         _sesionRepo
@@ -258,24 +258,31 @@ public sealed class SubmitEvidenciaCommandHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Resultado.Should().Be("Valida");
-        sesion.ContextoMision!.PistasEntregadas.Should().ContainSingle(p =>
-            p.ParticipanteId == noGanador.ParticipanteId);
-        await _notifier.Received(1).NotificarPistaLiberadaAsync(
+        sesion.ContextoMision!.EtapaActualIndex.Should().Be(1);
+        sesion.ContextoMision.PistasEntregadas.Where(p => p.EtapaIndex == 1).Should().HaveCount(2);
+        await _notifier.Received().NotificarPistaLiberadaAsync(
             sesion.SesionId.Valor.ToString(),
-            noGanador.ParticipanteId.Valor.ToString(),
+            ganador.ParticipanteId.Valor.ToString(),
+            Arg.Any<string>(),
+            1,
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+        await _notifier.Received().NotificarPistaLiberadaAsync(
+            sesion.SesionId.Valor.ToString(),
+            otro.ParticipanteId.Valor.ToString(),
             Arg.Any<string>(),
             1,
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
     }
 
-    private static SesionAR CrearSesionActivaDosEtapasConPorGanador()
+    private static SesionAR CrearSesionActivaDosEtapasConPistaAlInicio()
     {
-        var mision = Mision.Crear("HU-10 handler");
+        var mision = Mision.Crear("AlInicio handler");
         mision.AgregarEtapaBusquedaTesoro("Etapa 1", "QR-H10-1");
         mision.AgregarEtapaBusquedaTesoro("Etapa 2", "QR-H10-2");
         ((EtapaBusquedaTesoro)mision.Etapas[1])
-            .AgregarPista("Avance para los demás", TipoLiberacion.PorGanador);
+            .AgregarPista("Pista inicial etapa 2", TipoLiberacion.PorGanador);
         mision.Activar();
         mision.ClearDomainEvents();
 

@@ -3,6 +3,7 @@ using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
 using Umbral.Domain.Ports;
 using Umbral.Domain.Sesion;
+using Umbral.Domain.Sesion.Events;
 using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Application.Sesion.Commands.IniciarSesion;
@@ -35,16 +36,31 @@ internal sealed class IniciarSesionCommandHandler
 
         sesion.Iniciar();
 
+        var eventosPista = sesion.DomainEvents.OfType<PistaLiberada>().ToList();
+
         await _sesionRepository.SaveAsync(sesion, cancellationToken);
         await _eventPublisher.PublishBatchAsync(
             sesion.DomainEvents,
             cancellationToken);
         sesion.ClearDomainEvents();
 
+        var sesionId = sesion.SesionId.Valor.ToString();
+
         await _notificacionRealTime.NotificarCambioEstadoSesionAsync(
-            sesion.SesionId.Valor.ToString(),
+            sesionId,
             sesion.Estado.ToString(),
             cancellationToken);
+
+        foreach (var evt in eventosPista)
+        {
+            await _notificacionRealTime.NotificarPistaLiberadaAsync(
+                sesionId,
+                evt.ParticipanteId.Valor.ToString(),
+                evt.PistaId.Valor.ToString(),
+                evt.EtapaIndex,
+                evt.Contenido,
+                cancellationToken);
+        }
 
         return Result<Guid>.Ok(sesion.SesionId.Valor);
     }
