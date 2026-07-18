@@ -15,6 +15,13 @@ public sealed class ParticipanteSesion : Entity
     /// </summary>
     public Puntaje DeudaPendiente { get; private set; } = default!;
 
+    /// <summary>
+    /// Milisegundos efectivos (sin pausas) acumulados al ganar etapas de Búsqueda
+    /// del Tesoro, medidos desde el inicio de cada etapa. Criterio de desempate:
+    /// a igual puntaje, gana quien resolvió en menos tiempo.
+    /// </summary>
+    public long TiempoBusquedaMs { get; private set; }
+
     private ParticipanteSesion() { }
 
     internal static ParticipanteSesion Crear(SesionId sesionId, UsuarioId jugadorId, string nombre)
@@ -50,6 +57,14 @@ public sealed class ParticipanteSesion : Entity
 
         DeudaPendiente = Puntaje.Zero();
         PuntajeTotal = PuntajeTotal.Sumar(puntos - deuda);
+    }
+
+    internal void AcumularTiempoBusqueda(long milisegundos)
+    {
+        if (milisegundos <= 0)
+            return;
+
+        TiempoBusquedaMs += milisegundos;
     }
 
     public void AplicarPenalizacion(Penalizacion penalizacion)

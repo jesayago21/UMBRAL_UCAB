@@ -72,7 +72,7 @@ function normalizarRankingPayload(
           tiempoAcumuladoMs: Number(row.tiempoAcumuladoMs ?? row.TiempoAcumuladoMs ?? 0),
         } satisfies PosicionRankingDto
       })
-      .filter((r): r is PosicionRankingDto => r != null),
+      .filter((r): r is NonNullable<typeof r> => r != null),
   )
 }
 

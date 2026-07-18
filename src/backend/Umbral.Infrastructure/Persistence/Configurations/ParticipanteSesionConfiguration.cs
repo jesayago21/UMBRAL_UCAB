@@ -40,6 +40,11 @@ public sealed class ParticipanteSesionConfiguration : IEntityTypeConfiguration<P
             .IsRequired()
             .HasDefaultValueSql("0");
 
+        builder.Property(x => x.TiempoBusquedaMs)
+            .HasColumnName("tiempo_busqueda_ms")
+            .IsRequired()
+            .HasDefaultValueSql("0");
+
         builder.HasOne<Sesion>()
             .WithMany("_participantes")
             .HasForeignKey(x => x.SesionId)

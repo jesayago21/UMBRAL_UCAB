@@ -2,7 +2,8 @@ namespace Umbral.Domain.Sesion;
 
 /// <summary>
 /// Domain Service — ranking por puntaje descendente; desempate por menor tiempo
-/// acumulado de respuestas trivia a tiempo (HU-23 / HU-39, RB-08 / RB-12).
+/// acumulado: respuestas trivia a tiempo (HU-23 / HU-39, RB-08 / RB-12) más el
+/// tiempo de resolución de etapas ganadas en Búsqueda del Tesoro.
 /// </summary>
 public static class RankingService
 {
@@ -17,7 +18,8 @@ public static class RankingService
         return participantes
             .Select(e => (
                 Participante: e,
-                TiempoMs: tiempoPorParticipante.GetValueOrDefault(e.ParticipanteId, 0L)))
+                TiempoMs: tiempoPorParticipante.GetValueOrDefault(e.ParticipanteId, 0L)
+                          + e.TiempoBusquedaMs))
             .OrderByDescending(x => x.Participante.PuntajeTotal.Valor)
             .ThenBy(x => x.TiempoMs)
             .ThenBy(x => x.Participante.Nombre.Valor, StringComparer.OrdinalIgnoreCase)

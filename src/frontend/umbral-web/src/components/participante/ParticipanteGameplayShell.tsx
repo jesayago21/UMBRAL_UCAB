@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ParticipanteEtapasPanel,
   esEtapaBusquedaTesoro,
@@ -25,7 +25,7 @@ interface ParticipanteGameplayShellProps {
   onParticipanteExpulsado?: (payload: ParticipanteExpulsadoPayload) => void
 }
 
-/** Pausa tras evidencia válida antes de mostrar el resumen/ranking final. */
+/** Pausa antes de mostrar el resumen/ranking final al terminar la partida en vivo. */
 const RESUMEN_FINAL_DELAY_MS = 3000
 
 function mensajeResultadoEvidencia(resultado: string): string {
@@ -58,6 +58,8 @@ export function ParticipanteGameplayShell({
   } | null>(null)
   const [esperarResumenTrasEvidencia, setEsperarResumenTrasEvidencia] = useState(false)
   const [resumenFinalListo, setResumenFinalListo] = useState(false)
+  /** Estado en el render anterior: detecta finalizaciones vistas en vivo (ej. trivia). */
+  const estadoPrevioRef = useRef<string | undefined>(undefined)
 
   const enviar = useEnviarEvidencia(inscripcion.sesionId)
 
@@ -67,6 +69,9 @@ export function ParticipanteGameplayShell({
   }, [inscripcion.sesionId])
 
   useEffect(() => {
+    const estadoPrevio = estadoPrevioRef.current
+    estadoPrevioRef.current = inscripcionServidor.estado
+
     if (inscripcionServidor.estado !== 'Finalizada') {
       if (
         inscripcionServidor.estado === 'Activa' ||
@@ -79,7 +84,14 @@ export function ParticipanteGameplayShell({
       return
     }
 
-    if (!esperarResumenTrasEvidencia) {
+    // Con delay si la partida terminó en vivo (evidencia propia o fin de trivia).
+    // Si se entra con la sesión ya finalizada, mostrar el resumen de inmediato.
+    const finalizoEnVivo =
+      esperarResumenTrasEvidencia ||
+      estadoPrevio === 'Activa' ||
+      estadoPrevio === 'Pausada'
+
+    if (!finalizoEnVivo) {
       setResumenFinalListo(true)
       return
     }
@@ -129,9 +141,7 @@ export function ParticipanteGameplayShell({
   const sesionEnJuego =
     inscripcionServidor.estado === 'Activa' || inscripcionServidor.estado === 'Pausada'
   const esperandoResumenFinal =
-    inscripcionServidor.estado === 'Finalizada' &&
-    esperarResumenTrasEvidencia &&
-    !resumenFinalListo
+    inscripcionServidor.estado === 'Finalizada' && !resumenFinalListo
   const postJuego =
     inscripcionServidor.estado === 'Cancelada' ||
     (inscripcionServidor.estado === 'Finalizada' && resumenFinalListo)
@@ -192,7 +202,7 @@ export function ParticipanteGameplayShell({
                   ¡Misión completada!
                 </p>
                 <h2 className="mt-1 text-lg font-semibold text-slate-900">
-                  Evidencia registrada
+                  {esperarResumenTrasEvidencia ? 'Evidencia registrada' : 'La partida terminó'}
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
                   Preparando el ranking final…

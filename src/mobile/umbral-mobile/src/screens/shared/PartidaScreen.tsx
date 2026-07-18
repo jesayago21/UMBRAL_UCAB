@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Pressable,
@@ -38,7 +38,7 @@ import type { MiInscripcionParticipanteDto } from '@/types/sesion.types'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Partida'>
 
-/** Pausa tras evidencia válida antes de mostrar el resumen/ranking final. */
+/** Pausa antes de mostrar el resumen/ranking final al terminar la partida en vivo. */
 const RESUMEN_FINAL_DELAY_MS = 3000
 
 export function PartidaScreen({ navigation, route }: Props) {
@@ -62,6 +62,8 @@ export function PartidaScreen({ navigation, route }: Props) {
   /** Evidencia válida reciente → aplazar UI de resumen cuando llegue Finalizada. */
   const [esperarResumenTrasEvidencia, setEsperarResumenTrasEvidencia] = useState(false)
   const [resumenFinalListo, setResumenFinalListo] = useState(false)
+  /** Estado en el render anterior: detecta finalizaciones vistas en vivo (ej. trivia). */
+  const estadoPrevioRef = useRef<string | undefined>(undefined)
 
   const onExpulsado = useCallback(
     async (_payload: ParticipanteExpulsadoPayload) => {
@@ -95,6 +97,9 @@ export function PartidaScreen({ navigation, route }: Props) {
         : null
 
   useEffect(() => {
+    const estadoPrevio = estadoPrevioRef.current
+    estadoPrevioRef.current = vista?.estado
+
     if (vista?.estado !== 'Finalizada') {
       if (
         vista?.estado === 'Activa' ||
@@ -107,7 +112,14 @@ export function PartidaScreen({ navigation, route }: Props) {
       return
     }
 
-    if (!esperarResumenTrasEvidencia) {
+    // Con delay si la partida terminó en vivo (evidencia propia o fin de trivia).
+    // Si se entra con la sesión ya finalizada, mostrar el resumen de inmediato.
+    const finalizoEnVivo =
+      esperarResumenTrasEvidencia ||
+      estadoPrevio === 'Activa' ||
+      estadoPrevio === 'Pausada'
+
+    if (!finalizoEnVivo) {
       setResumenFinalListo(true)
       return
     }
@@ -199,7 +211,7 @@ export function PartidaScreen({ navigation, route }: Props) {
   const sesionEnJuego =
     vista.estado === 'Activa' || vista.estado === 'Pausada'
   const esperandoResumenFinal =
-    vista.estado === 'Finalizada' && esperarResumenTrasEvidencia && !resumenFinalListo
+    vista.estado === 'Finalizada' && !resumenFinalListo
   const postJuego =
     vista.estado === 'Cancelada' ||
     (vista.estado === 'Finalizada' && resumenFinalListo)
@@ -250,7 +262,9 @@ export function PartidaScreen({ navigation, route }: Props) {
             <>
               <Text style={styles.heading}>¡Misión completada!</Text>
               <Text style={styles.body}>
-                Evidencia registrada. Preparando el ranking final…
+                {esperarResumenTrasEvidencia
+                  ? 'Evidencia registrada. Preparando el ranking final…'
+                  : 'La partida terminó. Preparando el ranking final…'}
               </Text>
               <ActivityIndicator style={{ marginTop: 12 }} />
             </>

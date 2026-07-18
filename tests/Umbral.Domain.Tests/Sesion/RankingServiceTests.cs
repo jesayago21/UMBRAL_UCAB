@@ -106,6 +106,76 @@ public sealed class RankingServiceTests
     }
 
     [Fact]
+    public void Calcular_CuandoEmpateEnBusquedaTesoro_MenorTiempoDeEtapaGana()
+    {
+        var sesion = SesionBuilder.BusquedaTesoro()
+            .Activa().ConParticipante("Alpha").ConParticipante("Beta").Build();
+        var alpha = sesion.Participantes.First(e => e.Nombre.Valor == "Alpha");
+        var beta  = sesion.Participantes.First(e => e.Nombre.Valor == "Beta");
+
+        // Ambos con 100 pts: Alpha ganó su etapa en 45s, Beta la suya en 20s.
+        alpha.SumarPuntaje(100);
+        alpha.AcumularTiempoBusqueda(45_000);
+        beta.SumarPuntaje(100);
+        beta.AcumularTiempoBusqueda(20_000);
+
+        var ranking = RankingService.Calcular(sesion.Participantes);
+
+        ranking[0].ParticipanteId.Should().Be(beta.ParticipanteId);
+        ranking[0].TiempoAcumuladoMs.Should().Be(20_000);
+        ranking[0].Posicion.Should().Be(1);
+        ranking[1].ParticipanteId.Should().Be(alpha.ParticipanteId);
+        ranking[1].TiempoAcumuladoMs.Should().Be(45_000);
+        ranking[1].Posicion.Should().Be(2);
+    }
+
+    [Fact]
+    public void Calcular_TiempoBusquedaSeSumaAlTiempoTrivia()
+    {
+        var sesion = SesionBuilder.BusquedaTesoro()
+            .Activa().ConParticipante("Alpha").ConParticipante("Beta").Build();
+        var alpha = sesion.Participantes.First(e => e.Nombre.Valor == "Alpha");
+        var beta  = sesion.Participantes.First(e => e.Nombre.Valor == "Beta");
+        alpha.SumarPuntaje(100);
+        beta.SumarPuntaje(100);
+
+        // Alpha: 5s trivia + 10s BT = 15s. Beta: 12s trivia + 0s BT = 12s → Beta primero.
+        alpha.AcumularTiempoBusqueda(10_000);
+        var respuestas = new[]
+        {
+            RespuestaTrivia.Crear(
+                sesion.SesionId, alpha.ParticipanteId, PreguntaId.Nuevo(), 0, DateTime.UtcNow,
+                fueraDeTiempo: false, esCorrecta: true, puntosOtorgados: 100, tiempoRespuestaMs: 5_000),
+            RespuestaTrivia.Crear(
+                sesion.SesionId, beta.ParticipanteId, PreguntaId.Nuevo(), 0, DateTime.UtcNow,
+                fueraDeTiempo: false, esCorrecta: true, puntosOtorgados: 100, tiempoRespuestaMs: 12_000),
+        };
+
+        var ranking = RankingService.Calcular(sesion.Participantes, respuestas);
+
+        ranking[0].ParticipanteId.Should().Be(beta.ParticipanteId);
+        ranking[0].TiempoAcumuladoMs.Should().Be(12_000);
+        ranking[1].ParticipanteId.Should().Be(alpha.ParticipanteId);
+        ranking[1].TiempoAcumuladoMs.Should().Be(15_000);
+    }
+
+    [Fact]
+    public void AcumularTiempoBusqueda_ValoresNoPositivos_NoModifica()
+    {
+        var sesion = SesionBuilder.BusquedaTesoro()
+            .Activa().ConParticipante("Alpha").Build();
+        var alpha = sesion.Participantes.Single();
+
+        alpha.AcumularTiempoBusqueda(0);
+        alpha.AcumularTiempoBusqueda(-500);
+        alpha.TiempoBusquedaMs.Should().Be(0);
+
+        alpha.AcumularTiempoBusqueda(3_000);
+        alpha.AcumularTiempoBusqueda(2_000);
+        alpha.TiempoBusquedaMs.Should().Be(5_000);
+    }
+
+    [Fact]
     public void Calcular_TiempoIdentico_DesempataPorNombre()
     {
         var sesion = SesionBuilder.BusquedaTesoro()

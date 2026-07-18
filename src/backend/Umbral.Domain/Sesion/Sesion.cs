@@ -427,7 +427,13 @@ public sealed class Sesion : AggregateRoot
         var puntos = CalculoPuntajeBusquedaService.Calcular(esGanador: true);
         participante.SumarPuntaje(puntos.Valor);
 
-        ContextoMision!.RegistrarGanadorEtapa(participante.ParticipanteId);
+        // Desempate por tiempo: acumula lo que tardó el ganador desde el inicio
+        // de la etapa (excluye pausas), antes de que AvanzarEtapa reinicie el reloj.
+        var tiempoEtapaMs = (long)Math.Round(
+            ContextoMision!.SegundosEfectivosTranscurridos(DateTimeOffset.UtcNow) * 1000);
+        participante.AcumularTiempoBusqueda(tiempoEtapaMs);
+
+        ContextoMision.RegistrarGanadorEtapa(participante.ParticipanteId);
 
         RaiseDomainEvent(new EvidenciaValidada(
             SesionId, participante.ParticipanteId, etapa.EtapaId, puntos));
@@ -673,11 +679,7 @@ public sealed class Sesion : AggregateRoot
 
         ContextoMision.LanzarPreguntaTrivia(ahora, duracionSegundos);
 
-        var preguntaId = ContextoMision.ObtenerPreguntaTriviaActualId();
-        RegistrarEvento(
-            "PreguntaTriviaIniciada",
-            $"pregunta={preguntaId.Valor};index={ContextoMision.PreguntaTriviaActualIndex};" +
-            $"timerCerradoEn={ContextoMision.TimerCerradoEn:O}");
+        RegistrarEventoPreguntaTriviaIniciada();
     }
 
     /// <summary>
@@ -707,11 +709,7 @@ public sealed class Sesion : AggregateRoot
             ContextoMision.LanzarPreguntaTrivia(ahora, duracionSegundos);
         }
 
-        var preguntaId = ContextoMision.ObtenerPreguntaTriviaActualId();
-        RegistrarEvento(
-            "PreguntaTriviaIniciada",
-            $"pregunta={preguntaId.Valor};index={ContextoMision.PreguntaTriviaActualIndex};" +
-            $"timerCerradoEn={ContextoMision.TimerCerradoEn:O}");
+        RegistrarEventoPreguntaTriviaIniciada();
     }
 
     /// <summary>HU-33 — cierra la pregunta activa y entra en transición.</summary>
@@ -732,8 +730,8 @@ public sealed class Sesion : AggregateRoot
 
         RegistrarEvento(
             "TriviaEnTransicion",
-            $"index={ContextoMision.PreguntaTriviaActualIndex};" +
-            $"hasta={ContextoMision.TransicionHasta:O}");
+            $"pregunta={ContextoMision.PreguntaTriviaActualIndex + 1};" +
+            $"hasta={ContextoMision.TransicionHasta:HH:mm:ss} UTC");
     }
 
     /// <summary>
@@ -768,17 +766,13 @@ public sealed class Sesion : AggregateRoot
                     ahora,
                     duracionPreguntaSegundos,
                     finTransicionProgramado);
-                var preguntaId = ContextoMision.ObtenerPreguntaTriviaActualId();
-                RegistrarEvento(
-                    "PreguntaTriviaIniciada",
-                    $"pregunta={preguntaId.Valor};index={ContextoMision.PreguntaTriviaActualIndex};" +
-                    $"timerCerradoEn={ContextoMision.TimerCerradoEn:O}");
+                RegistrarEventoPreguntaTriviaIniciada();
                 return ResultadoCicloTrivia.SiguientePreguntaLanzada;
             }
 
             var indexCerrado = ContextoMision.PreguntaTriviaActualIndex;
             ContextoMision.CompletarSecuenciaTrivia();
-            RegistrarEvento("TriviaSecuenciaCompletada", $"index={indexCerrado}");
+            RegistrarEvento("TriviaSecuenciaCompletada", $"preguntasCompletadas={indexCerrado + 1}");
 
             if (!ContextoMision.EsUltimaEtapa())
             {
@@ -793,11 +787,7 @@ public sealed class Sesion : AggregateRoot
                         ahora,
                         duracionPreguntaSegundos,
                         finTransicionProgramado);
-                    var preguntaId = ContextoMision.ObtenerPreguntaTriviaActualId();
-                    RegistrarEvento(
-                        "PreguntaTriviaIniciada",
-                        $"pregunta={preguntaId.Valor};index={ContextoMision.PreguntaTriviaActualIndex};" +
-                        $"timerCerradoEn={ContextoMision.TimerCerradoEn:O}");
+                    RegistrarEventoPreguntaTriviaIniciada();
                     return ResultadoCicloTrivia.SiguientePreguntaLanzada;
                 }
 
@@ -823,6 +813,19 @@ public sealed class Sesion : AggregateRoot
         if (limpio.Length <= max)
             return limpio;
         return limpio[..max] + "…";
+    }
+
+    /// <summary>
+    /// Historial legible para el operador: número de pregunta (1-based) en vez del
+    /// PreguntaId (el snapshot no guarda el enunciado dentro del agregado).
+    /// </summary>
+    private void RegistrarEventoPreguntaTriviaIniciada()
+    {
+        var total = ContextoMision!.ObtenerEtapaTriviaActual().PreguntasOrdenadas.Count;
+        RegistrarEvento(
+            "PreguntaTriviaIniciada",
+            $"pregunta={ContextoMision.PreguntaTriviaActualIndex + 1} de {total};" +
+            $"cierraEn={ContextoMision.TimerCerradoEn:HH:mm:ss} UTC");
     }
 
     private void RegistrarEvento(string tipo, string payload) =>
