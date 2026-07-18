@@ -11,6 +11,9 @@ namespace Umbral.Domain.Sesion;
 /// </summary>
 public sealed class Sesion : AggregateRoot
 {
+    /// <summary>Cupo máximo de participantes por sesión (inscripción).</summary>
+    public const int MaxParticipantes = 5;
+
     public SesionId SesionId { get; private set; } = default!;
     /// <summary>Nombre visible de la instancia de sesión (p. ej. «Grupo A — mañana»).</summary>
     public string Nombre { get; private set; } = default!;
@@ -105,6 +108,10 @@ public sealed class Sesion : AggregateRoot
 
         if (_participantes.Any(e => e.JugadorId == jugadorId))
             throw new DomainException("Ya estás inscrito en esta sesión.");
+
+        if (_participantes.Count >= MaxParticipantes)
+            throw new DomainException(
+                $"La sesión ya alcanzó el máximo de {MaxParticipantes} participantes.");
 
         var nombreParticipante = NombreParticipante.Crear(nombre);
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Umbral.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Umbral.Infrastructure.Persistence;
 namespace Umbral.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(UmbralDbContext))]
-    partial class UmbralDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260718020414_AddDeudaPendienteParticipante")]
+    partial class AddDeudaPendienteParticipante
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

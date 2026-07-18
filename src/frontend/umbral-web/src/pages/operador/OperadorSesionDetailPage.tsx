@@ -206,6 +206,7 @@ export function OperadorSesionDetailPage() {
               sesionId={sesionId}
               participantes={sesion.participantes}
               estadoSesion={sesion.estado}
+              maxParticipantes={detalle?.maxParticipantes}
               onExpulsado={() => {
                 void invalidateSesion()
               }}
@@ -261,6 +262,7 @@ export function OperadorSesionDetailPage() {
               sesionId={sesionId}
               participantes={sesion.participantes}
               estadoSesion={sesion.estado}
+              maxParticipantes={detalle?.maxParticipantes}
               onExpulsado={() => {
                 void invalidateSesion()
                 showSuccess('Participante expulsado de la sala.')

@@ -26,4 +26,6 @@ public sealed record MiInscripcionParticipanteDto(
     int SegundosPausaAcumulados = 0,
     DateTimeOffset? PausadaDesde = null,
     IReadOnlyList<PistaPorTiempoPendienteDto>? PistasPorTiempoPendientes = null,
-    IReadOnlyList<PenalizacionParticipanteDto>? Penalizaciones = null);
+    IReadOnlyList<PenalizacionParticipanteDto>? Penalizaciones = null,
+    int ParticipantesInscritos = 0,
+    int MaxParticipantes = 5);

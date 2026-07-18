@@ -1,8 +1,11 @@
+export const MAX_PARTICIPANTES_SESION = 5
+
 export interface SesionDisponibleParticipanteDto {
   id: string
   titulo: string
   estado: string
   participantesInscritos: number
+  maxParticipantes?: number
 }
 
 export interface PistaSesionDto {
@@ -47,6 +50,8 @@ export interface MiInscripcionParticipanteDto {
   pausadaDesde?: string | null
   pistasPorTiempoPendientes?: PistaPorTiempoPendienteDto[] | null
   penalizaciones?: PenalizacionParticipanteDto[] | null
+  participantesInscritos?: number
+  maxParticipantes?: number
 }
 
 export interface UnirseSesionRequest {

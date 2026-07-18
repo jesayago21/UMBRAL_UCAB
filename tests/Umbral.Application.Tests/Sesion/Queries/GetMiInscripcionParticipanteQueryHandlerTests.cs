@@ -53,6 +53,8 @@ public sealed class GetMiInscripcionParticipanteQueryHandlerTests
         result!.SesionId.Should().Be(sesion.SesionId.Valor);
         result.ParticipanteId.Should().Be(participanteId.Valor);
         result.Estado.Should().Be("EnPreparacion");
+        result.ParticipantesInscritos.Should().Be(1);
+        result.MaxParticipantes.Should().Be(SesionAR.MaxParticipantes);
     }
 
     [Fact]

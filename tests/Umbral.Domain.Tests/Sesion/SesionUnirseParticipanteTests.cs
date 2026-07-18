@@ -106,6 +106,20 @@ public sealed class SesionUnirseParticipanteTests
             e.Tipo == "ParticipanteUnido" && e.Payload == "Gamma");
     }
 
+    [Fact]
+    public void UnirseParticipante_CuandoCupoCompleto_LanzaDomainException()
+    {
+        var sesion = SesionEnPreparacion();
+        for (var i = 1; i <= SesionAR.MaxParticipantes; i++)
+            SesionTestHelpers.UnirParticipante(sesion, $"P{i}");
+
+        var act = () => SesionTestHelpers.UnirParticipante(sesion, "Extra");
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("*máximo de*participantes*");
+        sesion.Participantes.Should().HaveCount(SesionAR.MaxParticipantes);
+    }
+
     private static SesionAR SesionEnPreparacion() =>
         SesionBuilder.BusquedaTesoro()
             .ConEstado(EstadoSesion.EnPreparacion)

@@ -29,6 +29,7 @@ import { useAuthStore } from '@/store/authStore'
 import { styles } from '@/styles/ui'
 import type { RootStackParamList } from '@/navigation/types'
 import type { MiInscripcionParticipanteDto } from '@/types/sesion.types'
+import { MAX_PARTICIPANTES_SESION } from '@/types/sesion.types'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Lobby'>
 
@@ -181,6 +182,11 @@ export function LobbyScreen({ navigation }: Props) {
           <View style={styles.card}>
             <Text style={styles.heading}>{inscripcion.titulo}</Text>
             <Text style={styles.muted}>Estado: {inscripcion.estado}</Text>
+            <Text style={styles.muted}>
+              Participantes:{' '}
+              {inscripcion.participantesInscritos ?? '—'}/
+              {inscripcion.maxParticipantes ?? MAX_PARTICIPANTES_SESION}
+            </Text>
             <Pressable
               style={styles.btnPrimary}
               onPress={() =>
@@ -241,6 +247,8 @@ export function LobbyScreen({ navigation }: Props) {
           }
           renderItem={({ item }) => {
             const selected = sesionId === item.id
+            const max = item.maxParticipantes ?? MAX_PARTICIPANTES_SESION
+            const llena = item.participantesInscritos >= max
             return (
               <Pressable
                 onPress={() => setSesionId(item.id)}
@@ -251,7 +259,8 @@ export function LobbyScreen({ navigation }: Props) {
               >
                 <Text style={styles.heading}>{item.titulo}</Text>
                 <Text style={styles.muted}>
-                  {item.estado} · {item.participantesInscritos} participantes
+                  {item.estado} · {item.participantesInscritos}/{max} participantes
+                  {llena ? ' · Llena' : ''}
                 </Text>
               </Pressable>
             )
@@ -282,6 +291,12 @@ export function LobbyScreen({ navigation }: Props) {
                 setFormError(null)
                 if (!sesionId || !codigo.trim()) {
                   setFormError('Selecciona una sesión e ingresa el código.')
+                  return
+                }
+                const seleccionada = sesiones?.find((s) => s.id === sesionId)
+                const max = seleccionada?.maxParticipantes ?? MAX_PARTICIPANTES_SESION
+                if (seleccionada && seleccionada.participantesInscritos >= max) {
+                  setFormError(`La sesión ya está llena (máximo ${max} participantes).`)
                   return
                 }
                 try {

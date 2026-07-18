@@ -8,6 +8,9 @@ export type EstadoSesionUi =
 
 export type TipoSesionApi = 'BusquedaTesoro' | 'Trivia' | 'Mision'
 
+/** Cupo máximo por sesión (alineado con Sesion.MaxParticipantes en dominio). */
+export const MAX_PARTICIPANTES_SESION = 5
+
 export interface SesionResumenDto {
   id: string
   nombre: string
@@ -16,6 +19,7 @@ export interface SesionResumenDto {
   misionNombre: string
   estado: string
   participantesCount: number
+  maxParticipantes?: number
   iniciadaEn: string | null
   finalizadaEn: string | null
   etapaActualOrden: number
@@ -58,6 +62,7 @@ export interface SesionDisponibleParticipanteDto {
   titulo: string
   estado: string
   participantesInscritos: number
+  maxParticipantes?: number
 }
 
 /** Countdown PorTiempo sin revelar contenido (HU-17 / RB-07). */
@@ -87,6 +92,8 @@ export interface MiInscripcionParticipanteDto {
   pistasPorTiempoPendientes?: PistaPorTiempoPendienteDto[] | null
   /** Penalizaciones aplicadas a este participante (con motivo). */
   penalizaciones?: PenalizacionParticipanteDto[] | null
+  participantesInscritos?: number
+  maxParticipantes?: number
 }
 
 export interface SesionEtapasParticipanteDto {

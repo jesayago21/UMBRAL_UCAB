@@ -15,7 +15,8 @@ public sealed record SesionResumenResponse(
     int EtapaActualOrden,
     int TotalEtapas,
     string? EtapaActualDescripcion,
-    string? EtapaActivaTipo);
+    string? EtapaActivaTipo,
+    int MaxParticipantes = 5);
 
 public sealed record ParticipanteSesionResponse(
     Guid ParticipanteId,
@@ -56,13 +57,15 @@ public sealed record SesionDetalleResponse(
     string? EtapaActivaTipo,
     IReadOnlyList<ParticipanteSesionResponse> Participantes,
     IReadOnlyList<EtapaSesionResponse>? Etapas,
-    string? TriviaFase = null);
+    string? TriviaFase = null,
+    int MaxParticipantes = 5);
 
 public sealed record SesionDisponibleParticipanteResponse(
     Guid Id,
     string Titulo,
     string Estado,
-    int ParticipantesInscritos);
+    int ParticipantesInscritos,
+    int MaxParticipantes = 5);
 
 public sealed record UnirseSesionRequest(string CodigoAcceso, string? NombreParticipante);
 
@@ -75,7 +78,9 @@ public sealed record MiInscripcionParticipanteResponse(
     string Estado,
     int TotalEtapas,
     IReadOnlyList<EtapaSesionResponse> Etapas,
-    IReadOnlyList<PenalizacionParticipanteResponse>? Penalizaciones = null);
+    IReadOnlyList<PenalizacionParticipanteResponse>? Penalizaciones = null,
+    int ParticipantesInscritos = 0,
+    int MaxParticipantes = 5);
 
 public sealed record PenalizacionParticipanteResponse(
     int Puntos,

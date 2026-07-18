@@ -3,12 +3,13 @@ import { ErrorState } from '@/components/shared/ErrorState'
 import { useExpulsarParticipante } from '@/hooks/useSesiones'
 import { getApiErrorMessage } from '@/services/apiClient'
 import { btnDangerLink, cardClass } from '@/styles/ui'
-import type { EstadoSesionUi, ParticipanteSesionDto } from '@/types/sesion.types'
+import { MAX_PARTICIPANTES_SESION, type EstadoSesionUi, type ParticipanteSesionDto } from '@/types/sesion.types'
 
 interface ParticipantesInscritosPanelProps {
   sesionId: string
   participantes: ParticipanteSesionDto[]
   estadoSesion: EstadoSesionUi
+  maxParticipantes?: number
   onExpulsado?: () => void
 }
 
@@ -17,6 +18,7 @@ export function ParticipantesInscritosPanel({
   sesionId,
   participantes,
   estadoSesion,
+  maxParticipantes = MAX_PARTICIPANTES_SESION,
   onExpulsado,
 }: ParticipantesInscritosPanelProps) {
   const expulsar = useExpulsarParticipante(sesionId)
@@ -57,7 +59,9 @@ export function ParticipantesInscritosPanel({
     <section className={`${cardClass} flex h-[14rem] flex-col gap-3`}>
       <h3 className="shrink-0 font-medium text-slate-900">
         Participantes inscritos{' '}
-        <span className="font-normal text-slate-500">({total})</span>
+        <span className="font-normal text-slate-500">
+          ({total}/{maxParticipantes})
+        </span>
       </h3>
 
       {error && <ErrorState message={error} />}

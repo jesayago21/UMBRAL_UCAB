@@ -24,7 +24,8 @@ internal static class SesionOperadorMappings
             etapaOrden,
             totalEtapas,
             etapaDescripcion,
-            etapaTipo);
+            etapaTipo,
+            SesionAR.MaxParticipantes);
     }
 
     public static SesionDetalleDto ToDetalle(this SesionAR sesion)
@@ -53,7 +54,8 @@ internal static class SesionOperadorMappings
             resumen.EtapaActivaTipo,
             participantes,
             MapEtapas(sesion, soloPistasLiberadasPara: null),
-            MapTriviaFase(sesion));
+            MapTriviaFase(sesion),
+            resumen.MaxParticipantes);
     }
 
     private static string? MapTriviaFase(SesionAR sesion)

@@ -305,12 +305,13 @@ public sealed class SesionRepository : ISesionRepository
         {
             // Valor CLR int: ExecuteUpdate + value converter a veces no aplica el VO completo.
             var puntajeValor = participante.PuntajeTotal.Valor;
+            var deudaValor = participante.DeudaPendiente.Valor;
             await _db.ParticipantesSesion
                 .Where(e => e.ParticipanteId == participante.ParticipanteId)
                 .ExecuteUpdateAsync(
-                    setters => setters.SetProperty(
-                        e => e.PuntajeTotal,
-                        Puntaje.Crear(puntajeValor)),
+                    setters => setters
+                        .SetProperty(e => e.PuntajeTotal, Puntaje.Crear(puntajeValor))
+                        .SetProperty(e => e.DeudaPendiente, Puntaje.Crear(deudaValor)),
                     ct);
         }
     }

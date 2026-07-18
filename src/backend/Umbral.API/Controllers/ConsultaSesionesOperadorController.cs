@@ -54,7 +54,8 @@ public sealed class ConsultaSesionesOperadorController : ControllerBase
             dto.EtapaActualOrden,
             dto.TotalEtapas,
             dto.EtapaActualDescripcion,
-            dto.EtapaActivaTipo);
+            dto.EtapaActivaTipo,
+            dto.MaxParticipantes);
 
     private static SesionDetalleResponse MapDetalle(SesionDetalleDto dto) =>
         new(
@@ -75,7 +76,8 @@ public sealed class ConsultaSesionesOperadorController : ControllerBase
                 .Select(e => new ParticipanteSesionResponse(e.ParticipanteId, e.JugadorId, e.Nombre))
                 .ToList(),
             dto.Etapas?.Select(MapEtapa).ToList(),
-            dto.TriviaFase);
+            dto.TriviaFase,
+            dto.MaxParticipantes);
 
     private static EtapaSesionResponse MapEtapa(EtapaSesionDto e) =>
         new(

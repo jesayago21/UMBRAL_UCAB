@@ -28,7 +28,8 @@ public sealed class InscripcionParticipanteController : ControllerBase
     {
         var items = await _sender.Send(new ListSesionesDisponiblesParticipanteQuery(null), cancellationToken);
         return Ok(items.Select(x =>
-            new SesionDisponibleParticipanteResponse(x.Id, x.Titulo, x.Estado, x.ParticipantesInscritos)).ToList());
+            new SesionDisponibleParticipanteResponse(
+                x.Id, x.Titulo, x.Estado, x.ParticipantesInscritos, x.MaxParticipantes)).ToList());
     }
 
     [HttpGet("mi-inscripcion")]
@@ -52,7 +53,9 @@ public sealed class InscripcionParticipanteController : ControllerBase
             inscripcion.Etapas.Select(MapEtapa).ToList(),
             (inscripcion.Penalizaciones ?? [])
                 .Select(p => new PenalizacionParticipanteResponse(p.Puntos, p.Motivo, p.OcurridoEn))
-                .ToList()));
+                .ToList(),
+            inscripcion.ParticipantesInscritos,
+            inscripcion.MaxParticipantes));
     }
 
     [HttpPost("{id:guid}/unirse")]

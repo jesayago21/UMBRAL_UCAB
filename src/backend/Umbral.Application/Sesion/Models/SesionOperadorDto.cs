@@ -13,7 +13,8 @@ public sealed record SesionResumenDto(
     int EtapaActualOrden,
     int TotalEtapas,
     string? EtapaActualDescripcion,
-    string? EtapaActivaTipo);
+    string? EtapaActivaTipo,
+    int MaxParticipantes = 5);
 
 public sealed record ParticipanteSesionDto(
     Guid ParticipanteId,
@@ -56,4 +57,5 @@ public sealed record SesionDetalleDto(
     IReadOnlyList<ParticipanteSesionDto> Participantes,
     IReadOnlyList<EtapaSesionDto>? Etapas,
     /// <summary>HU-33 — fase trivia si la etapa activa es Trivia; null en otro caso.</summary>
-    string? TriviaFase = null);
+    string? TriviaFase = null,
+    int MaxParticipantes = 5);

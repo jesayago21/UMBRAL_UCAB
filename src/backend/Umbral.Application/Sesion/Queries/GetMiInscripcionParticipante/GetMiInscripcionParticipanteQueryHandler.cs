@@ -59,7 +59,9 @@ internal sealed class GetMiInscripcionParticipanteQueryHandler
             ctx?.SegundosPausaAcumulados ?? 0,
             ctx?.PausadaDesde,
             MapPistasPorTiempoPendientes(sesion, participanteId),
-            MapPenalizaciones(sesion, participanteId));
+            MapPenalizaciones(sesion, participanteId),
+            sesion.Participantes.Count,
+            SesionAR.MaxParticipantes);
     }
 
     private static IReadOnlyList<PistaPorTiempoPendienteDto> MapPistasPorTiempoPendientes(

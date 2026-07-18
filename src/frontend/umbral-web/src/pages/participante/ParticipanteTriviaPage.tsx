@@ -155,17 +155,21 @@ export function ParticipanteTriviaPage() {
               <div>
                 <p className="font-medium text-slate-900">{s.titulo}</p>
                 <p className="text-xs text-slate-500">
-                  {s.participantesInscritos} participante{s.participantesInscritos === 1 ? '' : 's'} inscrito
-                  {s.participantesInscritos === 1 ? '' : 's'}
+                  {s.participantesInscritos}/{s.maxParticipantes ?? 5} participantes
+                  {s.participantesInscritos >= (s.maxParticipantes ?? 5) ? ' · Llena' : ''}
                 </p>
               </div>
               <button
                 type="button"
-                disabled={unirse.isPending}
+                disabled={unirse.isPending || s.participantesInscritos >= (s.maxParticipantes ?? 5)}
                 onClick={() => void handleUnirse(s.id, s.titulo)}
                 className={btnPrimary}
               >
-                {unirse.isPending && joiningId === s.id ? 'Uniéndose…' : 'Unirse'}
+                {s.participantesInscritos >= (s.maxParticipantes ?? 5)
+                  ? 'Llena'
+                  : unirse.isPending && joiningId === s.id
+                    ? 'Uniéndose…'
+                    : 'Unirse'}
               </button>
             </li>
           ))}
