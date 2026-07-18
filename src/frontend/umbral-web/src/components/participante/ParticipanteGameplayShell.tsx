@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   ParticipanteEtapasPanel,
   esEtapaBusquedaTesoro,
@@ -24,6 +24,9 @@ interface ParticipanteGameplayShellProps {
   puedeAbandonar?: boolean
   onParticipanteExpulsado?: (payload: ParticipanteExpulsadoPayload) => void
 }
+
+/** Pausa tras evidencia válida antes de mostrar el resumen/ranking final. */
+const RESUMEN_FINAL_DELAY_MS = 3000
 
 function mensajeResultadoEvidencia(resultado: string): string {
   switch (resultado) {
@@ -53,8 +56,48 @@ export function ParticipanteGameplayShell({
     puntos: number
     motivo: string
   } | null>(null)
+  const [esperarResumenTrasEvidencia, setEsperarResumenTrasEvidencia] = useState(false)
+  const [resumenFinalListo, setResumenFinalListo] = useState(false)
 
   const enviar = useEnviarEvidencia(inscripcion.sesionId)
+
+  useEffect(() => {
+    setEsperarResumenTrasEvidencia(false)
+    setResumenFinalListo(false)
+  }, [inscripcion.sesionId])
+
+  useEffect(() => {
+    if (inscripcionServidor.estado !== 'Finalizada') {
+      if (
+        inscripcionServidor.estado === 'Activa' ||
+        inscripcionServidor.estado === 'Pausada' ||
+        inscripcionServidor.estado === 'EnPreparacion' ||
+        inscripcionServidor.estado === 'Programada'
+      ) {
+        setResumenFinalListo(false)
+      }
+      return
+    }
+
+    if (!esperarResumenTrasEvidencia) {
+      setResumenFinalListo(true)
+      return
+    }
+
+    setResumenFinalListo(false)
+    const timer = window.setTimeout(() => {
+      setResumenFinalListo(true)
+      setEsperarResumenTrasEvidencia(false)
+    }, RESUMEN_FINAL_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [inscripcionServidor.estado, esperarResumenTrasEvidencia])
+
+  useEffect(() => {
+    if (!esperarResumenTrasEvidencia) return
+    if (inscripcionServidor.estado === 'Finalizada') return
+    const timer = window.setTimeout(() => setEsperarResumenTrasEvidencia(false), 10_000)
+    return () => window.clearTimeout(timer)
+  }, [esperarResumenTrasEvidencia, inscripcionServidor.estado])
 
   const onPenalizacionAplicada = useCallback(
     (payload: { puntos: number; motivo: string }) => {
@@ -85,9 +128,13 @@ export function ParticipanteGameplayShell({
     inscripcionServidor.estado === 'Programada'
   const sesionEnJuego =
     inscripcionServidor.estado === 'Activa' || inscripcionServidor.estado === 'Pausada'
+  const esperandoResumenFinal =
+    inscripcionServidor.estado === 'Finalizada' &&
+    esperarResumenTrasEvidencia &&
+    !resumenFinalListo
   const postJuego =
-    inscripcionServidor.estado === 'Finalizada' ||
-    inscripcionServidor.estado === 'Cancelada'
+    inscripcionServidor.estado === 'Cancelada' ||
+    (inscripcionServidor.estado === 'Finalizada' && resumenFinalListo)
   const etapaReferencia = preJuego
     ? etapasOrdenadas[0]
     : etapasOrdenadas.find((e) => e.esActual) ?? etapasOrdenadas[0]
@@ -113,39 +160,62 @@ export function ParticipanteGameplayShell({
     try {
       const result = await enviar.mutateAsync({ codigoQr: qr })
       setFeedback(mensajeResultadoEvidencia(result.resultado))
-      if (result.resultado === 'Valida') setCodigoQr('')
+      if (result.resultado === 'Valida') {
+        setCodigoQr('')
+        setEsperarResumenTrasEvidencia(true)
+        setResumenFinalListo(false)
+      }
     } catch (err) {
       setError(getApiErrorMessage(err))
     }
   }
 
   const etiquetaSalir = postJuego ? 'Salir de la sesión' : 'Abandonar sesión'
+  const mostrarSalir = onAbandonar && puedeAbandonar && !esperandoResumenFinal
 
   return (
     <div className="space-y-6">
       <section
         className={`${cardClass} ${
-          postJuego
-            ? 'border-indigo-200 bg-indigo-50/40'
-            : 'border-emerald-200 bg-emerald-50/40'
+          esperandoResumenFinal
+            ? 'border-emerald-200 bg-emerald-50/50'
+            : postJuego
+              ? 'border-indigo-200 bg-indigo-50/40'
+              : 'border-emerald-200 bg-emerald-50/40'
         }`}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            {postJuego && (
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-800">
-                {inscripcionServidor.estado === 'Cancelada'
-                  ? 'Sesión cancelada'
-                  : 'Partida finalizada'}
-              </p>
+            {esperandoResumenFinal ? (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+                  ¡Misión completada!
+                </p>
+                <h2 className="mt-1 text-lg font-semibold text-slate-900">
+                  Evidencia registrada
+                </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Preparando el ranking final…
+                </p>
+              </>
+            ) : (
+              <>
+                {postJuego && (
+                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-800">
+                    {inscripcionServidor.estado === 'Cancelada'
+                      ? 'Sesión cancelada'
+                      : 'Partida finalizada'}
+                  </p>
+                )}
+                <h2
+                  className={`text-lg font-semibold text-slate-900 ${postJuego ? 'mt-1' : ''}`}
+                >
+                  {inscripcion.titulo}
+                </h2>
+              </>
             )}
-            <h2
-              className={`text-lg font-semibold text-slate-900 ${postJuego ? 'mt-1' : ''}`}
-            >
-              {inscripcion.titulo}
-            </h2>
           </div>
-          {onAbandonar && puedeAbandonar && (
+          {mostrarSalir && (
             <button
               type="button"
               onClick={onAbandonar}
@@ -156,31 +226,38 @@ export function ParticipanteGameplayShell({
             </button>
           )}
         </div>
-        {!puedeAbandonar && (
+        {!puedeAbandonar && !esperandoResumenFinal && (
           <p className="mt-3 text-sm text-amber-800">
             La sesión ya está en juego. No puedes abandonar hasta que finalice.
           </p>
         )}
-        <p className="mt-3 text-sm text-slate-600">
-          {preJuego ? (
-            <>
-              Espera a que el operador <strong>inicie</strong> la partida.
-            </>
-          ) : postJuego ? (
-            inscripcionServidor.estado === 'Cancelada' ? (
-              <>La sesión fue cancelada. Revisa el ranking y sal cuando quieras.</>
-            ) : (
+        {!esperandoResumenFinal && (
+          <p className="mt-3 text-sm text-slate-600">
+            {preJuego ? (
               <>
-                La partida terminó. Revisa el <strong>ranking final</strong> y sal cuando quieras.
+                Espera a que el operador <strong>inicie</strong> la partida.
               </>
-            )
-          ) : (
-            <>La sesión está en curso.</>
-          )}
-        </p>
+            ) : postJuego ? (
+              inscripcionServidor.estado === 'Cancelada' ? (
+                <>La sesión fue cancelada. Revisa el ranking y sal cuando quieras.</>
+              ) : (
+                <>
+                  La partida terminó. Revisa el <strong>ranking final</strong> y sal cuando quieras.
+                </>
+              )
+            ) : (
+              <>La sesión está en curso.</>
+            )}
+          </p>
+        )}
+        {esperandoResumenFinal && (
+          <p className="mt-4 text-sm font-medium text-emerald-800" aria-live="polite">
+            Un momento…
+          </p>
+        )}
       </section>
 
-      {(sesionEnJuego || preJuego || postJuego) && (
+      {!esperandoResumenFinal && (sesionEnJuego || preJuego || postJuego) && (
         <ParticipanteTableroHeader
           inscripcion={inscripcionServidor}
           participanteId={inscripcion.participanteId}
@@ -188,11 +265,13 @@ export function ParticipanteGameplayShell({
         />
       )}
 
-      <ParticipantePenalizacionesPanel
-        penalizaciones={inscripcionServidor.penalizaciones ?? []}
-        avisoVivo={avisoPenalizacion}
-        onDismissAviso={() => setAvisoPenalizacion(null)}
-      />
+      {!esperandoResumenFinal && (
+        <ParticipantePenalizacionesPanel
+          penalizaciones={inscripcionServidor.penalizaciones ?? []}
+          avisoVivo={avisoPenalizacion}
+          onDismissAviso={() => setAvisoPenalizacion(null)}
+        />
+      )}
 
       {muestraTrivia && (
         <ParticipanteTriviaLivePanel
@@ -201,7 +280,7 @@ export function ParticipanteGameplayShell({
         />
       )}
 
-      {!postJuego && (
+      {!postJuego && !esperandoResumenFinal && (
         <ParticipanteEtapasPanel
           estadoSesion={inscripcionServidor.estado}
           etapas={inscripcionServidor.etapas}
@@ -233,14 +312,16 @@ export function ParticipanteGameplayShell({
         <p className="text-sm text-amber-800">Sesión pausada.</p>
       )}
 
-      <SesionRankingPanel
-        sesionId={inscripcion.sesionId}
-        enabled
-        title={postJuego ? 'Ranking final' : 'Ranking'}
-        participanteIdDestacado={inscripcion.participanteId}
-        emptyParticipantesMessage="Sin posiciones aún."
-        hubStatus={hubStatus}
-      />
+      {!esperandoResumenFinal && (
+        <SesionRankingPanel
+          sesionId={inscripcion.sesionId}
+          enabled
+          title={postJuego ? 'Ranking final' : 'Ranking'}
+          participanteIdDestacado={inscripcion.participanteId}
+          emptyParticipantesMessage="Sin posiciones aún."
+          hubStatus={hubStatus}
+        />
+      )}
     </div>
   )
 }

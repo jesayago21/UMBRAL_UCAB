@@ -38,6 +38,9 @@ import type { MiInscripcionParticipanteDto } from '@/types/sesion.types'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Partida'>
 
+/** Pausa tras evidencia válida antes de mostrar el resumen/ranking final. */
+const RESUMEN_FINAL_DELAY_MS = 3000
+
 export function PartidaScreen({ navigation, route }: Props) {
   const { sesionId } = route.params
   const {
@@ -56,6 +59,9 @@ export function PartidaScreen({ navigation, route }: Props) {
     puntos: number
     motivo: string
   } | null>(null)
+  /** Evidencia válida reciente → aplazar UI de resumen cuando llegue Finalizada. */
+  const [esperarResumenTrasEvidencia, setEsperarResumenTrasEvidencia] = useState(false)
+  const [resumenFinalListo, setResumenFinalListo] = useState(false)
 
   const onExpulsado = useCallback(
     async (_payload: ParticipanteExpulsadoPayload) => {
@@ -71,6 +77,11 @@ export function PartidaScreen({ navigation, route }: Props) {
   }, [])
 
   useEffect(() => {
+    setEsperarResumenTrasEvidencia(false)
+    setResumenFinalListo(false)
+  }, [sesionId])
+
+  useEffect(() => {
     if (inscripcion?.sesionId === sesionId) {
       setPartidaLocal(inscripcion)
     }
@@ -82,6 +93,40 @@ export function PartidaScreen({ navigation, route }: Props) {
       : partidaLocal?.sesionId === sesionId
         ? partidaLocal
         : null
+
+  useEffect(() => {
+    if (vista?.estado !== 'Finalizada') {
+      if (
+        vista?.estado === 'Activa' ||
+        vista?.estado === 'Pausada' ||
+        vista?.estado === 'EnPreparacion' ||
+        vista?.estado === 'Programada'
+      ) {
+        setResumenFinalListo(false)
+      }
+      return
+    }
+
+    if (!esperarResumenTrasEvidencia) {
+      setResumenFinalListo(true)
+      return
+    }
+
+    setResumenFinalListo(false)
+    const timer = setTimeout(() => {
+      setResumenFinalListo(true)
+      setEsperarResumenTrasEvidencia(false)
+    }, RESUMEN_FINAL_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [vista?.estado, esperarResumenTrasEvidencia])
+
+  // Si la evidencia no cierra la sesión, no dejar el flag colgado.
+  useEffect(() => {
+    if (!esperarResumenTrasEvidencia) return
+    if (vista?.estado === 'Finalizada') return
+    const timer = setTimeout(() => setEsperarResumenTrasEvidencia(false), 10_000)
+    return () => clearTimeout(timer)
+  }, [esperarResumenTrasEvidencia, vista?.estado])
 
   const hubStatus = useSesionHub({
     sesionId,
@@ -153,8 +198,11 @@ export function PartidaScreen({ navigation, route }: Props) {
     vista.estado === 'EnPreparacion' || vista.estado === 'Programada'
   const sesionEnJuego =
     vista.estado === 'Activa' || vista.estado === 'Pausada'
+  const esperandoResumenFinal =
+    vista.estado === 'Finalizada' && esperarResumenTrasEvidencia && !resumenFinalListo
   const postJuego =
-    vista.estado === 'Finalizada' || vista.estado === 'Cancelada'
+    vista.estado === 'Cancelada' ||
+    (vista.estado === 'Finalizada' && resumenFinalListo)
   const etapaReferencia = preJuego
     ? etapasOrdenadas[0]
     : (etapasOrdenadas.find((e) => e.esActual) ?? etapasOrdenadas[0])
@@ -165,13 +213,15 @@ export function PartidaScreen({ navigation, route }: Props) {
     vista.estado === 'Activa'
   const muestraTrivia =
     sesionEnJuego && etapaReferencia != null && etapaReferencia.tipoEtapa === 'Trivia'
-  const puedeAbandonar = !sesionEnJuego
+  const puedeAbandonar = !sesionEnJuego && !esperandoResumenFinal
 
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.rowBetween}>
-          <Text style={styles.title}>{postJuego ? 'Resultados' : 'Partida'}</Text>
+          <Text style={styles.title}>
+            {esperandoResumenFinal ? '¡Completado!' : postJuego ? 'Resultados' : 'Partida'}
+          </Text>
           {puedeAbandonar ? (
             <Pressable
               disabled={abandonar.isPending}
@@ -196,20 +246,32 @@ export function PartidaScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.card}>
-          {postJuego ? (
-            <Text style={styles.muted}>
-              {vista.estado === 'Cancelada' ? 'Sesión cancelada' : 'Partida finalizada'}
-            </Text>
-          ) : null}
-          <Text style={styles.heading}>{vista.titulo}</Text>
-          <Text style={styles.body}>
-            {preJuego
-              ? 'Espera a que el operador inicie la partida.'
-              : postJuego
-                ? 'Revisa el ranking final.'
-                : 'La sesión está en curso.'}
-          </Text>
-          {!puedeAbandonar ? (
+          {esperandoResumenFinal ? (
+            <>
+              <Text style={styles.heading}>¡Misión completada!</Text>
+              <Text style={styles.body}>
+                Evidencia registrada. Preparando el ranking final…
+              </Text>
+              <ActivityIndicator style={{ marginTop: 12 }} />
+            </>
+          ) : (
+            <>
+              {postJuego ? (
+                <Text style={styles.muted}>
+                  {vista.estado === 'Cancelada' ? 'Sesión cancelada' : 'Partida finalizada'}
+                </Text>
+              ) : null}
+              <Text style={styles.heading}>{vista.titulo}</Text>
+              <Text style={styles.body}>
+                {preJuego
+                  ? 'Espera a que el operador inicie la partida.'
+                  : postJuego
+                    ? 'Revisa el ranking final.'
+                    : 'La sesión está en curso.'}
+              </Text>
+            </>
+          )}
+          {!puedeAbandonar && !esperandoResumenFinal ? (
             <Text style={[styles.muted, { color: '#b45309' }]}>
               No puedes abandonar mientras la sesión está en juego.
             </Text>
@@ -217,17 +279,21 @@ export function PartidaScreen({ navigation, route }: Props) {
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
 
-        <TableroHeader
-          inscripcion={vista}
-          participanteId={vista.participanteId}
-          etapaActual={postJuego ? undefined : etapaReferencia}
-        />
+        {!esperandoResumenFinal ? (
+          <TableroHeader
+            inscripcion={vista}
+            participanteId={vista.participanteId}
+            etapaActual={postJuego ? undefined : etapaReferencia}
+          />
+        ) : null}
 
-        <PenalizacionesPanel
-          penalizaciones={vista.penalizaciones ?? []}
-          avisoVivo={avisoPenalizacion}
-          onDismissAviso={() => setAvisoPenalizacion(null)}
-        />
+        {!esperandoResumenFinal ? (
+          <PenalizacionesPanel
+            penalizaciones={vista.penalizaciones ?? []}
+            avisoVivo={avisoPenalizacion}
+            onDismissAviso={() => setAvisoPenalizacion(null)}
+          />
+        ) : null}
 
         {muestraTrivia ? (
           <TriviaLivePanel
@@ -236,7 +302,7 @@ export function PartidaScreen({ navigation, route }: Props) {
           />
         ) : null}
 
-        {!postJuego ? (
+        {!postJuego && !esperandoResumenFinal ? (
           <EtapaPanel estadoSesion={vista.estado} etapas={vista.etapas} />
         ) : null}
 
@@ -246,6 +312,10 @@ export function PartidaScreen({ navigation, route }: Props) {
             onEnviar={async (codigoQr) => {
               try {
                 const result = await enviar.mutateAsync({ codigoQr })
+                if (result.resultado === 'Valida') {
+                  setEsperarResumenTrasEvidencia(true)
+                  setResumenFinalListo(false)
+                }
                 void refetch()
                 return result
               } catch (err) {
@@ -259,12 +329,14 @@ export function PartidaScreen({ navigation, route }: Props) {
           <Text style={[styles.muted, { color: '#b45309' }]}>Sesión pausada.</Text>
         ) : null}
 
-        <RankingPanel
-          sesionId={sesionId}
-          participanteId={vista.participanteId}
-          title={postJuego ? 'Ranking final' : 'Ranking'}
-          hubStatus={hubStatus}
-        />
+        {!esperandoResumenFinal ? (
+          <RankingPanel
+            sesionId={sesionId}
+            participanteId={vista.participanteId}
+            title={postJuego ? 'Ranking final' : 'Ranking'}
+            hubStatus={hubStatus}
+          />
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   )

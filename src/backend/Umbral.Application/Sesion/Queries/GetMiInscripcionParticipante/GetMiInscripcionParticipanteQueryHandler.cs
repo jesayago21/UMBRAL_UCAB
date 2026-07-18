@@ -92,19 +92,30 @@ internal sealed class GetMiInscripcionParticipanteQueryHandler
         SesionAR sesion,
         ParticipanteId participanteId)
     {
+        var participante = sesion.Participantes
+            .FirstOrDefault(p => p.ParticipanteId == participanteId);
+        if (participante is null)
+            return Array.Empty<PenalizacionParticipanteDto>();
+
         var idStr = participanteId.Valor.ToString();
+        var nombre = participante.Nombre.Valor;
+
         return sesion.HistorialEventos
             .Where(e => e.Tipo == "PenalizacionAplicada")
-            .Select(e => TryParse(e, idStr))
+            .Select(e => TryParsePenalizacion(e, idStr, nombre))
             .Where(p => p is not null)
             .Select(p => p!)
             .OrderByDescending(p => p.OcurridoEn)
             .ToList();
     }
 
-    private static PenalizacionParticipanteDto? TryParse(EventoSesion evento, string participanteId)
+    private static PenalizacionParticipanteDto? TryParsePenalizacion(
+        EventoSesion evento,
+        string participanteId,
+        string nombreParticipante)
     {
-        // Payload: participante={guid};puntos={n};motivo={texto libre}
+        // Payload: participante={nombre|guid};puntos={n};motivo={texto libre}
+        // Compatibilidad: eventos antiguos guardaban el GUID.
         var payload = evento.Payload;
         const string prefijoPart = "participante=";
         const string prefijoPuntos = ";puntos=";
@@ -116,10 +127,13 @@ internal sealed class GetMiInscripcionParticipanteQueryHandler
         if (iPart < 0 || iPuntos < 0 || iMotivo < 0)
             return null;
 
-        var idRaw = payload.Substring(
+        var clave = payload.Substring(
             iPart + prefijoPart.Length,
             iPuntos - (iPart + prefijoPart.Length));
-        if (!string.Equals(idRaw, participanteId, StringComparison.OrdinalIgnoreCase))
+        var esDeEsteParticipante =
+            string.Equals(clave, nombreParticipante, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(clave, participanteId, StringComparison.OrdinalIgnoreCase);
+        if (!esDeEsteParticipante)
             return null;
 
         var puntosRaw = payload.Substring(

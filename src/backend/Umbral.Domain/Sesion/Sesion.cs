@@ -163,7 +163,7 @@ public sealed class Sesion : AggregateRoot
         _participantes.Remove(participante);
         RegistrarEvento(
             "ParticipanteExpulsado",
-            $"participante={participante.ParticipanteId.Valor};nombre={participante.Nombre.Valor};motivo={motivoLimpio}");
+            $"nombre={participante.Nombre.Valor};motivo={motivoLimpio}");
         return participante.ParticipanteId;
     }
 
@@ -261,7 +261,7 @@ public sealed class Sesion : AggregateRoot
             penalizacion.OperadorId));
 
         RegistrarEvento("PenalizacionAplicada",
-            $"participante={participanteId.Valor};puntos={penalizacion.Puntos};motivo={penalizacion.Motivo}");
+            $"participante={participante.Nombre.Valor};puntos={penalizacion.Puntos};motivo={penalizacion.Motivo}");
     }
 
     public Evidencia RegistrarEvidencia(ParticipanteId participanteId, string codigoQR)
@@ -303,7 +303,7 @@ public sealed class Sesion : AggregateRoot
             SesionId, participante.ParticipanteId, etapa.EtapaId, resultado, qr.Valor));
 
         RegistrarEvento("EvidenciaRegistrada",
-            $"participante={participante.ParticipanteId.Valor};etapa={etapa.EtapaId.Valor};resultado={resultado};qr={qr.Valor}");
+            $"participante={participante.Nombre.Valor};etapa={etapa.Orden};resultado={resultado};qr={qr.Valor}");
 
         if (resultado == ResultadoValidacion.Valida)
             ProcesarEvidenciaGanadora(participante, etapa);
@@ -407,9 +407,15 @@ public sealed class Sesion : AggregateRoot
             fueraDeTiempo,
             puntaje.Valor));
 
+        var enunciadoCorto = pregunta.Enunciado.Length <= 80
+            ? pregunta.Enunciado
+            : pregunta.Enunciado[..80] + "…";
+        // Evita romper el formato clave=valor del historial.
+        enunciadoCorto = enunciadoCorto.Replace(';', ',');
+
         RegistrarEvento(
             "RespuestaTriviaRecibida",
-            $"participante={participanteId.Valor};pregunta={preguntaId.Valor};" +
+            $"participante={participante.Nombre.Valor};pregunta={enunciadoCorto};" +
             $"indice={indiceOpcion};correcta={esCorrecta};tarde={fueraDeTiempo};puntos={puntaje.Valor}");
 
         return respuesta;
@@ -432,7 +438,7 @@ public sealed class Sesion : AggregateRoot
             SesionId, indexCompletada, participante.ParticipanteId));
 
         RegistrarEvento("EtapaCompletada",
-            $"etapaIndex={indexCompletada};ganador={participante.ParticipanteId.Valor}");
+            $"etapaIndex={indexCompletada};ganador={participante.Nombre.Valor}");
 
         // HU-10: liberar pistas PorGanador de la etapa BT siguiente a los demás, antes de avanzar.
         if (!esUltima)
@@ -503,7 +509,7 @@ public sealed class Sesion : AggregateRoot
 
                 RegistrarEvento(
                     "PistaLiberada",
-                    $"pista={pista.PistaId.Valor};etapaIndex={siguienteIndex};participante={participante.ParticipanteId.Valor};motivo=PorGanador");
+                    $"pista={pista.PistaId.Valor};etapaIndex={siguienteIndex};participante={participante.Nombre.Valor};motivo=PorGanador");
 
                 liberadas++;
             }
@@ -570,7 +576,7 @@ public sealed class Sesion : AggregateRoot
 
                 RegistrarEvento(
                     "PistaLiberada",
-                    $"pista={pista.PistaId.Valor};etapaIndex={etapaIndex};participante={participante.ParticipanteId.Valor}");
+                    $"pista={pista.PistaId.Valor};etapaIndex={etapaIndex};participante={participante.Nombre.Valor}");
 
                 liberadas++;
             }
@@ -648,7 +654,7 @@ public sealed class Sesion : AggregateRoot
 
             RegistrarEvento(
                 "PistaLiberada",
-                $"pista={pistaId.Valor};etapaIndex={etapaIndex};participante={participante.ParticipanteId.Valor};motivo=Manual");
+                $"pista={pistaId.Valor};etapaIndex={etapaIndex};participante={participante.Nombre.Valor};motivo=Manual");
 
             liberadas++;
         }
