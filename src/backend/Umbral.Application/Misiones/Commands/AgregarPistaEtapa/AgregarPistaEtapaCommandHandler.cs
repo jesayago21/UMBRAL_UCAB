@@ -21,7 +21,11 @@ internal sealed class AgregarPistaEtapaCommandHandler
         var mision = await _misionRepository.FindByIdAsync(new MisionId(command.MisionId), cancellationToken)
             ?? throw new NotFoundException("Misión", command.MisionId);
 
-        var tipo = Enum.Parse<TipoLiberacion>(command.TipoLiberacion, ignoreCase: true);
+        if (await _misionRepository.HasSesionesActivasAsync(mision.MisionId, cancellationToken))
+            throw new DomainException(
+                "No se puede agregar pistas a una misión con sesiones activas (RB-11).");
+
+        var tipo = TipoLiberacionParser.Parse(command.TipoLiberacion);
         mision.AgregarPistaAEtapa(
             new EtapaId(command.EtapaId),
             command.Contenido,

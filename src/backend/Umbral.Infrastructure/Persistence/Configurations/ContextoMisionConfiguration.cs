@@ -26,6 +26,34 @@ internal static class ContextoMisionConfiguration
             .HasColumnName("pregunta_trivia_actual_index")
             .IsRequired();
 
+        ctx.Property(c => c.TimerCerradoEn)
+            .HasColumnName("timer_cerrado_en");
+
+        ctx.Property(c => c.TriviaEnTransicion)
+            .HasColumnName("trivia_en_transicion")
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        ctx.Property(c => c.TransicionHasta)
+            .HasColumnName("transicion_hasta");
+
+        ctx.Property(c => c.EtapaIniciadaEn)
+            .HasColumnName("etapa_iniciada_en");
+
+        ctx.Property(c => c.PausadaDesde)
+            .HasColumnName("pausada_desde");
+
+        ctx.Property(c => c.SegundosPausaAcumulados)
+            .HasColumnName("segundos_pausa_acumulados")
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        ctx.Property(c => c.PistasEntregadas)
+            .HasColumnName("pistas_entregadas_json")
+            .HasColumnType("jsonb")
+            .HasConversion(new PistasEntregadasJsonValueConverter())
+            .Metadata.SetValueComparer(PistasEntregadasJsonValueConverter.Comparer);
+
         ctx.Property(c => c.MisionSnapshot)
             .HasColumnName("mision_snapshot_json")
             .HasColumnType("jsonb")

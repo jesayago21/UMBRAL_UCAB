@@ -11,7 +11,10 @@ public sealed record CrearEtapaRequest(
     string? Descripcion,
     string? CodigoQrSolucion,
     IReadOnlyList<CrearPistaRequest>? Pistas,
-    IReadOnlyList<Guid>? CategoriaIds);
+    IReadOnlyList<Guid>? CategoriaIds,
+    double? Latitud = null,
+    double? Longitud = null,
+    int? RadioMetros = null);
 
 public sealed record CrearPistaRequest(
     string Contenido,

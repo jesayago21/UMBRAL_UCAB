@@ -32,7 +32,10 @@ internal static class MisionMappings
                 p.Contenido,
                 p.TipoLiberacion.ToString(),
                 p.SegundosLiberacion)).ToList(),
-            null),
+            null,
+            bt.Latitud,
+            bt.Longitud,
+            bt.RadioMetros),
         EtapaTrivia trivia => new EtapaMisionDto(
             trivia.EtapaId.Valor,
             trivia.Orden,

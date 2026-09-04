@@ -11,4 +11,5 @@ public sealed record SesionDisponibleParticipanteDto(
     Guid Id,
     string Titulo,
     string Estado,
-    int ParticipantesInscritos);
+    int ParticipantesInscritos,
+    int MaxParticipantes);

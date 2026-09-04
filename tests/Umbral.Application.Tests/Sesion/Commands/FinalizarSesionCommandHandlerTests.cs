@@ -16,11 +16,12 @@ public sealed class FinalizarSesionCommandHandlerTests
 {
     private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
+    private readonly INotificacionRealTime _notifier = Substitute.For<INotificacionRealTime>();
     private readonly FinalizarSesionCommandHandler _sut;
 
     public FinalizarSesionCommandHandlerTests()
     {
-        _sut = new FinalizarSesionCommandHandler(_sesionRepo, _publisher);
+        _sut = new FinalizarSesionCommandHandler(_sesionRepo, _publisher, _notifier);
     }
 
     [Fact]
@@ -46,6 +47,14 @@ public sealed class FinalizarSesionCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         sesion.Estado.Should().Be(EstadoSesion.Finalizada);
         eventos.Should().ContainSingle(e => e is SesionFinalizada);
+        await _notifier.Received(1).NotificarCambioEstadoSesionAsync(
+            sesion.SesionId.Valor.ToString(),
+            "Finalizada",
+            Arg.Any<CancellationToken>());
+        await _notifier.Received(1).NotificarRankingActualizadoAsync(
+            sesion.SesionId.Valor.ToString(),
+            Arg.Any<IReadOnlyList<RankingPosicionNotificacion>>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

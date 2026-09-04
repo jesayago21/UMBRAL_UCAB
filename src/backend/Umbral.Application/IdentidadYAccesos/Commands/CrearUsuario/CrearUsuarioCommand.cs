@@ -9,5 +9,4 @@ public sealed record CrearUsuarioCommand(
     string Username,
     string Nombre,
     string Apellido,
-    string PasswordTemporal,
     IReadOnlyList<string> Roles) : IRequest<Result<CrearUsuarioResult>>;

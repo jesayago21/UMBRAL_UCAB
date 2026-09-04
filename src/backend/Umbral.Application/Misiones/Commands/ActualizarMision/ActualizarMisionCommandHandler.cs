@@ -1,7 +1,10 @@
 using MediatR;
 using Umbral.Application.Common.Exceptions;
 using Umbral.Application.Common.Models;
+using Umbral.Application.Misiones.Services;
 using Umbral.Domain.CatalogoMision.Mision;
+using Umbral.Domain.CatalogoTrivia.Categoria;
+using Umbral.Domain.CatalogoTrivia.Pregunta;
 using Umbral.Domain.Shared;
 
 namespace Umbral.Application.Misiones.Commands.ActualizarMision;
@@ -9,10 +12,17 @@ namespace Umbral.Application.Misiones.Commands.ActualizarMision;
 internal sealed class ActualizarMisionCommandHandler : IRequestHandler<ActualizarMisionCommand, Result<Guid>>
 {
     private readonly IMisionRepository _misionRepository;
+    private readonly ICategoriaRepository _categoriaRepository;
+    private readonly IPreguntaRepository _preguntaRepository;
 
-    public ActualizarMisionCommandHandler(IMisionRepository misionRepository)
+    public ActualizarMisionCommandHandler(
+        IMisionRepository misionRepository,
+        ICategoriaRepository categoriaRepository,
+        IPreguntaRepository preguntaRepository)
     {
         _misionRepository = misionRepository;
+        _categoriaRepository = categoriaRepository;
+        _preguntaRepository = preguntaRepository;
     }
 
     public async Task<Result<Guid>> Handle(ActualizarMisionCommand command, CancellationToken cancellationToken)
@@ -37,9 +47,15 @@ internal sealed class ActualizarMisionCommandHandler : IRequestHandler<Actualiza
         if (command.Activar.HasValue)
         {
             if (command.Activar.Value && mision.Estado != EstadoMision.Activa)
+            {
+                await MisionTriviaValidacion.AsegurarPreguntasActivasParaActivacionAsync(
+                    mision, _preguntaRepository, _categoriaRepository, cancellationToken);
                 mision.Activar();
+            }
             else if (!command.Activar.Value && mision.Estado == EstadoMision.Activa)
+            {
                 mision.Desactivar();
+            }
         }
 
         await _misionRepository.SaveAsync(mision, cancellationToken);

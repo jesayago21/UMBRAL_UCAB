@@ -71,12 +71,19 @@ Fuente de códigos: `docs/TRAZABILIDAD.md` y `docs/ERS_Proyecto_UMBRAL_UCAB.md`.
 | HU-12..HU-16 (crear sesión, unir participantes, iniciar/pausar/reanudar, penalización) | Cubiertas en backend y operador |
 | HU-18..HU-23 (evidencia, ranking, cierre/auditoría) | Backend cubierto; UI parcial según alcance E1 |
 | HU-24..HU-31 (CRUD trivia banco) | Cubiertas |
-| HU-32..HU-40 (trivia jugable en vivo) | Pendientes (E2) |
+| HU-32 (sala de espera + expulsar) | ✅ E1 (lista viva + `ExpulsarParticipante`) |
+| HU-33 (secuencia trivia + timer) | ✅ parcial E1 (secuencia auto + live UI) |
+| HU-34 (enviar respuesta) | ✅ (202 + UI; cola = HU-35) |
+| HU-35, HU-36 (cola + puntaje dinámico) | ✅ hechas |
+| HU-37 (ranking parcial + feedback) | ✅ (SignalR ranking + feedback personal; revelación grupal de opción correcta = opcional no hecha) |
+| HU-39 (desempate por tiempo acumulado) | ✅ |
+| HU-40 (config etapa Trivia en misión) | ✅ (admin + RB-09 al activar) |
+| Mobile participante (`umbral-mobile`) | ✅ scaffold + flujo (QR cámara pendiente) |
 
 Notas:
 
 - En E1 se incorporó sesión de trivia en operador y flujo de participante web para unión/visualización de preguntas.
-- La interacción en vivo (rounds/respuesta sincronizada) queda en E2.
+- App Expo en `src/mobile/umbral-mobile` (Keycloak + lobby + partida). Web participante sigue habilitado hasta apagar el flag.
 
 ---
 

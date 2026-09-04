@@ -23,15 +23,19 @@ import {
   inputClass,
   selectClass,
 } from '@/styles/ui'
+import { useAuthStore } from '@/store/authStore'
 import {
   ROLES_USUARIO,
-  type CrearUsuarioResponse,
   type RolUsuarioAdmin,
   type UsuarioDto,
 } from '@/types/usuario.types'
 
-function puedeEliminar(usuario: UsuarioDto): boolean {
-  return !usuario.roles.some((r) => r.toLowerCase() === 'administrador')
+function puedeEliminar(usuario: UsuarioDto, usernameSesion: string | null): boolean {
+  const u = usuario.username.trim().toLowerCase()
+  // Cuenta seed «admin» y la propia sesión no se eliminan.
+  if (u === 'admin') return false
+  if (usernameSesion && u === usernameSesion.trim().toLowerCase()) return false
+  return true
 }
 
 function rolUnicoDesdeUsuario(usuario: UsuarioDto): RolUsuarioAdmin | '' {
@@ -75,7 +79,7 @@ function RolSelect({
         ))}
       </select>
       <p className="text-xs text-slate-500">
-        Un solo rol por usuario (Administrador, Operador o Participante).
+        Un solo rol por usuario (Administrador u Operador).
       </p>
     </div>
   )
@@ -87,6 +91,7 @@ export function UsuariosPage() {
   const [rolEditar, setRolEditar] = useState<RolUsuarioAdmin | ''>('')
   const [formError, setFormError] = useState<string | null>(null)
   const { successMessage, showSuccess, clearSuccess } = useSuccessMessage()
+  const usernameSesion = useAuthStore((s) => s.username)
 
   const { data, isLoading, isError, error } = useUsuarios()
   const crear = useCrearUsuario()
@@ -115,21 +120,18 @@ export function UsuariosPage() {
       return
     }
     const username = String(form.get('username')).trim()
-    const password = String(form.get('password'))
-    let created: CrearUsuarioResponse | undefined
     try {
-      created = await crear.mutateAsync({
+      await crear.mutateAsync({
         email: String(form.get('email')),
         username,
         nombre: String(form.get('nombre')),
         apellido: String(form.get('apellido')),
-        passwordTemporal: password,
         roles: [rolCrear],
       })
       formEl.reset()
       setRolCrear('')
       showSuccess(
-        `Usuario registrado. Entregar a «${username}» su contraseña: ${created.passwordTemporal}`,
+        `Usuario «${username}» registrado. Se envió un correo para establecer la contraseña (en local: Mailpit http://localhost:8025).`,
       )
     } catch (err) {
       setFormError(getApiErrorMessage(err))
@@ -148,7 +150,7 @@ export function UsuariosPage() {
     const nuevaPassword = String(form.get('nuevaPassword') ?? '').trim()
     try {
       await actualizar.mutateAsync({
-        id: editTarget.id,
+        keycloakUserId: editTarget.keycloakUserId,
         body: {
           nombre: String(form.get('nombre')),
           apellido: String(form.get('apellido')),
@@ -167,7 +169,7 @@ export function UsuariosPage() {
     setFormError(null)
     const accion = usuario.estado === 'Activo' ? 'Bloquear' : 'Activar'
     try {
-      await cambiarEstado.mutateAsync({ id: usuario.id, accion })
+      await cambiarEstado.mutateAsync({ keycloakUserId: usuario.keycloakUserId, accion })
       showSuccess(accion === 'Bloquear' ? 'Usuario bloqueado.' : 'Usuario activado.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
@@ -175,20 +177,24 @@ export function UsuariosPage() {
   }
 
   const handleDelete = async (usuario: UsuarioDto) => {
-    if (!puedeEliminar(usuario)) {
-      setFormError('No se puede eliminar un usuario con rol Administrador.')
+    if (!puedeEliminar(usuario, usernameSesion)) {
+      setFormError(
+        usuario.username.trim().toLowerCase() === 'admin'
+          ? 'No se puede eliminar la cuenta administradora raíz (admin).'
+          : 'No puedes eliminar tu propia cuenta mientras la sesión está activa.',
+      )
       return
     }
     if (
       !window.confirm(
-        `¿Eliminar a «${usuario.username}»? Se borrará de Keycloak y del registro local.`,
+        `¿Eliminar a «${usuario.username}»? Se borrará de Keycloak.`,
       )
     ) {
       return
     }
     setFormError(null)
     try {
-      await eliminar.mutateAsync(usuario.id)
+      await eliminar.mutateAsync(usuario.keycloakUserId)
       showSuccess('Usuario eliminado.')
     } catch (err) {
       setFormError(getApiErrorMessage(err))
@@ -199,7 +205,7 @@ export function UsuariosPage() {
     <div className="space-y-6">
       <PageHeader
         title="Usuarios"
-        description="Un usuario, un rol. La contraseña mostrada es la última fijada por el administrador (para entregar a operadores y participantes). Usuarios demo: Umbral123!"
+        description="Un usuario, un rol. Los usuarios se gestionan directamente en Keycloak."
       />
 
       {successMessage && <SuccessAlert message={successMessage} onDismiss={clearSuccess} />}
@@ -211,14 +217,6 @@ export function UsuariosPage() {
           <input name="username" required placeholder="Username (login)" className={inputClass} />
           <input name="nombre" required placeholder="Nombre" className={inputClass} />
           <input name="apellido" required placeholder="Apellido" className={inputClass} />
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            placeholder="Contraseña"
-            className={`${inputClass} sm:col-span-2`}
-          />
           <RolSelect
             id="rol-crear"
             value={rolCrear}
@@ -233,7 +231,7 @@ export function UsuariosPage() {
 
       {editTarget && (
         <form
-          key={editTarget.id}
+          key={editTarget.keycloakUserId}
           onSubmit={handleUpdate}
           className={`${cardHighlightClass} grid gap-3 sm:grid-cols-2`}
         >
@@ -241,7 +239,7 @@ export function UsuariosPage() {
             Editando: {editTarget.username} ({editTarget.email})
             {editTarget.roles.length > 1 && (
               <span className="mt-1 block text-xs font-normal text-amber-700">
-                Este usuario tenía varios roles en BD; al guardar quedará solo el rol del desplegable.
+                Este usuario tenía varios roles en Keycloak; al guardar quedará solo el rol del desplegable.
               </span>
             )}
           </p>
@@ -295,7 +293,7 @@ export function UsuariosPage() {
       {data && data.length > 0 && (
         <ul className={`${cardClass} divide-y divide-slate-100`}>
           {data.map((u) => (
-            <li key={u.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+            <li key={u.keycloakUserId} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
               <div>
                 <p className="font-medium text-slate-900">
                   {u.nombre} {u.apellido}{' '}
@@ -318,7 +316,7 @@ export function UsuariosPage() {
                 >
                   {u.estado === 'Activo' ? 'Bloquear' : 'Activar'}
                 </button>
-                {puedeEliminar(u) ? (
+                {puedeEliminar(u, usernameSesion) ? (
                   <button
                     type="button"
                     className={btnDangerLink}
@@ -328,7 +326,14 @@ export function UsuariosPage() {
                     Eliminar
                   </button>
                 ) : (
-                  <span className="text-xs text-slate-400" title="No se eliminan administradores">
+                  <span
+                    className="text-xs text-slate-400"
+                    title={
+                      u.username.trim().toLowerCase() === 'admin'
+                        ? 'Cuenta administradora raíz'
+                        : 'No puedes eliminarte a ti mismo'
+                    }
+                  >
                     No eliminable
                   </span>
                 )}

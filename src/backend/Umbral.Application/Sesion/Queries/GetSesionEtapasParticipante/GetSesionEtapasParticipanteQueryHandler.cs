@@ -32,7 +32,8 @@ internal sealed class GetSesionEtapasParticipanteQueryHandler
         }
 
         var detalle = sesion.ToDetalle();
-        var etapas  = detalle.Etapas ?? Array.Empty<EtapaSesionDto>();
+        var participante = sesion.Participantes.First(e => e.JugadorId == jugadorId);
+        var etapas = sesion.ToEtapasParticipante(participante.ParticipanteId);
 
         return new SesionEtapasParticipanteDto(
             detalle.Estado,

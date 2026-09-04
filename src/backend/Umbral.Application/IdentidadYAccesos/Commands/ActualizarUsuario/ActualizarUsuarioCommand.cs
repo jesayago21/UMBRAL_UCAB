@@ -4,7 +4,7 @@ using Umbral.Application.Common.Models;
 namespace Umbral.Application.IdentidadYAccesos.Commands.ActualizarUsuario;
 
 public sealed record ActualizarUsuarioCommand(
-    Guid UsuarioId,
+    Guid KeycloakUserId,
     string Nombre,
     string Apellido,
     string Rol,

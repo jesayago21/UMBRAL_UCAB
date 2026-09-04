@@ -49,6 +49,15 @@ public sealed class EtapaBusquedaTesoroConfiguration : IEntityTypeConfiguration<
             .HasMaxLength(120)
             .IsRequired();
 
+        builder.Property(x => x.Latitud)
+            .HasColumnName("latitud");
+
+        builder.Property(x => x.Longitud)
+            .HasColumnName("longitud");
+
+        builder.Property(x => x.RadioMetros)
+            .HasColumnName("radio_metros");
+
         builder.Ignore(x => x.Pistas);
 
         builder.HasMany<Pista>("_pistas")
@@ -65,7 +74,8 @@ public sealed class EtapaTriviaConfiguration : IEntityTypeConfiguration<EtapaTri
         builder.Property(x => x.CategoriaIdsStorage)
             .HasColumnName("categoria_ids_json")
             .HasColumnType("jsonb")
-            .HasConversion(new CategoriaIdsJsonValueConverter());
+            .HasConversion(new CategoriaIdsJsonValueConverter())
+            .Metadata.SetValueComparer(CategoriaIdsJsonValueConverter.Comparer);
 
         builder.Ignore(x => x.CategoriaIds);
     }

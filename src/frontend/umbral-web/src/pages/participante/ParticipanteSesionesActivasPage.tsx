@@ -72,6 +72,12 @@ export function ParticipanteSesionesActivasPage() {
       setFormError('Selecciona una sesión e ingresa el código de acceso.')
       return
     }
+    const seleccionada = sesiones?.find((s) => s.id === sesionId)
+    const max = seleccionada?.maxParticipantes ?? 5
+    if (seleccionada && seleccionada.participantesInscritos >= max) {
+      setFormError('La sesión ya está llena (máximo 5 participantes).')
+      return
+    }
     setFormError(null)
     try {
       const result = await unirse.mutateAsync({
@@ -111,6 +117,11 @@ export function ParticipanteSesionesActivasPage() {
         <div className={cardClass}>
           <p className="font-medium text-slate-900">{inscripcionServidor.titulo}</p>
           <p className="mt-1 text-sm text-slate-600">Estado: {inscripcionServidor.estado}</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Participantes inscritos:{' '}
+            {inscripcionServidor.participantesInscritos ?? '—'}/
+            {inscripcionServidor.maxParticipantes ?? 5}
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link to={rutaPartidaParticipante(insc)} className={btnPrimary}>
               Ir a mi partida
@@ -166,7 +177,8 @@ export function ParticipanteSesionesActivasPage() {
             >
               <span className="font-medium">{s.titulo}</span>
               <span className="ml-2 text-slate-500">
-                {s.estado} · {s.participantesInscritos} participantes
+                {s.estado} · {s.participantesInscritos}/{s.maxParticipantes ?? 5} participantes
+                {s.participantesInscritos >= (s.maxParticipantes ?? 5) ? ' · Llena' : ''}
               </span>
             </button>
           </li>

@@ -6,6 +6,16 @@
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "accessTokenLifespan": 1800,
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "noreply@umbral.local",
+    "fromDisplayName": "UMBRAL",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false",
+    "replyTo": "noreply@umbral.local"
+  },
   "roles": {
     "realm": [
       { "name": "Administrador", "description": "Gestiona catálogo (misiones, banco de trivia) y usuarios" },
@@ -22,7 +32,9 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "redirectUris": [
+        "http://localhost:5173/",
         "http://localhost:5173/*",
+        "http://localhost:3000/",
         "http://localhost:3000/*"
       ],
       "webOrigins": [
@@ -33,6 +45,38 @@
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:3000/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-umbral-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "umbral-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "umbral-mobile",
+      "name": "UMBRAL Mobile (Participante)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "umbral://*",
+        "umbral://redirect",
+        "exp://*",
+        "exp://127.0.0.1:8081/--/redirect",
+        "exp://localhost:8081/--/redirect"
+      ],
+      "webOrigins": ["+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "umbral://*##exp://*"
       },
       "protocolMappers": [
         {

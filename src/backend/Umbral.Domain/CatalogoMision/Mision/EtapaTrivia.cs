@@ -29,4 +29,13 @@ public sealed class EtapaTrivia : Etapa
             CategoriaIdsStorage = distinct.Select(c => c.Valor).ToList()
         };
     }
+
+    public void ActualizarCategorias(IReadOnlyList<CategoriaId> categoriaIds)
+    {
+        if (categoriaIds is null || categoriaIds.Count == 0)
+            throw new DomainException(
+                "Etapa trivia requiere al menos una categoría (RB-33).");
+
+        CategoriaIdsStorage = categoriaIds.Distinct().Select(c => c.Valor).ToList();
+    }
 }

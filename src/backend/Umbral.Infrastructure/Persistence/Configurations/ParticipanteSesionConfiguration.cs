@@ -34,6 +34,17 @@ public sealed class ParticipanteSesionConfiguration : IEntityTypeConfiguration<P
             .HasConversion(x => x.Valor, value => Puntaje.Crear(value))
             .IsRequired();
 
+        builder.Property(x => x.DeudaPendiente)
+            .HasColumnName("deuda_pendiente")
+            .HasConversion(x => x.Valor, value => Puntaje.Crear(value))
+            .IsRequired()
+            .HasDefaultValueSql("0");
+
+        builder.Property(x => x.TiempoBusquedaMs)
+            .HasColumnName("tiempo_busqueda_ms")
+            .IsRequired()
+            .HasDefaultValueSql("0");
+
         builder.HasOne<Sesion>()
             .WithMany("_participantes")
             .HasForeignKey(x => x.SesionId)

@@ -12,16 +12,17 @@ using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Application.Tests.Sesion.Commands;
 
-/// <summary>HU-16 — AplicarPenalizacion (Application).</summary>
+/// <summary>HU-16 — AplicarPenalizacion (Application); HU-17 — RankingActualizado.</summary>
 public sealed class AplicarPenalizacionCommandHandlerTests
 {
     private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
+    private readonly INotificacionRealTime _notifier = Substitute.For<INotificacionRealTime>();
     private readonly AplicarPenalizacionCommandHandler _sut;
 
     public AplicarPenalizacionCommandHandlerTests()
     {
-        _sut = new AplicarPenalizacionCommandHandler(_sesionRepo, _publisher);
+        _sut = new AplicarPenalizacionCommandHandler(_sesionRepo, _publisher, _notifier);
     }
 
     [Fact]
@@ -61,6 +62,16 @@ public sealed class AplicarPenalizacionCommandHandlerTests
         participante.PuntajeTotal.Valor.Should().Be(80);
         eventos.Should().ContainSingle().Which.Should().BeOfType<PenalizacionAplicada>();
         sesion.DomainEvents.Should().BeEmpty();
+        await _notifier.Received(1).NotificarRankingActualizadoAsync(
+            sesion.SesionId.Valor.ToString(),
+            Arg.Any<IReadOnlyList<RankingPosicionNotificacion>>(),
+            Arg.Any<CancellationToken>());
+        await _notifier.Received(1).NotificarPenalizacionAplicadaAsync(
+            sesion.SesionId.Valor.ToString(),
+            participante.ParticipanteId.Valor.ToString(),
+            20,
+            "Trampa detectada",
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

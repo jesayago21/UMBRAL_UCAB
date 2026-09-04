@@ -1,6 +1,8 @@
 using MediatR;
 using Umbral.Application.Sesion.Models;
+using Umbral.Domain.CatalogoMision.Mision;
 using Umbral.Domain.Sesion;
+using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Application.Sesion.Queries.GetMiInscripcionParticipante;
 
@@ -16,12 +18,23 @@ internal sealed class GetMiInscripcionParticipanteQueryHandler
         GetMiInscripcionParticipanteQuery query,
         CancellationToken cancellationToken)
     {
-        var sesion = await _sesionRepository.FindInscripcionAbiertaPorJugadorAsync(
-            new UsuarioId(query.JugadorId),
+        var jugadorId = new UsuarioId(query.JugadorId);
+
+        // Incluye Finalizada para pantalla de resultados en mobile/web.
+        // Lobby filtra estados terminales y no los trata como partida en curso.
+        // Cancelada no entra en vigente (evita fantasma); se limpia abajo si no hay nada.
+        var sesion = await _sesionRepository.FindInscripcionVigentePorJugadorAsync(
+            jugadorId,
             cancellationToken);
 
         if (sesion is null)
+        {
+            // Sin partida vigente: limpia filas huérfanas en Cancelada/Finalizada.
+            await _sesionRepository.EliminarParticipacionesEnSesionesTerminalesAsync(
+                jugadorId,
+                cancellationToken);
             return null;
+        }
 
         var participante = sesion.Participantes
             .FirstOrDefault(p => p.JugadorId.Valor == query.JugadorId);
@@ -30,15 +43,106 @@ internal sealed class GetMiInscripcionParticipanteQueryHandler
             return null;
 
         var titulo = sesion.Nombre;
-
-        var detalle = sesion.ToDetalle();
+        var ctx = sesion.ContextoMision;
+        var participanteId = participante.ParticipanteId;
 
         return new MiInscripcionParticipanteDto(
             sesion.SesionId.Valor,
             titulo,
-            participante.ParticipanteId.Valor,
+            participanteId.Valor,
             sesion.Estado.ToString(),
-            detalle.TotalEtapas,
-            detalle.Etapas ?? Array.Empty<EtapaSesionDto>());
+            ctx?.MisionSnapshot.Etapas.Count
+                ?? sesion.ContextoBT?.MisionSnapshot.Etapas.Count
+                ?? 0,
+            sesion.ToEtapasParticipante(participanteId),
+            ctx?.EtapaIniciadaEn,
+            ctx?.SegundosPausaAcumulados ?? 0,
+            ctx?.PausadaDesde,
+            MapPistasPorTiempoPendientes(sesion, participanteId),
+            MapPenalizaciones(sesion, participanteId),
+            sesion.Participantes.Count,
+            SesionAR.MaxParticipantes);
+    }
+
+    private static IReadOnlyList<PistaPorTiempoPendienteDto> MapPistasPorTiempoPendientes(
+        SesionAR sesion,
+        ParticipanteId participanteId)
+    {
+        if (sesion.ContextoMision is not { } ctx)
+            return Array.Empty<PistaPorTiempoPendienteDto>();
+
+        if (ctx.EtapaActualIndex < 0 || ctx.EtapaActualIndex >= ctx.MisionSnapshot.Etapas.Count)
+            return Array.Empty<PistaPorTiempoPendienteDto>();
+
+        if (ctx.MisionSnapshot.Etapas[ctx.EtapaActualIndex] is not EtapaBusquedaTesoroSnapshot bt)
+            return Array.Empty<PistaPorTiempoPendienteDto>();
+
+        var index = ctx.EtapaActualIndex;
+        return bt.Pistas
+            .Where(p =>
+                p.TipoLiberacion == TipoLiberacion.PorTiempo
+                && p.SegundosLiberacion is > 0
+                && !ctx.YaEntregoPista(p.PistaId, index, participanteId))
+            .Select(p => new PistaPorTiempoPendienteDto(p.PistaId.Valor, p.SegundosLiberacion!.Value))
+            .OrderBy(p => p.SegundosLiberacion)
+            .ToList();
+    }
+
+    private static IReadOnlyList<PenalizacionParticipanteDto> MapPenalizaciones(
+        SesionAR sesion,
+        ParticipanteId participanteId)
+    {
+        var participante = sesion.Participantes
+            .FirstOrDefault(p => p.ParticipanteId == participanteId);
+        if (participante is null)
+            return Array.Empty<PenalizacionParticipanteDto>();
+
+        var idStr = participanteId.Valor.ToString();
+        var nombre = participante.Nombre.Valor;
+
+        return sesion.HistorialEventos
+            .Where(e => e.Tipo == "PenalizacionAplicada")
+            .Select(e => TryParsePenalizacion(e, idStr, nombre))
+            .Where(p => p is not null)
+            .Select(p => p!)
+            .OrderByDescending(p => p.OcurridoEn)
+            .ToList();
+    }
+
+    private static PenalizacionParticipanteDto? TryParsePenalizacion(
+        EventoSesion evento,
+        string participanteId,
+        string nombreParticipante)
+    {
+        // Payload: participante={nombre|guid};puntos={n};motivo={texto libre}
+        // Compatibilidad: eventos antiguos guardaban el GUID.
+        var payload = evento.Payload;
+        const string prefijoPart = "participante=";
+        const string prefijoPuntos = ";puntos=";
+        const string prefijoMotivo = ";motivo=";
+
+        var iPart = payload.IndexOf(prefijoPart, StringComparison.Ordinal);
+        var iPuntos = payload.IndexOf(prefijoPuntos, StringComparison.Ordinal);
+        var iMotivo = payload.IndexOf(prefijoMotivo, StringComparison.Ordinal);
+        if (iPart < 0 || iPuntos < 0 || iMotivo < 0)
+            return null;
+
+        var clave = payload.Substring(
+            iPart + prefijoPart.Length,
+            iPuntos - (iPart + prefijoPart.Length));
+        var esDeEsteParticipante =
+            string.Equals(clave, nombreParticipante, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(clave, participanteId, StringComparison.OrdinalIgnoreCase);
+        if (!esDeEsteParticipante)
+            return null;
+
+        var puntosRaw = payload.Substring(
+            iPuntos + prefijoPuntos.Length,
+            iMotivo - (iPuntos + prefijoPuntos.Length));
+        if (!int.TryParse(puntosRaw, out var puntos))
+            return null;
+
+        var motivo = payload[(iMotivo + prefijoMotivo.Length)..].Trim();
+        return new PenalizacionParticipanteDto(puntos, motivo, evento.OcurridoEn);
     }
 }

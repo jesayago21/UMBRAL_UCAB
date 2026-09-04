@@ -4,6 +4,7 @@ import { LoadingState } from '@/components/shared/LoadingState'
 import { mapEstadoSesionFromApi } from '@/lib/sesionUi'
 import { cardClass } from '@/styles/ui'
 import type { SesionResumenDto } from '@/types/sesion.types'
+import { MAX_PARTICIPANTES_SESION } from '@/types/sesion.types'
 
 const ESTADO_LABEL: Record<string, string> = {
   programada: 'Programada',
@@ -65,7 +66,8 @@ export function SesionesOperativasList({ sesiones, isLoading }: SesionesOperativ
                       {s.tipoSesion === 'Trivia' ? 'Trivia' : s.tipoSesion === 'Mision' ? 'Misión' : 'Búsqueda'}
                     </span>
                     {' · '}
-                    {s.participantesCount} participante{s.participantesCount === 1 ? '' : 's'}
+                    {s.participantesCount}/{s.maxParticipantes ?? MAX_PARTICIPANTES_SESION}{' '}
+                    participante{s.participantesCount === 1 ? '' : 's'}
                     {s.totalEtapas > 0 && (
                       <>
                         {' · '}

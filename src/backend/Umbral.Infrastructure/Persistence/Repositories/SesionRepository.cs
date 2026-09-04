@@ -20,13 +20,17 @@ public sealed class SesionRepository : ISesionRepository
             .Include("_participantes")
             .Include("_historialEventos")
             .Include("_evidencias")
+            .Include("_respuestasTrivia")
             .FirstOrDefaultAsync(x => x.SesionId == id, ct);
     }
 
     public async Task<IReadOnlyList<Sesion>> FindActivasAsync(CancellationToken ct = default)
     {
+        // Background services poll this often — no historial/evidencias (crecen sin límite).
         return await _db.Sesiones
             .AsNoTracking()
+            .Include(s => s.ContextoMision)
+            .Include("_participantes")
             .Where(x => x.Estado == EstadoSesion.Activa)
             .ToListAsync(ct);
     }
@@ -90,6 +94,57 @@ public sealed class SesionRepository : ISesionRepository
         return await FindByIdAsync(sesionId, ct);
     }
 
+    public async Task<Sesion?> FindInscripcionVigentePorJugadorAsync(
+        UsuarioId jugadorId,
+        CancellationToken ct = default)
+    {
+        var candidatos = await (
+                from p in _db.ParticipantesSesion.AsNoTracking()
+                join s in _db.Sesiones.AsNoTracking() on p.SesionId equals s.SesionId
+                where p.JugadorId == jugadorId
+                      // Cancelada no es “mi partida”: evitaba lobby fantasma en mobile/web.
+                      && s.Estado != EstadoSesion.Cancelada
+                select new
+                {
+                    SesionId     = s.SesionId,
+                    s.Estado,
+                    s.IniciadaEn,
+                    s.FinalizadaEn
+                })
+            .ToListAsync(ct);
+
+        if (candidatos.Count == 0)
+            return null;
+
+        static int Prioridad(EstadoSesion estado) => estado switch
+        {
+            EstadoSesion.Activa or EstadoSesion.Pausada => 0,
+            EstadoSesion.EnPreparacion or EstadoSesion.Programada => 1,
+            EstadoSesion.Finalizada or EstadoSesion.Cancelada => 2,
+            _ => 3
+        };
+
+        var elegido = candidatos
+            .OrderBy(c => Prioridad(c.Estado))
+            .ThenByDescending(c => c.FinalizadaEn ?? c.IniciadaEn)
+            .ThenByDescending(c => c.SesionId.Valor)
+            .First();
+
+        return await FindByIdAsync(elegido.SesionId, ct);
+    }
+
+    public async Task<int> EliminarParticipacionesEnSesionesTerminalesAsync(
+        UsuarioId jugadorId,
+        CancellationToken ct = default)
+    {
+        return await _db.ParticipantesSesion
+            .Where(p => p.JugadorId == jugadorId)
+            .Where(p => _db.Sesiones.Any(s =>
+                s.SesionId == p.SesionId
+                && (s.Estado == EstadoSesion.Finalizada || s.Estado == EstadoSesion.Cancelada)))
+            .ExecuteDeleteAsync(ct);
+    }
+
     public Task<bool> ExisteNombreSesionOperativaAsync(string nombre, CancellationToken ct = default)
     {
         var normalized = nombre.Trim().ToLowerInvariant();
@@ -98,6 +153,29 @@ public sealed class SesionRepository : ISesionRepository
                  && x.Estado != EstadoSesion.Finalizada
                  && x.Estado != EstadoSesion.Cancelada,
             ct);
+    }
+
+    public async Task<int> CountEventosHistorialAsync(SesionId sesionId, CancellationToken ct = default)
+    {
+        return await _db.EventosSesion
+            .AsNoTracking()
+            .CountAsync(x => x.SesionId == sesionId, ct);
+    }
+
+    public async Task<IReadOnlyList<EventoSesion>> ListEventosHistorialAsync(
+        SesionId sesionId,
+        int pagina,
+        int tamanoPagina,
+        CancellationToken ct = default)
+    {
+        var skip = Math.Max(0, (pagina - 1) * tamanoPagina);
+        return await _db.EventosSesion
+            .AsNoTracking()
+            .Where(x => x.SesionId == sesionId)
+            .OrderByDescending(x => x.OcurridoEn)
+            .Skip(skip)
+            .Take(tamanoPagina)
+            .ToListAsync(ct);
     }
 
     public async Task EliminarParticipanteAsync(ParticipanteId participanteId, CancellationToken ct = default)
@@ -143,16 +221,38 @@ public sealed class SesionRepository : ISesionRepository
         var cm      = sesion.ContextoMision;
         var json    = MisionSnapshotPersistence.ToJson(cm.MisionSnapshot);
         var ganador = cm.GanadorEtapaActualId?.Valor;
+        var pistasJson = PistasEntregadasPersistence.ToJson(cm.PistasEntregadas);
+        var etapaIniciada = cm.EtapaIniciadaEn;
+        var pausadaDesde = cm.PausadaDesde;
+        var segundosPausa = cm.SegundosPausaAcumulados;
+        var timerCerrado = cm.TimerCerradoEn;
+        var triviaTransicion = cm.TriviaEnTransicion;
+        var transicionHasta = cm.TransicionHasta;
 
         await _db.Database.ExecuteSqlInterpolatedAsync(
             $"""
-             INSERT INTO contextos_mision ("SesionId", mision_id, etapa_actual_index, ganador_etapa_actual_id, pregunta_trivia_actual_index, mision_snapshot_json)
-             VALUES ({sesion.SesionId.Valor}, {cm.MisionId.Valor}, {cm.EtapaActualIndex}, {ganador}, {cm.PreguntaTriviaActualIndex}, {json}::jsonb)
+             INSERT INTO contextos_mision (
+                 "SesionId", mision_id, etapa_actual_index, ganador_etapa_actual_id,
+                 pregunta_trivia_actual_index, mision_snapshot_json,
+                 etapa_iniciada_en, pausada_desde, segundos_pausa_acumulados, pistas_entregadas_json,
+                 timer_cerrado_en, trivia_en_transicion, transicion_hasta)
+             VALUES (
+                 {sesion.SesionId.Valor}, {cm.MisionId.Valor}, {cm.EtapaActualIndex}, {ganador},
+                 {cm.PreguntaTriviaActualIndex}, {json}::jsonb,
+                 {etapaIniciada}, {pausadaDesde}, {segundosPausa}, {pistasJson}::jsonb,
+                 {timerCerrado}, {triviaTransicion}, {transicionHasta})
              ON CONFLICT ("SesionId") DO UPDATE SET
                  etapa_actual_index = EXCLUDED.etapa_actual_index,
                  ganador_etapa_actual_id = EXCLUDED.ganador_etapa_actual_id,
                  pregunta_trivia_actual_index = EXCLUDED.pregunta_trivia_actual_index,
-                 mision_snapshot_json = EXCLUDED.mision_snapshot_json
+                 mision_snapshot_json = EXCLUDED.mision_snapshot_json,
+                 etapa_iniciada_en = EXCLUDED.etapa_iniciada_en,
+                 pausada_desde = EXCLUDED.pausada_desde,
+                 segundos_pausa_acumulados = EXCLUDED.segundos_pausa_acumulados,
+                 pistas_entregadas_json = EXCLUDED.pistas_entregadas_json,
+                 timer_cerrado_en = EXCLUDED.timer_cerrado_en,
+                 trivia_en_transicion = EXCLUDED.trivia_en_transicion,
+                 transicion_hasta = EXCLUDED.transicion_hasta
              """,
             ct);
     }
@@ -203,11 +303,17 @@ public sealed class SesionRepository : ISesionRepository
     {
         foreach (var participante in sesion.Participantes)
         {
-            var puntaje = participante.PuntajeTotal;
+            // Valor CLR int: ExecuteUpdate + value converter a veces no aplica el VO completo.
+            var puntajeValor = participante.PuntajeTotal.Valor;
+            var deudaValor = participante.DeudaPendiente.Valor;
+            var tiempoBusquedaMs = participante.TiempoBusquedaMs;
             await _db.ParticipantesSesion
                 .Where(e => e.ParticipanteId == participante.ParticipanteId)
                 .ExecuteUpdateAsync(
-                    setters => setters.SetProperty(e => e.PuntajeTotal, puntaje),
+                    setters => setters
+                        .SetProperty(e => e.PuntajeTotal, Puntaje.Crear(puntajeValor))
+                        .SetProperty(e => e.DeudaPendiente, Puntaje.Crear(deudaValor))
+                        .SetProperty(e => e.TiempoBusquedaMs, tiempoBusquedaMs),
                     ct);
         }
     }
@@ -239,6 +345,15 @@ public sealed class SesionRepository : ISesionRepository
 
             if (!exists)
                 await _db.Evidencias.AddAsync(evidencia, ct);
+        }
+
+        foreach (var respuesta in sesion.RespuestasTrivia)
+        {
+            var exists = await _db.RespuestasTrivia
+                .AnyAsync(r => r.RespuestaTriviaId == respuesta.RespuestaTriviaId, ct);
+
+            if (!exists)
+                await _db.RespuestasTrivia.AddAsync(respuesta, ct);
         }
     }
 }

@@ -12,4 +12,10 @@ public sealed class KeycloakAdminOptions
     public string AdminUsername { get; init; } = "admin";
     public string AdminPassword { get; init; } = "admin";
     public bool UseDevStub { get; init; }
+
+    /// <summary>Client OIDC público usado en el link del email de acciones requeridas.</summary>
+    public string FrontendClientId { get; init; } = "umbral-web";
+
+    /// <summary>Redirect URI tras completar UPDATE_PASSWORD (debe estar en el client).</summary>
+    public string FrontendRedirectUri { get; init; } = "http://localhost:5173/";
 }

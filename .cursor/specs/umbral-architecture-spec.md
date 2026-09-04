@@ -709,3 +709,14 @@ needs: [backend, frontend]
 | DA-07 | Validación via timestamp servidor, no cliente       | Elimina posibilidad de trampas por manipulación del cliente. |
 | DA-08 | Queries acceden directo al DbContext                | Evita overhead de reconstruir agregados para lecturas puras. |
 | DA-09 | Domain Events publicados batch al finalizar el handler | Consistencia: solo se publican si el handler completa sin error.|
+| DA-10 | `Umbral.Gateway` (YARP) como reverse proxy de borde | Punto de entrada HTTP para `/api/v1/**` sin dividir el monolito. No contiene dominio ni casos de uso; reenvía al único deployable de negocio (`Umbral.API`). No constituye microservicio. |
+
+### Umbral.Gateway (adaptador de entrada — edge)
+
+Proyecto ASP.NET Core mínimo con `Yarp.ReverseProxy`. Responsabilidades:
+
+- Enrutar `GET/POST/PUT/DELETE /api/v1/{**catch-all}` → cluster `umbral-api` (`http://localhost:5000` en dev).
+- Exponer `GET /health` propio del gateway.
+- **No** validar JWT, **no** transformar payloads, **no** referenciar `Umbral.Domain` ni `Umbral.Application`.
+
+Puertos locales: gateway `:8000`, API `:5000`. El frontend puede apuntar `VITE_API_URL` al gateway para REST.

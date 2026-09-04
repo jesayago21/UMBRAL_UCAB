@@ -22,12 +22,13 @@ internal sealed class GetRankingSesionQueryHandler
                          cancellationToken)
                      ?? throw new NotFoundException(nameof(SesionAR), query.SesionId);
 
-        return RankingService.Calcular(sesion.Participantes)
+        return RankingService.Calcular(sesion.Participantes, sesion.RespuestasTrivia)
             .Select(x => new PosicionRankingDto(
                 x.Posicion,
                 x.ParticipanteId.Valor,
                 x.NombreParticipante,
-                x.PuntajeTotal))
+                x.PuntajeTotal,
+                x.TiempoAcumuladoMs))
             .ToList();
     }
 }

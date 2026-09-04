@@ -29,7 +29,7 @@ public sealed class UsuariosControllerTests
         var body = await response.Content.ReadFromJsonAsync<CrearUsuarioResponse>();
         body!.Email.Should().Be("admin_crear@test.com");
         body.Roles.Should().Contain("Operador");
-        body.PasswordTemporal.Should().NotBeNullOrWhiteSpace();
+        body.KeycloakUserId.Should().NotBe(Guid.Empty);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public sealed class UsuariosControllerTests
     }
 
     [Fact]
-    public async Task POST_usuarios_CuandoRolesParticipante_Retorna201()
+    public async Task POST_usuarios_CuandoRolesParticipante_Retorna400_RB35()
     {
         SetRole("Administrador");
 
@@ -69,13 +69,9 @@ public sealed class UsuariosControllerTests
                 $"part_user_{Guid.NewGuid():N}",
                 "Part",
                 "Test",
-                "Password1!",
                 ["Participante"]));
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        var body = await response.Content.ReadFromJsonAsync<CrearUsuarioResponse>();
-        body!.Roles.Should().Contain("Participante");
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -115,7 +111,7 @@ public sealed class UsuariosControllerTests
         var usuario = (await create.Content.ReadFromJsonAsync<CrearUsuarioResponse>())!;
 
         var response = await _client.PutAsJsonAsync(
-            $"/api/v1/usuarios/{usuario.Id}/roles",
+            $"/api/v1/usuarios/{usuario.KeycloakUserId}/roles",
             new AsignarRolesRequest(["Administrador"]));
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -132,10 +128,55 @@ public sealed class UsuariosControllerTests
         var usuario = (await create.Content.ReadFromJsonAsync<CrearUsuarioResponse>())!;
 
         var response = await _client.PutAsJsonAsync(
-            $"/api/v1/usuarios/{usuario.Id}/estado",
+            $"/api/v1/usuarios/{usuario.KeycloakUserId}/estado",
             new CambiarEstadoUsuarioRequest("Bloquear"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task PUT_usuarios_id_CuandoAdmin_ActualizaPerfil_Retorna204()
+    {
+        SetRole("Administrador");
+        var create = await _client.PostAsJsonAsync(
+            "/api/v1/usuarios",
+            BuildCrearRequest("actualizar@test.com", "actualizar_user"));
+        create.EnsureSuccessStatusCode();
+        var usuario = (await create.Content.ReadFromJsonAsync<CrearUsuarioResponse>())!;
+
+        var response = await _client.PutAsJsonAsync(
+            $"/api/v1/usuarios/{usuario.KeycloakUserId}",
+            new ActualizarUsuarioRequest("Nombre Nuevo", "Apellido Nuevo", "Operador", null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task DELETE_usuarios_id_CuandoOperador_Elimina_Retorna204()
+    {
+        SetRole("Administrador");
+        var create = await _client.PostAsJsonAsync(
+            "/api/v1/usuarios",
+            BuildCrearRequest("eliminar@test.com", "eliminar_user"));
+        create.EnsureSuccessStatusCode();
+        var usuario = (await create.Content.ReadFromJsonAsync<CrearUsuarioResponse>())!;
+
+        var response = await _client.DeleteAsync(
+            $"/api/v1/usuarios/{usuario.KeycloakUserId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task GET_autenticacion_me_CuandoAutenticado_Retorna200()
+    {
+        SetRole("Administrador");
+
+        var response = await _client.GetAsync("/api/v1/autenticacion/me");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<MeResponse>();
+        body!.Roles.Should().Contain("Administrador");
     }
 
     private void SetRole(string role)
@@ -145,5 +186,5 @@ public sealed class UsuariosControllerTests
     }
 
     private static CrearUsuarioRequest BuildCrearRequest(string email, string username) =>
-        new(email, username, "Nombre", "Apellido", "Password1", ["Operador"]);
+        new(email, username, "Nombre", "Apellido", ["Operador"]);
 }

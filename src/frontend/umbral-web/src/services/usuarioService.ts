@@ -17,18 +17,27 @@ export async function crearUsuario(body: CrearUsuarioRequest): Promise<CrearUsua
   return data
 }
 
-export async function asignarRolesUsuario(id: string, body: AsignarRolesRequest): Promise<void> {
-  await apiClient.put(`/usuarios/${id}/roles`, body)
+export async function asignarRolesUsuario(
+  keycloakUserId: string,
+  body: AsignarRolesRequest,
+): Promise<void> {
+  await apiClient.put(`/usuarios/${keycloakUserId}/roles`, body)
 }
 
-export async function cambiarEstadoUsuario(id: string, accion: 'Activar' | 'Bloquear'): Promise<void> {
-  await apiClient.put(`/usuarios/${id}/estado`, { accion })
+export async function cambiarEstadoUsuario(
+  keycloakUserId: string,
+  accion: 'Activar' | 'Bloquear',
+): Promise<void> {
+  await apiClient.put(`/usuarios/${keycloakUserId}/estado`, { accion })
 }
 
-export async function actualizarUsuario(id: string, body: ActualizarUsuarioRequest): Promise<void> {
-  await apiClient.put(`/usuarios/${id}`, body)
+export async function actualizarUsuario(
+  keycloakUserId: string,
+  body: ActualizarUsuarioRequest,
+): Promise<void> {
+  await apiClient.put(`/usuarios/${keycloakUserId}`, body)
 }
 
-export async function eliminarUsuario(id: string): Promise<void> {
-  await apiClient.delete(`/usuarios/${id}`)
+export async function eliminarUsuario(keycloakUserId: string): Promise<void> {
+  await apiClient.delete(`/usuarios/${keycloakUserId}`)
 }

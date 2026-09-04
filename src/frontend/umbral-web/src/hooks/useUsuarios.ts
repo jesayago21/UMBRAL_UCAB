@@ -33,8 +33,13 @@ export function useCrearUsuario() {
 export function useActualizarUsuario() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: ActualizarUsuarioRequest }) =>
-      actualizarUsuario(id, body),
+    mutationFn: ({
+      keycloakUserId,
+      body,
+    }: {
+      keycloakUserId: string
+      body: ActualizarUsuarioRequest
+    }) => actualizarUsuario(keycloakUserId, body),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   })
 }
@@ -42,8 +47,13 @@ export function useActualizarUsuario() {
 export function useAsignarRolesUsuario() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: AsignarRolesRequest }) =>
-      asignarRolesUsuario(id, body),
+    mutationFn: ({
+      keycloakUserId,
+      body,
+    }: {
+      keycloakUserId: string
+      body: AsignarRolesRequest
+    }) => asignarRolesUsuario(keycloakUserId, body),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   })
 }
@@ -51,8 +61,13 @@ export function useAsignarRolesUsuario() {
 export function useCambiarEstadoUsuario() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, accion }: { id: string; accion: 'Activar' | 'Bloquear' }) =>
-      cambiarEstadoUsuario(id, accion),
+    mutationFn: ({
+      keycloakUserId,
+      accion,
+    }: {
+      keycloakUserId: string
+      accion: 'Activar' | 'Bloquear'
+    }) => cambiarEstadoUsuario(keycloakUserId, accion),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   })
 }
@@ -60,7 +75,7 @@ export function useCambiarEstadoUsuario() {
 export function useEliminarUsuario() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => eliminarUsuario(id),
+    mutationFn: (keycloakUserId: string) => eliminarUsuario(keycloakUserId),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   })
 }

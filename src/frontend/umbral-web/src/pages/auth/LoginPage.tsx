@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from 'react-oidc-context'
 import { getHomePathForRol } from '@/auth/authPaths'
 import { isParticipanteWebEnabled } from '@/auth/participanteWebAccess'
@@ -7,12 +7,14 @@ import { syncOidcSession } from '@/auth/syncOidcSession'
 import { SessionEndActions } from '@/components/shared/SessionEndActions'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { LoadingState } from '@/components/shared/LoadingState'
-import { btnPrimary } from '@/styles/ui'
+import { clearOidcBrowserState } from '@/auth/clearOidcBrowserState'
+import { btnLink, btnPrimary } from '@/styles/ui'
 import { useAuthStore } from '@/store/authStore'
 
 export function LoginPage() {
   const auth = useAuth()
   const rol = useAuthStore((s) => s.rol)
+  const logoutStore = useAuthStore((s) => s.logout)
 
   useEffect(() => {
     if (auth.isLoading || !auth.isAuthenticated || !auth.user?.access_token) return
@@ -30,7 +32,7 @@ export function LoginPage() {
   if (auth.isAuthenticated && rol === 'Participante') {
     if (!isParticipanteWebEnabled()) {
       return (
-        <SessionEndActions message="El rol participante está deshabilitado en web. Usa la app mobile cuando esté disponible." />
+        <SessionEndActions message="El rol participante no está disponible en web. Usa la app mobile." />
       )
     }
     return <Navigate to="/participante" replace />
@@ -42,6 +44,11 @@ export function LoginPage() {
 
   const handleLogin = async () => {
     try {
+      // Evita invalid_code / tokens huérfanos tras reiniciar o recrear Keycloak.
+      clearOidcBrowserState()
+      logoutStore()
+      await auth.clearStaleState()
+      await auth.removeUser()
       await auth.signinRedirect({
         prompt: 'login',
       })
@@ -54,22 +61,10 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
         <h1 className="text-2xl font-bold text-indigo-700">UMBRAL</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Inicia sesión con el realm <code className="text-xs">umbral</code> en Keycloak.
-          Usuarios demo: <strong>admin</strong> / <strong>operador</strong> / <strong>participante</strong> — contraseña{' '}
-          <code className="text-xs">Umbral123!</code>
-          {' '}(jugador: panel <code className="text-xs">/participante</code> en web durante E1)
-        </p>
-
-        <p className="mt-2 text-xs text-slate-500">
-          Keycloak: {import.meta.env.VITE_KEYCLOAK_URL ?? 'http://localhost:8080'}
-        </p>
 
         {auth.error && (
           <div className="mt-4">
-            <ErrorState
-              message={`${auth.error.message} — Comprueba: docker compose up -d keycloak`}
-            />
+            <ErrorState message={auth.error.message} />
           </div>
         )}
 
@@ -79,8 +74,17 @@ export function LoginPage() {
           disabled={!!auth.activeNavigator}
           className={`mt-6 w-full ${btnPrimary}`}
         >
-          {auth.activeNavigator ? 'Redirigiendo a Keycloak…' : 'Iniciar sesión con Keycloak'}
+          {auth.activeNavigator ? 'Redirigiendo…' : 'Iniciar sesión'}
         </button>
+
+        {isParticipanteWebEnabled() && (
+          <p className="mt-4 text-center text-sm text-slate-600">
+            ¿Eres participante y no tienes cuenta?{' '}
+            <Link to="/registro" className={btnLink}>
+              Crear cuenta de participante
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   )

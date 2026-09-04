@@ -6,6 +6,9 @@ public sealed class EtapaBusquedaTesoroSnapshot : EtapaSnapshotBase
 {
     public string Descripcion { get; }
     public string CodigoQRSolucion { get; }
+    public double? Latitud { get; }
+    public double? Longitud { get; }
+    public int? RadioMetros { get; }
     public IReadOnlyList<PistaSnapshot> Pistas { get; }
 
     public override TipoEtapa Tipo => TipoEtapa.BusquedaTesoro;
@@ -15,11 +18,17 @@ public sealed class EtapaBusquedaTesoroSnapshot : EtapaSnapshotBase
         int orden,
         string descripcion,
         string codigoQR,
+        double? latitud,
+        double? longitud,
+        int? radioMetros,
         IReadOnlyList<PistaSnapshot> pistas)
         : base(id, orden)
     {
         Descripcion      = descripcion;
         CodigoQRSolucion = codigoQR;
+        Latitud          = latitud;
+        Longitud         = longitud;
+        RadioMetros      = radioMetros;
         Pistas           = pistas;
     }
 
@@ -35,6 +44,9 @@ public sealed class EtapaBusquedaTesoroSnapshot : EtapaSnapshotBase
             etapa.Orden,
             etapa.Descripcion,
             etapa.CodigoQRSolucion,
+            etapa.Latitud,
+            etapa.Longitud,
+            etapa.RadioMetros,
             pistas);
     }
 
@@ -43,6 +55,9 @@ public sealed class EtapaBusquedaTesoroSnapshot : EtapaSnapshotBase
         int orden,
         string descripcion,
         string codigoQr,
-        IReadOnlyList<PistaSnapshot>? pistas = null) =>
-        new(id, orden, descripcion, codigoQr, pistas ?? []);
+        IReadOnlyList<PistaSnapshot>? pistas = null,
+        double? latitud = null,
+        double? longitud = null,
+        int? radioMetros = null) =>
+        new(id, orden, descripcion, codigoQr, latitud, longitud, radioMetros, pistas ?? []);
 }

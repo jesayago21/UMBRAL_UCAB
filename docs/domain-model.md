@@ -463,12 +463,12 @@ classDiagram
 | **`Pregunta.segundosRespuesta`** | E2 | RF-25; previsto en diagrama; aún no existe en `Umbral.Domain`. |
 | **Evidencia BT** | Implementado | `RegistrarEvidencia`, `ValidacionEvidenciaService`, RF-07..11, RF-20. |
 | **Penalización** | Implementado | `AplicarPenalizacion`, RB-20/24/25. |
-| **Ranking** | Parcial | `RankingService` por puntaje descendente; desempate RB-08 por tiempo acumulado → E2 (hoy desempata por nombre). |
+| **Ranking** | ✅ | `RankingService` por puntaje descendente; desempate RB-08/HU-39 por menor tiempo acumulado de respuestas a tiempo; empate residual por nombre. |
 | **`EventoSesion`** | Parcial | Se persiste en dominio/BD; consulta API de auditoría HU-22 → E2. |
-| **Liberación de pistas** | E2 | Catálogo de `Pista` en misión ✅; runtime `PistaEntregada`, RF-14/15, HU-09/10/11 → pendiente. |
-| **`RespuestaTrivia` / trivia en vivo** | E2 | RF-26..30, RB-12/13/17/29..32, HU-33..38; UI participante en modo lectura en E1. |
+| **Liberación de pistas** | E1 parcial (HU-09, HU-10, RF-15) | `PorTiempo` + `PorGanador` + pista ad-hoc operador ✅; SignalR real → E2. |
+| **`RespuestaTrivia` / trivia en vivo** | E1 parcial | HU-34 sync submit + puntaje; HU-35 cola RabbitMQ pendiente. |
 | **`IEventPublisher`** | Parcial | Puerto en dominio ✅; implementación `NoOpEventPublisher` en E1; RabbitMQ real RF-19/29, RNF-05 → E2. |
-| **Tiempo real (WebSockets)** | E2 | RF-17/18, RNF-03; clientes usan REST/polling en E1. |
+| **Tiempo real (WebSockets)** | E1 parcial (HU-15) | `SesionHub` + `NotificacionRealTimeService` (estado sesión + pistas); TriviaHub → E2. |
 | **Identidad Keycloak** | Implementado | `UsuarioAdministrable`, doble commit, compensación RB-37, RF-31/33/34. |
 | **Roles en admin** | Implementado | Un rol por usuario (`Administrador`, `Operador` o `Participante` para cuentas demo); ver RB-35 actualizado en ERS. |
 | **Participación en juego** | Implementado | Inscripción con código de acceso + nombre único RB-02; rol Keycloak `Participante` no sustituye la inscripción a sesión. |

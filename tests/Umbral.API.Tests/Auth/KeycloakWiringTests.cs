@@ -109,6 +109,23 @@ public sealed class KeycloakWiringTests
     }
 
     [Fact]
+    public void AddUmbralApi_ConMetadataAddress_ConfiguraJwtBearerMetadata()
+    {
+        var provider = BuildProviderProduccion(new Dictionary<string, string?>
+        {
+            ["Keycloak:Authority"] = "http://localhost:8080/realms/umbral",
+            ["Keycloak:MetadataAddress"] = "http://keycloak:8080/realms/umbral",
+            ["Keycloak:Audience"] = "umbral-api",
+            ["Keycloak:RequireHttpsMetadata"] = "false"
+        });
+        var options = ResolveJwtOptions(provider);
+
+        options.Authority.Should().Be("http://localhost:8080/realms/umbral");
+        options.MetadataAddress.Should().Be(
+            "http://keycloak:8080/realms/umbral/.well-known/openid-configuration");
+    }
+
+    [Fact]
     public void KeycloakOptions_PorDefecto_TieneValoresDeDesarrollo()
     {
         // Arrange / Act

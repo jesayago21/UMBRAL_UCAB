@@ -14,7 +14,8 @@ namespace Umbral.Domain.Tests.Sesion;
 /// Reglas:
 /// RB-16-01: solo en estado Activa.
 /// RB-16-02: participante debe pertenecer a la sesión.
-/// RB-16-03: emite PenalizacionAplicada; puntaje no baja de cero.
+/// RB-16-03: emite PenalizacionAplicada; puntaje visible no baja de cero
+///           (exceso queda como DeudaPendiente y se salda al SumarPuntaje).
 /// RB-16-04: Penalizacion.Puntos > 0; Motivo no vacío.
 /// </summary>
 public sealed class SesionAplicarPenalizacionTests
@@ -95,7 +96,7 @@ public sealed class SesionAplicarPenalizacionTests
     }
 
     [Fact]
-    public void AplicarPenalizacion_CuandoPuntajeMenorQuePenalizacion_ResultaCero()
+    public void AplicarPenalizacion_CuandoPuntajeMenorQuePenalizacion_ResultaCeroConDeuda()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
@@ -107,10 +108,11 @@ public sealed class SesionAplicarPenalizacionTests
 
         // Assert
         participante.PuntajeTotal.Valor.Should().Be(0);
+        participante.DeudaPendiente.Valor.Should().Be(95);
     }
 
     [Fact]
-    public void AplicarPenalizacion_CuandoParticipanteConPuntajeCero_PermaneceCero()
+    public void AplicarPenalizacion_CuandoParticipanteConPuntajeCero_AcumulaDeuda()
     {
         // Arrange
         var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
@@ -121,6 +123,39 @@ public sealed class SesionAplicarPenalizacionTests
 
         // Assert
         participante.PuntajeTotal.Valor.Should().Be(0);
+        participante.DeudaPendiente.Valor.Should().Be(50);
+    }
+
+    [Fact]
+    public void SumarPuntaje_CuandoHayDeudaMayor_ReduceDeudaSinSumarPuntaje()
+    {
+        // Arrange
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
+        var participante = sesion.Participantes.First();
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida(50));
+
+        // Act
+        participante.SumarPuntaje(30);
+
+        // Assert
+        participante.PuntajeTotal.Valor.Should().Be(0);
+        participante.DeudaPendiente.Valor.Should().Be(20);
+    }
+
+    [Fact]
+    public void SumarPuntaje_CuandoPuntosSuperanDeuda_SaldadaYSumaSobrante()
+    {
+        // Arrange
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
+        var participante = sesion.Participantes.First();
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida(50));
+
+        // Act
+        participante.SumarPuntaje(80);
+
+        // Assert
+        participante.DeudaPendiente.Valor.Should().Be(0);
+        participante.PuntajeTotal.Valor.Should().Be(30);
     }
 
     [Fact]
@@ -137,6 +172,23 @@ public sealed class SesionAplicarPenalizacionTests
 
         // Assert
         participante.PuntajeTotal.Valor.Should().Be(65);
+        participante.DeudaPendiente.Valor.Should().Be(0);
+    }
+
+    [Fact]
+    public void AplicarPenalizacion_VariasConPuntajeInsuficiente_AcumulanDeuda()
+    {
+        // Arrange
+        var sesion = SesionBuilder.BusquedaTesoro().Activa().Build();
+        var participante = sesion.Participantes.First();
+
+        // Act
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida(20));
+        sesion.AplicarPenalizacion(participante.ParticipanteId, PenalizacionValida(15));
+
+        // Assert
+        participante.PuntajeTotal.Valor.Should().Be(0);
+        participante.DeudaPendiente.Valor.Should().Be(35);
     }
 
     // ── Guard: estado de sesion ────────────────────────────────────

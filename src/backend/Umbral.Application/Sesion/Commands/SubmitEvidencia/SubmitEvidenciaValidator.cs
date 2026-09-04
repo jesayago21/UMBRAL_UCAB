@@ -11,9 +11,9 @@ public sealed class SubmitEvidenciaValidator
             .NotEmpty()
             .WithMessage("El identificador de la sesión es obligatorio.");
 
-        RuleFor(x => x.ParticipanteId)
+        RuleFor(x => x.JugadorId)
             .NotEmpty()
-            .WithMessage("El identificador del participante es obligatorio.");
+            .WithMessage("El identificador del jugador es obligatorio.");
 
         RuleFor(x => x.CodigoQr)
             .NotEmpty()

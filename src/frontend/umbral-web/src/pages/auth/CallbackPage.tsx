@@ -4,6 +4,7 @@ import { useAuth } from 'react-oidc-context'
 import { getHomePathForRol } from '@/auth/authPaths'
 import { isParticipanteWebEnabled } from '@/auth/participanteWebAccess'
 import { syncOidcSession } from '@/auth/syncOidcSession'
+import { clearOidcBrowserState } from '@/auth/clearOidcBrowserState'
 import { SessionEndActions } from '@/components/shared/SessionEndActions'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { LoadingState } from '@/components/shared/LoadingState'
@@ -20,7 +21,10 @@ export function CallbackPage() {
 
   useEffect(() => {
     if (auth.isLoading) return
-    if (auth.error) return
+    if (auth.error) {
+      clearOidcBrowserState()
+      return
+    }
     if (!auth.isAuthenticated || !auth.user?.access_token) return
 
     const rol: RolUsuario | null = syncOidcSession(auth.user.access_token)
@@ -41,16 +45,30 @@ export function CallbackPage() {
   }, [auth.isLoading, auth.error, auth.isAuthenticated, auth.user?.access_token, navigate])
 
   if (auth.error) {
+    const isInvalidCode =
+      /invalid_code|No matching state|Code mismatch|invalid_grant/i.test(
+        auth.error.message ?? '',
+      )
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="max-w-md space-y-4 text-center">
           <ErrorState
             message={
-              auth.error.message ??
-              'No se pudo completar el inicio de sesión. ¿Está Keycloak en marcha (puerto 8080)?'
+              isInvalidCode
+                ? 'Sesión OIDC inválida (suele pasar tras reiniciar Keycloak). Vuelve al login e inténtalo de nuevo.'
+                : (auth.error.message ??
+                  'No se pudo completar el inicio de sesión. ¿Está Keycloak en marcha (puerto 8080)?')
             }
           />
-          <button type="button" onClick={() => void logout()} className={btnPrimary}>
+          <button
+            type="button"
+            onClick={() => {
+              clearOidcBrowserState()
+              void logout()
+              navigate('/login', { replace: true })
+            }}
+            className={btnPrimary}
+          >
             Volver al login
           </button>
         </div>

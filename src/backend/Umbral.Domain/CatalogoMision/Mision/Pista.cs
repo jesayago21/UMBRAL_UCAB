@@ -35,6 +35,23 @@ public sealed class Pista : Entity
         };
     }
 
+    internal void Actualizar(
+        string contenido,
+        TipoLiberacion tipoLiberacion,
+        int? segundosLiberacion)
+    {
+        if (tipoLiberacion == TipoLiberacion.PorTiempo && (segundosLiberacion is null or <= 0))
+            throw new DomainException(
+                "El tipo PorTiempo requiere un valor de segundos de liberación mayor a cero.");
+
+        if (string.IsNullOrWhiteSpace(contenido))
+            throw new DomainException("El contenido de la pista no puede estar vacío.");
+
+        Contenido          = contenido.Trim();
+        TipoLiberacion     = tipoLiberacion;
+        SegundosLiberacion = segundosLiberacion;
+    }
+
     protected override bool IdEquals(Entity other) =>
         other is Pista p && p.PistaId == PistaId;
 

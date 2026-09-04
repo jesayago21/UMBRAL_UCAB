@@ -39,7 +39,12 @@ export function rutaListadoParticipante(_tipoSesion?: TipoSesionApi): string {
   return '/participante'
 }
 
-export function confirmarAbandonarSesion(): boolean {
+export function confirmarAbandonarSesion(opciones?: { postJuego?: boolean }): boolean {
+  if (opciones?.postJuego) {
+    return window.confirm(
+      '¿Salir de esta sesión?\n\nPodrás unirte a otra cuando el operador tenga una abierta.',
+    )
+  }
   return window.confirm(
     '¿Abandonar esta sesión?\n\nSaldrás del recorrido actual. Podrás unirte a otra sesión después si el operador la tiene abierta.',
   )

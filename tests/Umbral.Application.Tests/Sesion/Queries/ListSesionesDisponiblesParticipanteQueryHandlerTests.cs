@@ -38,6 +38,7 @@ public sealed class ListSesionesDisponiblesParticipanteQueryHandlerTests
         result.Should().ContainSingle();
         result[0].Titulo.Should().Be("Misión de prueba");
         result[0].ParticipantesInscritos.Should().Be(0);
+        result[0].MaxParticipantes.Should().Be(SesionAR.MaxParticipantes);
     }
 
     [Fact]

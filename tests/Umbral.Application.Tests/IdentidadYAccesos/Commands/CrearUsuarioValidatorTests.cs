@@ -16,7 +16,6 @@ public sealed class CrearUsuarioValidatorTests
             "valido_user",
             "Nombre",
             "Apellido",
-            "Password1",
             ["Operador"]));
 
         result.IsValid.Should().BeTrue();
@@ -30,21 +29,6 @@ public sealed class CrearUsuarioValidatorTests
             "user",
             "Nombre",
             "Apellido",
-            "Password1",
-            ["Operador"]));
-
-        result.IsValid.Should().BeFalse();
-    }
-
-    [Fact]
-    public void Validate_PasswordCorta_Error()
-    {
-        var result = _sut.Validate(new CrearUsuarioCommand(
-            "valido@umbral.test",
-            "user",
-            "Nombre",
-            "Apellido",
-            "corta",
             ["Operador"]));
 
         result.IsValid.Should().BeFalse();
@@ -58,7 +42,6 @@ public sealed class CrearUsuarioValidatorTests
             "user",
             "Nombre",
             "Apellido",
-            "Password1",
             ["Administrador", "Operador"]));
 
         result.IsValid.Should().BeFalse();

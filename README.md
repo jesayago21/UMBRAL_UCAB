@@ -24,38 +24,117 @@ Arquitectura: **Monolito hexagonal** (Ports & Adapters) en .NET 8. Comunicación
 
 ## Inicio rápido (desarrollo local)
 
-### Solo backend (.NET)
+Usa **una terminal por paso**. El gateway (`:8000`) es opcional pero recomendado: el frontend apunta REST ahí; la API sigue en `:5000`.
+
+### Terminal 1 — Infraestructura
 
 ```bash
 cp .env.example .env
-docker compose up postgres keycloak -d
-dotnet build Umbral.sln
-dotnet run --project src/backend/Umbral.API
-dotnet test Umbral.sln
-# Coverage with gate (≥90% per assembly, CI standard)
-.\scripts\run-coverage.ps1 -Threshold 90        # Windows
-# Cobertura: 
-.\scripts\run-coverage.ps1 -Open                # Windows
+docker compose up postgres mailpit keycloak -d
 ```
 
-| Paso | URL / comando |
-|------|----------------|
-| API health | http://localhost:5000/health |
-| Tests | `dotnet test Umbral.sln` |
-| Cobertura + reporte | `.\scripts\run-coverage.ps1 -Open` (Windows) o `bash scripts/run-coverage.sh` |
+RabbitMQ solo si lo necesitas (`docker compose up rabbitmq -d`); la API arranca sin él hoy.
 
-### Backend + frontend web
-
-Además de lo anterior, en otra terminal (requiere **Node.js** solo aquí):
+### Terminal 2 — API monolito (`:5000`)
 
 ```bash
-cd src/frontend/umbral-web && cp .env.example .env && npm install && npm run dev
+dotnet build Umbral.sln
+dotnet run --project src/backend/Umbral.API
 ```
 
-| Paso | URL |
-|------|-----|
-| Frontend | http://localhost:5173/login |
-| Keycloak admin | http://localhost:8080 (admin / admin) |
+En **Development** la API aplica migraciones EF al arrancar. Si falla por esquema desactualizado:
+
+```bash
+dotnet ef database update --project src/backend/Umbral.Infrastructure --startup-project src/backend/Umbral.API
+```
+
+### Terminal 3 — Gateway YARP (`:8000`, recomendado)
+
+```bash
+dotnet run --project src/backend/Umbral.Gateway
+```
+
+El gateway **solo reenvía** tráfico; la API debe estar corriendo en `:5000`.
+
+### Terminal 4 — Frontend web (opcional)
+
+```bash
+cd src/frontend/umbral-web
+cp .env.example .env    # VITE_API_URL=http://localhost:8000
+npm install
+npm run dev
+```
+
+Abrir **http://localhost:5173/login**.
+
+### Pruebas rápidas (smoke test)
+
+**PowerShell** (en Windows evita `curl`; a veces cuelga):
+
+```powershell
+# Health API directa
+Invoke-RestMethod http://localhost:5000/health
+# → {"status":"ok"}
+
+# Health gateway
+Invoke-RestMethod http://localhost:8000/health
+# → {"status":"ok","service":"gateway"}
+
+# REST vía gateway (401 sin token; 200 con sesión Keycloak)
+Invoke-WebRequest http://localhost:8000/api/v1/misiones -UseBasicParsing
+```
+
+**Bash / Git Bash:**
+
+```bash
+curl http://localhost:5000/health
+curl http://localhost:8000/health
+curl -i http://localhost:8000/api/v1/misiones
+```
+
+| Qué probar | URL | Resultado esperado |
+|------------|-----|-------------------|
+| API viva | http://localhost:5000/health | `{"status":"ok"}` |
+| Gateway viva | http://localhost:8000/health | `{"status":"ok","service":"gateway"}` |
+| Proxy funciona | http://localhost:8000/api/v1/misiones | Mismo status que `:5000/api/v1/misiones` |
+| Frontend | http://localhost:5173/login | Login Keycloak |
+| Keycloak admin | http://localhost:8080 | `admin` / `admin` |
+| Mailpit (emails) | http://localhost:8025 | Bandeja SMTP local (reset password) |
+
+### Resumen de puertos
+
+| Servicio | Puerto | Rol |
+|----------|--------|-----|
+| PostgreSQL | 5433 | Base de datos |
+| Keycloak | 8080 | Autenticación OIDC |
+| Mailpit | 1025 / 8025 | SMTP de desarrollo (UI en :8025) |
+| RabbitMQ | 5672 / 15672 | Mensajería (UI en :15672) |
+| **Umbral.API** | **5000** | Monolito hexagonal (acceso directo) |
+| **Umbral.Gateway** | **8000** | REST público `/api/v1/**` |
+| Frontend web | 5173 | Admin + Operador (+ participante E1) |
+
+**Credenciales de desarrollo** (PostgreSQL y RabbitMQ): `umbral_user` / `umbral_pass` · BD: `umbral_db`  
+**Nota:** Postgres usa `5433` para no chocar con instalaciones locales en `5432`.
+
+### Alternativa: stack en Docker
+
+Levanta infra + API + gateway en contenedores (requiere Docker Desktop):
+
+```bash
+docker compose up postgres rabbitmq keycloak api gateway -d
+# REST:  http://localhost:8000/api/v1/...
+# API:   http://localhost:5000/health
+```
+
+### Tests y cobertura (backend)
+
+```bash
+dotnet test Umbral.sln
+.\scripts\run-coverage.ps1 -Threshold 90 -Open    # Windows
+bash scripts/run-coverage.sh --threshold 90     # Linux/macOS/CI
+```
+
+> Docker debe estar corriendo para tests de **Infrastructure** y **API** (Testcontainers).
 
 ---
 
@@ -76,68 +155,22 @@ El archivo `.env` ya trae valores seguros para desarrollo local. No lo modifique
 ## 2. Levantar la infraestructura con Docker
 
 ```bash
-# Iniciar PostgreSQL, RabbitMQ y Keycloak
-docker compose up postgres rabbitmq keycloak -d
-
-# Verificar que ambos servicios están healthy
-docker compose ps
-
-# Ver logs si algo falla
-docker compose logs -f postgres
-docker compose logs -f rabbitmq
-```
-
-### Puertos expuestos
-
-| Servicio       | Puerto local | URL                              |
-|----------------|-------------|----------------------------------|
-| PostgreSQL     | 5433        | `localhost:5433`                 |
-| Keycloak       | 8080        | http://localhost:8080            |
-| RabbitMQ AMQP  | 5672        | `amqp://localhost:5672`          |
-| RabbitMQ UI    | 15672       | http://localhost:15672           |
-| API Backend    | 5000        | http://localhost:5000            |
-| Frontend web   | 5173        | http://localhost:5173            |
-
-**Credenciales de desarrollo** (PostgreSQL y RabbitMQ): `umbral_user` / `umbral_pass`  
-**Base de datos**: `umbral_db`
-**Nota**: se usa `5433` para evitar conflicto con instalaciones locales de PostgreSQL en `5432`.
-
----
-
-## 3. Compilar el backend
-
-```bash
-dotnet build Umbral.sln
-```
-
----
-
-## 4. Ejecutar la API en local
-
-Con la infraestructura Docker corriendo (**PostgreSQL + Keycloak**):
-
-```bash
+# Mínimo para dev local (API con dotnet run)
 docker compose up postgres keycloak -d
 
-dotnet run --project src/backend/Umbral.API
-```
+# Infra completa (+ RabbitMQ)
+docker compose up postgres rabbitmq keycloak -d
 
-En **Development** la API aplica migraciones EF al arrancar. Si falla por esquema desactualizado:
+# Stack completo: infra + API + gateway en contenedores
+docker compose up postgres rabbitmq keycloak api gateway -d
 
-```bash
-dotnet ef database update --project src/backend/Umbral.Infrastructure --startup-project src/backend/Umbral.API
-```
-
-Verificar:
-
-```bash
-curl http://localhost:5000/health
-# → {"status":"ok"}
+docker compose ps
+docker compose logs -f postgres
 ```
 
 ---
 
-## 5. Frontend web (`umbral-web`)
+## 3. Frontend web (`umbral-web`)
 
 ```bash
 cd src/frontend/umbral-web
@@ -150,9 +183,9 @@ Abrir **http://localhost:5173/login**.
 
 | Variable | Uso |
 |----------|-----|
-| `VITE_API_URL` | API REST (default `http://localhost:5000`) |
+| `VITE_API_URL` | API REST vía gateway (default `http://localhost:8000`; API directa `:5000`) |
 | `VITE_KEYCLOAK_*` | Realm `umbral`, client `umbral-web` |
-| `VITE_PARTICIPANTE_WEB_ENABLED` | `true` = jugador en `/participante` (E1). `false` cuando exista mobile |
+| `VITE_PARTICIPANTE_WEB_ENABLED` | `false` = jugador solo en mobile. `true` = también `/participante` en web |
 
 ### Usuarios demo (Keycloak)
 
@@ -160,7 +193,7 @@ Abrir **http://localhost:5173/login**.
 |---------|------------|-----|----------------|
 | `admin` | `Umbral123!` | Administrador | `/admin/misiones` |
 | `operador` | `Umbral123!` | Operador | `/operador/sesiones` |
-| `participante` | `Umbral123!` | Participante | `/participante` (si `VITE_PARTICIPANTE_WEB_ENABLED=true`) |
+| `participante` | `Umbral123!` | Participante | App mobile (`umbral-mobile`) |
 
 Si Keycloak dice **usuario desconocido** o tras login aparece *rol no válido*, el realm se creó antes de añadir `participante` o el rol `Participante`. Con Keycloak en marcha:
 
@@ -168,22 +201,43 @@ Si Keycloak dice **usuario desconocido** o tras login aparece *rol no válido*, 
 .\scripts\keycloak-ensure-demo-users.ps1
 ```
 
-Para reimportar el realm desde cero (borra usuarios del contenedor): `docker compose rm -sf keycloak` y luego `docker compose up keycloak -d`.
+### Registro de usuarios (contraseña por email)
+
+Al crear un usuario **Administrador/Operador** desde Admin, Keycloak envía un correo con link `UPDATE_PASSWORD` (sin contraseña previa). En local:
+
+```bash
+docker compose up mailpit keycloak -d
+.\scripts\keycloak-configure-smtp.ps1   # si el realm ya existía sin SMTP
+```
+
+1. Crear usuario en `/admin/usuarios` (email real o de prueba).
+2. Abrir [Mailpit](http://localhost:8025) → abrir el correo → seguir el link.
+3. Definir contraseña en Keycloak e iniciar sesión.
+
+### Auto-registro de Participante
+
+Los jugadores se registran solos (rol fijo `Participante`; el admin **no** puede crearlos — RB-35 / HU-42):
+
+1. En Login → **Crear cuenta de participante** (`/registro`).
+2. Completar email, usuario, nombre, apellido y contraseña (≥8).
+3. Iniciar sesión con Keycloak y unirse a una sesión con el código del operador.
+
+Para reimportar el realm desde cero (borra usuarios del contenedor): `docker compose rm -sf keycloak` y luego `docker compose up mailpit keycloak -d`.
 
 ---
 
-## 6. Guion de demo (Entrega 1)
+## 4. Guion de demo (Entrega 1)
 
-Duración orientativa: **12–15 min**. Requiere Postgres + Keycloak + API + `npm run dev`.
+Duración orientativa: **12–15 min**. Requiere Postgres + Keycloak + API + gateway (opcional) + `npm run dev`.
 
-### 6.1 Administrador — catálogo
+### 4.1 Administrador — catálogo
 
 1. Login **`admin`** / `Umbral123!` → redirige a misiones.
 2. Crear o revisar una **misión activa** (nombre, etapas si aplica).
 3. Ir a **Trivia** → crear **categoría** y **pregunta** con opciones.
 4. Cerrar sesión.
 
-### 6.2 Operador — sesión búsqueda del tesoro
+### 4.2 Operador — sesión búsqueda del tesoro
 
 1. Login **`operador`** / `Umbral123!` → `/operador/sesiones`.
 2. **Crear sesión** eligiendo la misión activa → anotar el **código de sesión** (único, no por participante).
@@ -195,26 +249,27 @@ Duración orientativa: **12–15 min**. Requiere Postgres + Keycloak + API + `np
    - **Refrescar ranking** (poll manual, sin SignalR).
 4. *(Opcional)* Intentar `/admin/misiones` → pantalla **403** (rol incorrecto).
 
-### 6.3 Participante — unirse a sesión (web temporal)
+### 4.3 Participante — unirse a sesión
 
-> Cuando exista `umbral-mobile`, poner `VITE_PARTICIPANTE_WEB_ENABLED=false` y repetir el flujo en la app.
+**Cliente oficial:** app mobile `src/mobile/umbral-mobile` (`VITE_PARTICIPANTE_WEB_ENABLED=false`).
 
-1. Login **`participante`** / `Umbral123!` → `/participante`.
-2. **Búsqueda del tesoro** → listado de sesiones abiertas a inscripción.
-3. Ingresar el **código de la sesión** del operador → **Unirse**.
-4. El operador ve el participante en el detalle de la sesión.
-5. Tras unirse, la partida se abre en `/participante/sesiones/{id}` (misiones con etapas BT y/o Trivia).
+```bash
+cd src/mobile/umbral-mobile
+cp .env.example .env && npm install && npx expo start
+```
 
-### 6.4 Qué decir que queda para E2
+Login (participante) → lobby → partida (QR manual o cámara, trivia, ranking).
 
-- Ranking en **tiempo real** (SignalR).
-- **Gameplay** BT: escanear QR, enviar evidencias desde mobile.
-- **Trivia jugable** y sesiones trivia desde operador.
-- App **React Native** (`umbral-mobile`) como cliente definitivo del participante.
+Si alguien entra a web con rol Participante, verá el mensaje de acceso deshabilitado (usar mobile).
+
+### 4.4 Qué decir que queda
+
+- Validar escáner QR en teléfono físico.
+- Pulido NativeWind / tests mobile / EAS build.
 
 ---
 
-## 7. Pendiente de implementar (después de probar el front)
+## 5. Pendiente de implementar (después de probar el front)
 
 Lista para cerrar E1 / abrir E2, en orden sugerido:
 
@@ -224,7 +279,7 @@ Lista para cerrar E1 / abrir E2, en orden sugerido:
 | 2 | **Sesiones trivia** | Operador: misión con etapa trivia; participante: mismo listado en `/participante` |
 | 3 | **Misiones completas** | CRUD etapas y pistas en admin (si aún incompleto) |
 | 4 | **`umbral-mobile`** | Expo + OIDC + mismas APIs de unirse/listar |
-| 5 | **Deshabilitar participante en web** | `VITE_PARTICIPANTE_WEB_ENABLED=false` al tener mobile |
+| 5 | **Participante web** | ✅ `VITE_PARTICIPANTE_WEB_ENABLED=false` (cliente = mobile) |
 | 6 | **SignalR** | Ranking y eventos de sesión en vivo |
 | 7 | **Gameplay BT** | Evidencia QR, lobby post-unión, pantallas de juego |
 | 8 | **E2E Playwright** | Flujos admin + operador + 403 |
@@ -233,7 +288,7 @@ Lista para cerrar E1 / abrir E2, en orden sugerido:
 
 ---
 
-## 8. Tests y cobertura
+## 6. Tests y cobertura
 
 ### Ejecutar tests
 
@@ -321,15 +376,20 @@ Más detalle: [`docs/archive/entrega-1/iter-e1-01-cobertura-baseline.md`](docs/a
 
 ---
 
-## 9. Estructura del proyecto
+## 7. Estructura del proyecto
 
 ```
 UMBRAL_UCAB/
 ├── Umbral.sln                        ← Solución .NET
-├── docker-compose.yml                ← Infra local (PostgreSQL + RabbitMQ + Keycloak)
+├── docker-compose.yml                ← Infra + api + gateway (Docker)
+├── docker/
+│   ├── api.Dockerfile
+│   └── gateway.Dockerfile
 ├── .env.example                      ← Plantilla de variables de entorno
 ├── src/
-│   ├── backend/                      ← API .NET 8
+│   ├── backend/
+│   │   ├── Umbral.API/               ← Monolito (:5000)
+│   │   └── Umbral.Gateway/           ← YARP edge proxy (:8000)
 │   └── frontend/
 │       └── umbral-web/               ← React (admin, operador, participante E1)
 ├── tests/                            ← Domain, Application, Infrastructure, API
@@ -344,6 +404,7 @@ UMBRAL_UCAB/
 ### Regla de dependencias (hexagonal)
 
 ```
+Umbral.Gateway → (ningún proyecto UMBRAL; solo YARP config)
 Umbral.API → Umbral.Application + Umbral.Infrastructure
 Umbral.Infrastructure → Umbral.Application + Umbral.Domain
 Umbral.Application → Umbral.Domain
@@ -352,7 +413,7 @@ Umbral.Domain → (ninguno)
 
 ---
 
-## 10. Gestión del stack Docker
+## 8. Gestión del stack Docker
 
 ```bash
 # Detener servicios (conserva los volúmenes/datos)

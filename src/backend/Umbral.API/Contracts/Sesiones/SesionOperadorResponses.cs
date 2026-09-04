@@ -15,7 +15,8 @@ public sealed record SesionResumenResponse(
     int EtapaActualOrden,
     int TotalEtapas,
     string? EtapaActualDescripcion,
-    string? EtapaActivaTipo);
+    string? EtapaActivaTipo,
+    int MaxParticipantes = 5);
 
 public sealed record ParticipanteSesionResponse(
     Guid ParticipanteId,
@@ -23,6 +24,7 @@ public sealed record ParticipanteSesionResponse(
     string Nombre);
 
 public sealed record PistaSesionResponse(
+    Guid PistaId,
     string Contenido,
     string TipoLiberacion,
     int? SegundosLiberacion);
@@ -33,7 +35,11 @@ public sealed record EtapaSesionResponse(
     string Descripcion,
     bool EsActual,
     IReadOnlyList<PistaSesionResponse>? Pistas,
-    IReadOnlyList<Guid>? CategoriaIds);
+    IReadOnlyList<Guid>? CategoriaIds,
+    double? Latitud = null,
+    double? Longitud = null,
+    int? RadioMetros = null,
+    string? CodigoQrSolucion = null);
 
 public sealed record SesionDetalleResponse(
     Guid Id,
@@ -50,13 +56,16 @@ public sealed record SesionDetalleResponse(
     string? EtapaActualDescripcion,
     string? EtapaActivaTipo,
     IReadOnlyList<ParticipanteSesionResponse> Participantes,
-    IReadOnlyList<EtapaSesionResponse>? Etapas);
+    IReadOnlyList<EtapaSesionResponse>? Etapas,
+    string? TriviaFase = null,
+    int MaxParticipantes = 5);
 
 public sealed record SesionDisponibleParticipanteResponse(
     Guid Id,
     string Titulo,
     string Estado,
-    int ParticipantesInscritos);
+    int ParticipantesInscritos,
+    int MaxParticipantes = 5);
 
 public sealed record UnirseSesionRequest(string CodigoAcceso, string? NombreParticipante);
 
@@ -68,7 +77,15 @@ public sealed record MiInscripcionParticipanteResponse(
     Guid ParticipanteId,
     string Estado,
     int TotalEtapas,
-    IReadOnlyList<EtapaSesionResponse> Etapas);
+    IReadOnlyList<EtapaSesionResponse> Etapas,
+    IReadOnlyList<PenalizacionParticipanteResponse>? Penalizaciones = null,
+    int ParticipantesInscritos = 0,
+    int MaxParticipantes = 5);
+
+public sealed record PenalizacionParticipanteResponse(
+    int Puntos,
+    string Motivo,
+    DateTime OcurridoEn);
 
 public sealed record SesionEtapasParticipanteResponse(
     string Estado,

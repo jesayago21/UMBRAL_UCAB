@@ -1,5 +1,6 @@
 using MediatR;
 using Umbral.Domain.Sesion;
+using SesionAR = Umbral.Domain.Sesion.Sesion;
 
 namespace Umbral.Application.Sesion.Queries.ListSesionesDisponiblesParticipante;
 
@@ -25,7 +26,8 @@ internal sealed class ListSesionesDisponiblesParticipanteQueryHandler
                 s.SesionId.Valor,
                 s.Nombre,
                 s.Estado.ToString(),
-                s.Participantes.Count);
+                s.Participantes.Count,
+                SesionAR.MaxParticipantes);
         }).ToList();
     }
 }

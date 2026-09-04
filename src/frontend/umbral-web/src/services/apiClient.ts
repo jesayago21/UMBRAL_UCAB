@@ -2,7 +2,7 @@ import axios, { type AxiosError } from 'axios'
 import { useAuthStore } from '@/store/authStore'
 import type { ApiErrorResponse } from '@/types/api.types'
 
-const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
+const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 export const apiClient = axios.create({
   baseURL: `${baseURL}/api/v1`,

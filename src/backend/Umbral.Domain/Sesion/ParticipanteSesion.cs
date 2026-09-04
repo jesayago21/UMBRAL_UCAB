@@ -9,6 +9,18 @@ public sealed class ParticipanteSesion : Entity
     public UsuarioId JugadorId { get; private set; } = default!;
     public NombreParticipante Nombre { get; private set; } = default!;
     public Puntaje PuntajeTotal { get; private set; } = default!;
+    /// <summary>
+    /// Penalización no cubierta por el puntaje actual. Se salda al ganar puntos
+    /// antes de incrementar <see cref="PuntajeTotal"/> (ranking nunca negativo).
+    /// </summary>
+    public Puntaje DeudaPendiente { get; private set; } = default!;
+
+    /// <summary>
+    /// Milisegundos efectivos (sin pausas) acumulados al ganar etapas de Búsqueda
+    /// del Tesoro, medidos desde el inicio de cada etapa. Criterio de desempate:
+    /// a igual puntaje, gana quien resolvió en menos tiempo.
+    /// </summary>
+    public long TiempoBusquedaMs { get; private set; }
 
     private ParticipanteSesion() { }
 
@@ -19,19 +31,53 @@ public sealed class ParticipanteSesion : Entity
 
         return new ParticipanteSesion
         {
-            ParticipanteId     = ParticipanteId.Nuevo(),
-            SesionId     = sesionId,
-            JugadorId    = jugadorId,
-            Nombre       = NombreParticipante.Crear(nombre),
-            PuntajeTotal = Puntaje.Zero(),
+            ParticipanteId = ParticipanteId.Nuevo(),
+            SesionId       = sesionId,
+            JugadorId      = jugadorId,
+            Nombre         = NombreParticipante.Crear(nombre),
+            PuntajeTotal   = Puntaje.Zero(),
+            DeudaPendiente = Puntaje.Zero(),
         };
     }
 
-    public void SumarPuntaje(int puntos) =>
-        PuntajeTotal = PuntajeTotal.Sumar(puntos);
+    public void SumarPuntaje(int puntos)
+    {
+        var deuda = DeudaPendiente.Valor;
+        if (deuda == 0)
+        {
+            PuntajeTotal = PuntajeTotal.Sumar(puntos);
+            return;
+        }
 
-    public void AplicarPenalizacion(Penalizacion penalizacion) =>
-        PuntajeTotal = PuntajeTotal.Restar(penalizacion.Puntos);
+        if (puntos <= deuda)
+        {
+            DeudaPendiente = DeudaPendiente.Restar(puntos);
+            return;
+        }
+
+        DeudaPendiente = Puntaje.Zero();
+        PuntajeTotal = PuntajeTotal.Sumar(puntos - deuda);
+    }
+
+    internal void AcumularTiempoBusqueda(long milisegundos)
+    {
+        if (milisegundos <= 0)
+            return;
+
+        TiempoBusquedaMs += milisegundos;
+    }
+
+    public void AplicarPenalizacion(Penalizacion penalizacion)
+    {
+        var puntos = penalizacion.Puntos;
+        var disponible = PuntajeTotal.Valor;
+        var restado = Math.Min(disponible, puntos);
+        var faltante = puntos - restado;
+
+        PuntajeTotal = PuntajeTotal.Restar(puntos);
+        if (faltante > 0)
+            DeudaPendiente = DeudaPendiente.Sumar(faltante);
+    }
 
     protected override bool IdEquals(Entity other) =>
         other is ParticipanteSesion e && e.ParticipanteId == ParticipanteId;

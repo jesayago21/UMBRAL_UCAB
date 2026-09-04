@@ -10,8 +10,19 @@ public interface IIdentityService
         string username,
         string nombre,
         string apellido,
-        string passwordTemporal,
         IReadOnlyList<RolSistema> roles,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Auto-registro de participante: crea el usuario con contraseña ya definida
+    /// (sin required action UPDATE_PASSWORD) y asigna solo el rol Participante.
+    /// </summary>
+    Task<KeycloakUserId> RegistrarParticipanteEnIdentityServerAsync(
+        EmailAddress email,
+        string username,
+        string nombre,
+        string apellido,
+        string password,
         CancellationToken ct = default);
 
     Task SincronizarRolesAsync(
@@ -35,4 +46,19 @@ public interface IIdentityService
     Task EliminarEnIdentityServerAsync(KeycloakUserId userId, CancellationToken ct = default);
 
     Task<KeycloakUserId?> ObtenerIdPorUsernameAsync(string username, CancellationToken ct = default);
+
+    Task<bool> ExisteEmailAsync(EmailAddress email, CancellationToken ct = default);
+
+    Task<bool> ExisteUsernameAsync(string username, CancellationToken ct = default);
+
+    Task<UsuarioIdentidad?> ObtenerUsuarioPorIdAsync(KeycloakUserId userId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<UsuarioIdentidad>> ListarUsuariosAsync(
+        int first,
+        int max,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<RolSistema>> ObtenerRolesAsync(
+        KeycloakUserId userId,
+        CancellationToken ct = default);
 }

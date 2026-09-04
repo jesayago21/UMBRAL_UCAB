@@ -16,6 +16,7 @@ public sealed class UnirseSesionCommandHandlerTests
 {
     private readonly ISesionRepository _sesionRepo = Substitute.For<ISesionRepository>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
+    private readonly INotificacionRealTime _notifier = Substitute.For<INotificacionRealTime>();
     private readonly UnirseSesionCommandHandler _sut;
 
     public UnirseSesionCommandHandlerTests()
@@ -24,7 +25,7 @@ public sealed class UnirseSesionCommandHandlerTests
             .FindInscripcionAbiertaPorJugadorAsync(Arg.Any<UsuarioId>(), Arg.Any<CancellationToken>())
             .Returns((SesionAR?)null);
 
-        _sut = new UnirseSesionCommandHandler(_sesionRepo, _publisher);
+        _sut = new UnirseSesionCommandHandler(_sesionRepo, _publisher, _notifier);
     }
 
     [Fact]
@@ -102,6 +103,14 @@ public sealed class UnirseSesionCommandHandlerTests
 
         await _sesionRepo.Received(1).SaveAsync(sesion, Arg.Any<CancellationToken>());
         sesion.DomainEvents.Should().BeEmpty();
+        await _notifier.Received(1).NotificarParticipantesActualizadosAsync(
+            sesion.SesionId.Valor.ToString(),
+            1,
+            Arg.Any<CancellationToken>());
+        await _notifier.Received(1).NotificarRankingActualizadoAsync(
+            sesion.SesionId.Valor.ToString(),
+            Arg.Any<IReadOnlyList<RankingPosicionNotificacion>>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

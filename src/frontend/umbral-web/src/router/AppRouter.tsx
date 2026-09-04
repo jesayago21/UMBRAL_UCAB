@@ -8,6 +8,7 @@ import { UsuariosPage } from '@/pages/admin/UsuariosPage'
 import { PreguntasPage } from '@/pages/admin/PreguntasPage'
 import { CallbackPage } from '@/pages/auth/CallbackPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
+import { RegistroParticipantePage } from '@/pages/auth/RegistroParticipantePage'
 import { ParticipanteLayout } from '@/components/layout/ParticipanteLayout'
 import { ParticipanteSesionesActivasPage } from '@/pages/participante/ParticipanteSesionesActivasPage'
 import { ParticipanteSesionJuegoPage } from '@/pages/participante/ParticipanteSesionJuegoPage'
@@ -19,6 +20,7 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/registro" element={<RegistroParticipantePage />} />
       <Route path="/callback" element={<CallbackPage />} />
 
       <Route

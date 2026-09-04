@@ -6,6 +6,7 @@ public sealed class EliminarUsuarioValidator : AbstractValidator<EliminarUsuario
 {
     public EliminarUsuarioValidator()
     {
-        RuleFor(x => x.UsuarioId).NotEmpty();
+        RuleFor(x => x.KeycloakUserId).NotEmpty();
+        RuleFor(x => x.SolicitanteKeycloakUserId).NotEmpty();
     }
 }

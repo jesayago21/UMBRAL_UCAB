@@ -1,3 +1,5 @@
+import { CodigoQrTesoro } from '@/components/shared/CodigoQrTesoro'
+import { MapaTesoroViewer } from '@/components/shared/MapaTesoroViewer'
 import { useCategorias } from '@/hooks/useCategorias'
 import { formatCategoriaIds } from '@/lib/formatCategoriaIds'
 import { cardClass } from '@/styles/ui'
@@ -5,7 +7,7 @@ import type { EtapaSesionDto } from '@/types/sesion.types'
 
 const TIPO_LIBERACION_LABEL: Record<string, string> = {
   PorTiempo: 'Por tiempo',
-  PorGanador: 'Al ganador de la etapa',
+  PorGanador: 'Al inicio',
 }
 
 function liberacionTexto(pista: NonNullable<EtapaSesionDto['pistas']>[number]): string {
@@ -16,6 +18,10 @@ function liberacionTexto(pista: NonNullable<EtapaSesionDto['pistas']>[number]): 
   return tipo
 }
 
+function tieneUbicacion(etapa: EtapaSesionDto): boolean {
+  return etapa.latitud != null && etapa.longitud != null && etapa.radioMetros != null
+}
+
 interface SesionEtapasPistasPanelProps {
   etapas: EtapaSesionDto[]
 }
@@ -23,25 +29,16 @@ interface SesionEtapasPistasPanelProps {
 export function SesionEtapasPistasPanel({ etapas }: SesionEtapasPistasPanelProps) {
   const { data: categorias } = useCategorias()
   const categoriaOptions = (categorias ?? []).map((c) => ({ id: c.id, nombre: c.nombre }))
-  const totalPistas = etapas.reduce((n, e) => n + (e.pistas?.length ?? 0), 0)
-  const tieneTrivia = etapas.some((e) => e.tipoEtapa === 'Trivia')
 
   return (
     <section className={`${cardClass} space-y-4`}>
-      <div>
-        <h3 className="font-medium text-slate-900">
-          {tieneTrivia && totalPistas === 0 ? 'Etapas de la misión' : 'Pistas por etapa'}
-        </h3>
-        <p className="mt-1 text-sm text-slate-600">
-          Copia de la misión al crear la sesión (definida por el administrador). La liberación
-          automática en juego llega en la segunda entrega con WebSockets.
-        </p>
-      </div>
+      <h3 className="font-medium text-slate-900">Etapas de la misión</h3>
 
       <ul className="space-y-3">
         {etapas.map((etapa) => {
           const pistas = etapa.pistas ?? []
           const esTrivia = etapa.tipoEtapa === 'Trivia'
+          const esBt = !esTrivia
 
           return (
             <li
@@ -64,21 +61,36 @@ export function SesionEtapasPistasPanel({ etapas }: SesionEtapasPistasPanelProps
                     </span>
                   )}
                 </p>
-                {!esTrivia && (
+                {esBt && (
                   <span className="text-xs text-slate-500">
                     {pistas.length} pista{pistas.length === 1 ? '' : 's'}
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-sm text-slate-600">{etapa.descripcion}</p>
+
+              {esBt && (
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {tieneUbicacion(etapa) && (
+                    <div className="space-y-1">
+                      <MapaTesoroViewer
+                        latitud={etapa.latitud!}
+                        longitud={etapa.longitud!}
+                        radioMetros={etapa.radioMetros!}
+                        heightClass="h-48"
+                      />
+                    </div>
+                  )}
+                  {etapa.codigoQrSolucion ? (
+                    <CodigoQrTesoro codigo={etapa.codigoQrSolucion} />
+                  ) : null}
+                </div>
+              )}
 
               {esTrivia ? (
                 <p className="mt-2 text-xs text-slate-600">
                   Categorías: {formatCategoriaIds(etapa.categoriaIds, categoriaOptions)}
                 </p>
-              ) : pistas.length === 0 ? (
-                <p className="mt-2 text-xs text-slate-500">Sin pistas en esta etapa.</p>
-              ) : (
+              ) : pistas.length === 0 ? null : (
                 <ol className="mt-3 space-y-2">
                   {pistas.map((pista, index) => (
                     <li
@@ -87,7 +99,7 @@ export function SesionEtapasPistasPanel({ etapas }: SesionEtapasPistasPanelProps
                     >
                       <p className="text-slate-800">{pista.contenido}</p>
                       <p className="mt-1 text-xs text-slate-500">
-                        Liberación: {liberacionTexto(pista)}
+                        {liberacionTexto(pista)}
                       </p>
                     </li>
                   ))}

@@ -26,6 +26,9 @@ internal static class MisionSnapshotPersistence
         public int Orden { get; init; }
         public string? Descripcion { get; init; }
         public string? CodigoQRSolucion { get; init; }
+        public double? Latitud { get; init; }
+        public double? Longitud { get; init; }
+        public int? RadioMetros { get; init; }
         public List<PistaSnapshotDto>? Pistas { get; init; }
         public List<Guid>? CategoriaIds { get; init; }
         public List<Guid>? PreguntasOrdenadas { get; init; }
@@ -34,6 +37,7 @@ internal static class MisionSnapshotPersistence
 
     internal sealed class PistaSnapshotDto
     {
+        public Guid PistaId { get; init; }
         public string Contenido { get; init; } = string.Empty;
         public string TipoLiberacion { get; init; } = string.Empty;
         public int? SegundosLiberacion { get; init; }
@@ -73,8 +77,12 @@ internal static class MisionSnapshotPersistence
             Orden            = bt.Orden,
             Descripcion      = bt.Descripcion,
             CodigoQRSolucion = bt.CodigoQRSolucion,
+            Latitud          = bt.Latitud,
+            Longitud         = bt.Longitud,
+            RadioMetros      = bt.RadioMetros,
             Pistas           = bt.Pistas.Select(p => new PistaSnapshotDto
             {
+                PistaId            = p.PistaId.Valor,
                 Contenido          = p.Contenido,
                 TipoLiberacion     = p.TipoLiberacion.ToString(),
                 SegundosLiberacion = p.SegundosLiberacion
@@ -106,6 +114,7 @@ internal static class MisionSnapshotPersistence
 
         var pistas = (e.Pistas ?? [])
             .Select(p => PistaSnapshot.Rehydrate(
+                new PistaId(p.PistaId == Guid.Empty ? Guid.NewGuid() : p.PistaId),
                 p.Contenido,
                 Enum.Parse<TipoLiberacion>(p.TipoLiberacion),
                 p.SegundosLiberacion))
@@ -117,6 +126,9 @@ internal static class MisionSnapshotPersistence
             e.Orden,
             e.Descripcion ?? string.Empty,
             e.CodigoQRSolucion ?? string.Empty,
-            pistas);
+            pistas,
+            e.Latitud,
+            e.Longitud,
+            e.RadioMetros);
     }
 }
